@@ -12,7 +12,7 @@ type Source struct {
 	Glob            string `json:"glob"`
 }
 
-type OutResponse []Version
+type CheckResponse []Version
 
 type Version struct {
 	Bucket string `json:"bucket"`
