@@ -12,7 +12,7 @@ import (
 // 3. extract value from paths
 // 4. filter those which are less than or equal to the current version
 
-var _ = Describe("Check", func() {
+var _ = Describe("Match", func() {
 	Context("when given an empty list of paths", func() {
 		It("returns an empty list of matches", func() {
 			result, err := check.Match([]string{}, "regex")
@@ -69,6 +69,26 @@ var _ = Describe("Check", func() {
 			result, err := check.Match(paths, regex)
 			Ω(err).ShouldNot(HaveOccurred())
 			Ω(result).Should(BeEmpty())
+		})
+	})
+})
+
+var _ = Describe("Extract", func() {
+	Context("when the path does not contain extractable information", func() {
+		It("doesn't extract it", func() {
+			result, ok := check.Extract("abc.tgz")
+			Ω(ok).Should(BeFalse())
+			Ω(result).Should(BeZero())
+		})
+	})
+
+	Context("when the path contains extractable information", func() {
+		It("extracts it", func() {
+			result, ok := check.Extract("abc-105.tgz")
+			Ω(ok).Should(BeTrue())
+
+			Ω(result.Path).Should(Equal("abc-105.tgz"))
+			Ω(result.Version).Should(Equal(105))
 		})
 	})
 })
