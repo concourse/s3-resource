@@ -37,12 +37,6 @@ func main() {
 	client := s3.New(auth, aws.USEast)
 	bucket := client.Bucket(request.Source.Bucket)
 
-	reader, err := bucket.GetReader(request.Version.Path)
-	if err != nil {
-		s3resource.Fatal("getting reader", err)
-	}
-	defer reader.Close()
-
 	var filePath string
 	if request.Version.Path == "" {
 		extractions := versions.GetBucketFileVersions(request.Source)
@@ -51,6 +45,12 @@ func main() {
 	} else {
 		filePath = request.Version.Path
 	}
+
+	reader, err := bucket.GetReader(filePath)
+	if err != nil {
+		s3resource.Fatal("getting reader", err)
+	}
+	defer reader.Close()
 
 	filename := path.Base(filePath)
 	dest := filepath.Join(destinationDir, filename)
