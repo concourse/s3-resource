@@ -19,7 +19,8 @@ func main() {
 		os.Exit(1)
 	}
 
-	os.MkdirAll(os.Args[1], 0644)
+	destinationDir := os.Args[1]
+	os.MkdirAll(destinationDir, 0777)
 
 	var request in.InRequest
 
@@ -41,7 +42,7 @@ func main() {
 	}
 
 	filename := path.Base(request.Version.Path)
-	dest := filepath.Join(os.Args[1], filename)
+	dest := filepath.Join(destinationDir, filename)
 	file, err := os.Create(dest)
 	if err != nil {
 		fatal("opening destination file", err)
