@@ -44,6 +44,7 @@ func main() {
 	if err != nil {
 		fatal("opening destination file", err)
 	}
+	defer file.Close()
 
 	_, err = io.Copy(file, reader)
 	if err != nil {
