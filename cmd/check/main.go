@@ -61,8 +61,7 @@ func main() {
 	if request.Version.Path == "" {
 		lastExtraction := extractions[len(extractions)-1]
 		version := check.Version{
-			Path:   lastExtraction.Path,
-			Bucket: request.Source.Bucket,
+			Path: lastExtraction.Path,
 		}
 		response = append(response, version)
 	} else {
@@ -75,8 +74,7 @@ func main() {
 		for _, extraction := range extractions {
 			if extraction.Version > lastVersion.Version {
 				version := check.Version{
-					Path:   extraction.Path,
-					Bucket: request.Source.Bucket,
+					Path: extraction.Path,
 				}
 				response = append(response, version)
 			}

@@ -15,6 +15,5 @@ type Source struct {
 type CheckResponse []Version
 
 type Version struct {
-	Bucket string `json:"bucket"`
-	Path   string `json:"path"`
+	Path string `json:"path"`
 }
