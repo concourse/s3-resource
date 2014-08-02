@@ -24,6 +24,20 @@ func Match(paths []string, pattern string) ([]string, error) {
 	return matched, nil
 }
 
+type Extractions []Extraction
+
+func (e Extractions) Len() int {
+	return len(e)
+}
+
+func (e Extractions) Less(i int, j int) bool {
+	return e[i].Version < e[j].Version
+}
+
+func (e Extractions) Swap(i int, j int) {
+	e[i], e[j] = e[j], e[i]
+}
+
 type Extraction struct {
 	Path    string
 	Version int
