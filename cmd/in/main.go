@@ -19,6 +19,8 @@ func main() {
 		os.Exit(1)
 	}
 
+	os.MkdirAll(os.Args[1], 0644)
+
 	var request in.InRequest
 
 	if err := json.NewDecoder(os.Stdin).Decode(&request); err != nil {
