@@ -10,6 +10,14 @@
 			"Rev": "9797cb57e314a5a2c4d735ff060d5c6dcba57749"
 		},
 		{
+			"ImportPath": "github.com/mitchellh/goamz/aws",
+			"Rev": "55f224c07975fddef9d2116600c664e30df3d594"
+		},
+		{
+			"ImportPath": "github.com/mitchellh/goamz/s3",
+			"Rev": "55f224c07975fddef9d2116600c664e30df3d594"
+		},
+		{
 			"ImportPath": "github.com/onsi/ginkgo",
 			"Comment": "v1.0.0-24-g9f2bf87",
 			"Rev": "9f2bf87d6050a4e6d18c14fd0970c81e467622ef"
@@ -17,6 +25,11 @@
 		{
 			"ImportPath": "github.com/onsi/gomega",
 			"Rev": "efd113280743f90026f1dc18b93ca5355d8df0bf"
+		},
+		{
+			"ImportPath": "github.com/rlmcpherson/s3gof3r",
+			"Comment": "v0.4.1-2-g70fda93",
+			"Rev": "70fda937be0957e8bebe31f6d43019618ebf234e"
 		}
 	]
 }
