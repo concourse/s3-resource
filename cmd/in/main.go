@@ -66,7 +66,9 @@ func main() {
 	}
 
 	response := in.InResponse{
-		Version: request.Version,
+		Version: s3resource.Version{
+			Path: filePath,
+		},
 		Metadata: []in.MetadataPair{
 			in.MetadataPair{
 				Name:  "filename",
