@@ -1,19 +1,10 @@
 package check
 
+import "github.com/concourse/s3-resource"
+
 type CheckRequest struct {
-	Source  Source  `json:"source"`
-	Version Version `json:"version"`
+	Source  s3resource.Source  `json:"source"`
+	Version s3resource.Version `json:"version"`
 }
 
-type Source struct {
-	AccessKeyID     string `json:"access_key_id"`
-	SecretAccessKey string `json:"secret_access_key"`
-	Bucket          string `json:"bucket"`
-	Glob            string `json:"glob"`
-}
-
-type CheckResponse []Version
-
-type Version struct {
-	Path string `json:"path"`
-}
+type CheckResponse []s3resource.Version

@@ -6,6 +6,7 @@ import (
 	"os"
 	"sort"
 
+	"github.com/concourse/s3-resource"
 	"github.com/concourse/s3-resource/check"
 	"github.com/mitchellh/colorstring"
 	"github.com/mitchellh/goamz/aws"
@@ -60,7 +61,7 @@ func main() {
 
 	if request.Version.Path == "" {
 		lastExtraction := extractions[len(extractions)-1]
-		version := check.Version{
+		version := s3resource.Version{
 			Path: lastExtraction.Path,
 		}
 		response = append(response, version)
@@ -73,7 +74,7 @@ func main() {
 
 		for _, extraction := range extractions {
 			if extraction.Version > lastVersion.Version {
-				version := check.Version{
+				version := s3resource.Version{
 					Path: extraction.Path,
 				}
 				response = append(response, version)
