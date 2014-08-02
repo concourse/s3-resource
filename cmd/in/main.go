@@ -2,20 +2,21 @@ package main
 
 import (
 	"encoding/json"
-	"fmt"
 	"io"
 	"os"
 	"path"
 	"path/filepath"
 
+	"github.com/concourse/s3-resource"
 	"github.com/concourse/s3-resource/in"
-	"github.com/mitchellh/colorstring"
-	"github.com/rlmcpherson/s3gof3r"
+	"github.com/concourse/s3-resource/versions"
+	"github.com/mitchellh/goamz/aws"
+	"github.com/mitchellh/goamz/s3"
 )
 
 func main() {
 	if len(os.Args) < 2 {
-		sayf("usage: %s <dest directory>\n", os.Args[0])
+		s3resource.Sayf("usage: %s <dest directory>\n", os.Args[0])
 		os.Exit(1)
 	}
 
@@ -25,33 +26,43 @@ func main() {
 	var request in.InRequest
 
 	if err := json.NewDecoder(os.Stdin).Decode(&request); err != nil {
-		fatal("reading request from stdin", err)
+		s3resource.Fatal("reading request from stdin", err)
 	}
 
-	keys := s3gof3r.Keys{
+	auth := aws.Auth{
 		AccessKey: request.Source.AccessKeyID,
 		SecretKey: request.Source.SecretAccessKey,
 	}
 
-	client := s3gof3r.New("", keys)
+	client := s3.New(auth, aws.USEast)
 	bucket := client.Bucket(request.Source.Bucket)
 
-	reader, _, err := bucket.GetReader(request.Version.Path, nil)
+	reader, err := bucket.GetReader(request.Version.Path)
 	if err != nil {
-		fatal("getting reader", err)
+		s3resource.Fatal("getting reader", err)
+	}
+	defer reader.Close()
+
+	var filePath string
+	if request.Version.Path == "" {
+		extractions := versions.GetBucketFileVersions(request.Source)
+		lastExtraction := extractions[len(extractions)-1]
+		filePath = lastExtraction.Path
+	} else {
+		filePath = request.Version.Path
 	}
 
-	filename := path.Base(request.Version.Path)
+	filename := path.Base(filePath)
 	dest := filepath.Join(destinationDir, filename)
 	file, err := os.Create(dest)
 	if err != nil {
-		fatal("opening destination file", err)
+		s3resource.Fatal("opening destination file", err)
 	}
 	defer file.Close()
 
 	_, err = io.Copy(file, reader)
 	if err != nil {
-		fatal("writing output file", err)
+		s3resource.Fatal("writing output file", err)
 	}
 
 	response := in.InResponse{
@@ -63,16 +74,8 @@ func main() {
 			},
 		},
 	}
+
 	if err := json.NewEncoder(os.Stdout).Encode(response); err != nil {
-		fatal("writing response to stdout", err)
+		s3resource.Fatal("writing response to stdout", err)
 	}
-}
-
-func sayf(message string, args ...interface{}) {
-	fmt.Fprintf(os.Stderr, message, args...)
-}
-
-func fatal(doing string, err error) {
-	sayf(colorstring.Color("[red]error %s: %s\n"), doing, err)
-	os.Exit(1)
 }

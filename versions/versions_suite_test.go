@@ -1,4 +1,4 @@
-package check_test
+package versions_test
 
 import (
 	. "github.com/onsi/ginkgo"
@@ -7,7 +7,7 @@ import (
 	"testing"
 )
 
-func TestCheck(t *testing.T) {
+func TestVersions(t *testing.T) {
 	RegisterFailHandler(Fail)
-	RunSpecs(t, "Check Suite")
+	RunSpecs(t, "Versions Suite")
 }

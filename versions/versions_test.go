@@ -1,10 +1,9 @@
-package check_test
+package versions_test
 
 import (
+	"github.com/concourse/s3-resource/versions"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-
-	"github.com/concourse/s3-resource/check"
 )
 
 // 1. get all paths
@@ -15,7 +14,7 @@ import (
 var _ = Describe("Match", func() {
 	Context("when given an empty list of paths", func() {
 		It("returns an empty list of matches", func() {
-			result, err := check.Match([]string{}, "regex")
+			result, err := versions.Match([]string{}, "regex")
 			Ω(err).ShouldNot(HaveOccurred())
 			Ω(result).Should(BeEmpty())
 		})
@@ -25,7 +24,7 @@ var _ = Describe("Match", func() {
 		It("returns it in a singleton list if it matches the regex", func() {
 			paths := []string{"abc"}
 			regex := "ab"
-			result, err := check.Match(paths, regex)
+			result, err := versions.Match(paths, regex)
 			Ω(err).ShouldNot(HaveOccurred())
 			Ω(result).Should(ConsistOf("abc"))
 		})
@@ -33,7 +32,7 @@ var _ = Describe("Match", func() {
 		It("returns an empty list if it does not match the regexp", func() {
 			paths := []string{"abc"}
 			regex := "ad"
-			result, err := check.Match(paths, regex)
+			result, err := versions.Match(paths, regex)
 			Ω(err).ShouldNot(HaveOccurred())
 			Ω(result).Should(BeEmpty())
 		})
@@ -41,7 +40,7 @@ var _ = Describe("Match", func() {
 		It("accepts full regexes", func() {
 			paths := []string{"abc"}
 			regex := "a.*c"
-			result, err := check.Match(paths, regex)
+			result, err := versions.Match(paths, regex)
 			Ω(err).ShouldNot(HaveOccurred())
 			Ω(result).Should(ConsistOf("abc"))
 		})
@@ -49,7 +48,7 @@ var _ = Describe("Match", func() {
 		It("errors when the regex is bad", func() {
 			paths := []string{"abc"}
 			regex := "a(c"
-			_, err := check.Match(paths, regex)
+			_, err := versions.Match(paths, regex)
 			Ω(err).Should(HaveOccurred())
 		})
 	})
@@ -58,7 +57,7 @@ var _ = Describe("Match", func() {
 		It("returns the matches", func() {
 			paths := []string{"abc", "bcd"}
 			regex := ".*bc.*"
-			result, err := check.Match(paths, regex)
+			result, err := versions.Match(paths, regex)
 			Ω(err).ShouldNot(HaveOccurred())
 			Ω(result).Should(ConsistOf("abc", "bcd"))
 		})
@@ -66,7 +65,7 @@ var _ = Describe("Match", func() {
 		It("returns an empty list if if none match the regexp", func() {
 			paths := []string{"abc", "def"}
 			regex := "ge.*h"
-			result, err := check.Match(paths, regex)
+			result, err := versions.Match(paths, regex)
 			Ω(err).ShouldNot(HaveOccurred())
 			Ω(result).Should(BeEmpty())
 		})
@@ -76,7 +75,7 @@ var _ = Describe("Match", func() {
 var _ = Describe("Extract", func() {
 	Context("when the path does not contain extractable information", func() {
 		It("doesn't extract it", func() {
-			result, ok := check.Extract("abc.tgz")
+			result, ok := versions.Extract("abc.tgz")
 			Ω(ok).Should(BeFalse())
 			Ω(result).Should(BeZero())
 		})
@@ -84,7 +83,7 @@ var _ = Describe("Extract", func() {
 
 	Context("when the path contains extractable information", func() {
 		It("extracts it", func() {
-			result, ok := check.Extract("abc-105.tgz")
+			result, ok := versions.Extract("abc-105.tgz")
 			Ω(ok).Should(BeTrue())
 
 			Ω(result.Path).Should(Equal("abc-105.tgz"))
