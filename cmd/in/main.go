@@ -21,7 +21,10 @@ func main() {
 	}
 
 	destinationDir := os.Args[1]
-	os.MkdirAll(destinationDir, 0777)
+	err := os.MkdirAll(destinationDir, 0777)
+	if err != nil {
+		s3resource.Fatal("creating destination directory", err)
+	}
 
 	var request in.InRequest
 
