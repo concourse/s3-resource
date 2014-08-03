@@ -62,7 +62,7 @@ var _ = Describe("Match", func() {
 			Ω(result).Should(ConsistOf("abc", "bcd"))
 		})
 
-		It("returns an empty list if if none match the regexp", func() {
+		It("returns an empty list if none match the regexp", func() {
 			paths := []string{"abc", "def"}
 			regex := "ge.*h"
 			result, err := versions.Match(paths, regex)
