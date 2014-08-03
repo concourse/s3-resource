@@ -10,4 +10,5 @@ ADD . /tmp/go/src/github.com/concourse/s3-resource
 RUN wget -qO- https://storage.googleapis.com/golang/go1.3.linux-amd64.tar.gz | tar -C /usr/local -xzf - && \
       go build -o /opt/resource/check github.com/concourse/s3-resource/cmd/check && \
       go build -o /opt/resource/in github.com/concourse/s3-resource/cmd/in && \
+      go build -o /opt/resource/out github.com/concourse/s3-resource/cmd/out && \
       rm -rf /tmp/go /usr/local/go

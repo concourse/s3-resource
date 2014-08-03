@@ -72,8 +72,8 @@ func main() {
 		Version: s3resource.Version{
 			Path: filePath,
 		},
-		Metadata: []in.MetadataPair{
-			in.MetadataPair{
+		Metadata: []s3resource.MetadataPair{
+			s3resource.MetadataPair{
 				Name:  "filename",
 				Value: filename,
 			},

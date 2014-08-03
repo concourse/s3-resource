@@ -7,12 +7,7 @@ type InRequest struct {
 	Version s3resource.Version `json:"version"`
 }
 
-type MetadataPair struct {
-	Name  string `json:"name"`
-	Value string `json:"value"`
-}
-
 type InResponse struct {
-	Version  s3resource.Version `json:"version"`
-	Metadata []MetadataPair     `json:"metadata"`
+	Version  s3resource.Version        `json:"version"`
+	Metadata []s3resource.MetadataPair `json:"metadata"`
 }

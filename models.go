@@ -10,3 +10,8 @@ type Source struct {
 type Version struct {
 	Path string `json:"path"`
 }
+
+type MetadataPair struct {
+	Name  string `json:"name"`
+	Value string `json:"value"`
+}
