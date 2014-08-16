@@ -12,62 +12,64 @@ import (
 // 4. filter those which are less than or equal to the current version
 
 var _ = Describe("Match", func() {
-	Context("when given an empty list of paths", func() {
-		It("returns an empty list of matches", func() {
-			result, err := versions.Match([]string{}, "regex")
-			Ω(err).ShouldNot(HaveOccurred())
-			Ω(result).Should(BeEmpty())
-		})
-	})
-
-	Context("when given a single path", func() {
-		It("returns it in a singleton list if it matches the regex", func() {
-			paths := []string{"abc"}
-			regex := "ab"
-			result, err := versions.Match(paths, regex)
-			Ω(err).ShouldNot(HaveOccurred())
-			Ω(result).Should(ConsistOf("abc"))
+	Describe("checking if paths in the bucket should be searched", func() {
+		Context("when given an empty list of paths", func() {
+			It("returns an empty list of matches", func() {
+				result, err := versions.Match([]string{}, "regex")
+				Ω(err).ShouldNot(HaveOccurred())
+				Ω(result).Should(BeEmpty())
+			})
 		})
 
-		It("returns an empty list if it does not match the regexp", func() {
-			paths := []string{"abc"}
-			regex := "ad"
-			result, err := versions.Match(paths, regex)
-			Ω(err).ShouldNot(HaveOccurred())
-			Ω(result).Should(BeEmpty())
+		Context("when given a single path", func() {
+			It("returns it in a singleton list if it matches the regex", func() {
+				paths := []string{"abc"}
+				regex := "ab"
+				result, err := versions.Match(paths, regex)
+				Ω(err).ShouldNot(HaveOccurred())
+				Ω(result).Should(ConsistOf("abc"))
+			})
+
+			It("returns an empty list if it does not match the regexp", func() {
+				paths := []string{"abc"}
+				regex := "ad"
+				result, err := versions.Match(paths, regex)
+				Ω(err).ShouldNot(HaveOccurred())
+				Ω(result).Should(BeEmpty())
+			})
+
+			It("accepts full regexes", func() {
+				paths := []string{"abc"}
+				regex := "a.*c"
+				result, err := versions.Match(paths, regex)
+				Ω(err).ShouldNot(HaveOccurred())
+				Ω(result).Should(ConsistOf("abc"))
+			})
+
+			It("errors when the regex is bad", func() {
+				paths := []string{"abc"}
+				regex := "a(c"
+				_, err := versions.Match(paths, regex)
+				Ω(err).Should(HaveOccurred())
+			})
 		})
 
-		It("accepts full regexes", func() {
-			paths := []string{"abc"}
-			regex := "a.*c"
-			result, err := versions.Match(paths, regex)
-			Ω(err).ShouldNot(HaveOccurred())
-			Ω(result).Should(ConsistOf("abc"))
-		})
+		Context("when given a multiple paths", func() {
+			It("returns the matches", func() {
+				paths := []string{"abc", "bcd"}
+				regex := ".*bc.*"
+				result, err := versions.Match(paths, regex)
+				Ω(err).ShouldNot(HaveOccurred())
+				Ω(result).Should(ConsistOf("abc", "bcd"))
+			})
 
-		It("errors when the regex is bad", func() {
-			paths := []string{"abc"}
-			regex := "a(c"
-			_, err := versions.Match(paths, regex)
-			Ω(err).Should(HaveOccurred())
-		})
-	})
-
-	Context("when given a multiple paths", func() {
-		It("returns the matches", func() {
-			paths := []string{"abc", "bcd"}
-			regex := ".*bc.*"
-			result, err := versions.Match(paths, regex)
-			Ω(err).ShouldNot(HaveOccurred())
-			Ω(result).Should(ConsistOf("abc", "bcd"))
-		})
-
-		It("returns an empty list if none match the regexp", func() {
-			paths := []string{"abc", "def"}
-			regex := "ge.*h"
-			result, err := versions.Match(paths, regex)
-			Ω(err).ShouldNot(HaveOccurred())
-			Ω(result).Should(BeEmpty())
+			It("returns an empty list if none match the regexp", func() {
+				paths := []string{"abc", "def"}
+				regex := "ge.*h"
+				result, err := versions.Match(paths, regex)
+				Ω(err).ShouldNot(HaveOccurred())
+				Ω(result).Should(BeEmpty())
+			})
 		})
 	})
 })
@@ -87,7 +89,15 @@ var _ = Describe("Extract", func() {
 			Ω(ok).Should(BeTrue())
 
 			Ω(result.Path).Should(Equal("abc-105.tgz"))
-			Ω(result.Version).Should(Equal(105))
+			Ω(result.Version.String()).Should(Equal("105.0.0"))
+		})
+
+		It("extracts semantics version numbers", func() {
+			result, ok := versions.Extract("abc-1.0.5.tgz")
+			Ω(ok).Should(BeTrue())
+
+			Ω(result.Path).Should(Equal("abc-1.0.5.tgz"))
+			Ω(result.Version.String()).Should(Equal("1.0.5"))
 		})
 	})
 })

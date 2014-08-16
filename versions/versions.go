@@ -3,9 +3,9 @@ package versions
 import (
 	"regexp"
 	"sort"
-	"strconv"
 
 	"github.com/concourse/s3-resource"
+	"github.com/hashicorp/go-version"
 	"github.com/mitchellh/goamz/aws"
 	"github.com/mitchellh/goamz/s3"
 )
@@ -29,7 +29,7 @@ func Match(paths []string, pattern string) ([]string, error) {
 	return matched, nil
 }
 
-var extractor = regexp.MustCompile("\\d+")
+var extractor = regexp.MustCompile("[\\d.]*\\d")
 
 func Extract(path string) (Extraction, bool) {
 	match := extractor.FindString(path)
@@ -38,9 +38,9 @@ func Extract(path string) (Extraction, bool) {
 		return Extraction{}, false
 	}
 
-	version, err := strconv.Atoi(match)
+	version, err := version.NewVersion(match)
 	if err != nil {
-		panic("regex that should only be numbers was not numbers: " + err.Error())
+		panic("version number was not valid: " + err.Error())
 	}
 
 	extraction := Extraction{
@@ -58,7 +58,7 @@ func (e Extractions) Len() int {
 }
 
 func (e Extractions) Less(i int, j int) bool {
-	return e[i].Version < e[j].Version
+	return e[i].Version.LessThan(e[j].Version)
 }
 
 func (e Extractions) Swap(i int, j int) {
@@ -67,7 +67,7 @@ func (e Extractions) Swap(i int, j int) {
 
 type Extraction struct {
 	Path    string
-	Version int
+	Version *version.Version
 }
 
 func GetBucketFileVersions(source s3resource.Source) Extractions {
