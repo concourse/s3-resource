@@ -4,7 +4,7 @@ type Source struct {
 	AccessKeyID     string `json:"access_key_id"`
 	SecretAccessKey string `json:"secret_access_key"`
 	Bucket          string `json:"bucket"`
-	Glob            string `json:"glob"`
+	Regexp          string `json:"regexp"`
 }
 
 type Version struct {

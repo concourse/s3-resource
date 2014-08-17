@@ -61,7 +61,7 @@ var _ = Describe("In Command", func() {
 		Context("when there is no existing version in the request", func() {
 			BeforeEach(func() {
 				request.Version.Path = ""
-				request.Source.Glob = "files/abc-.*.tgz"
+				request.Source.Regexp = "files/abc-.*.tgz"
 
 				s3client.BucketFilesReturns([]string{
 					"files/abc-0.0.1.tgz",

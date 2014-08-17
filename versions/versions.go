@@ -74,7 +74,7 @@ func GetBucketFileVersions(client s3resource.S3Client, source s3resource.Source)
 		s3resource.Fatal("listing files", err)
 	}
 
-	matchingPaths, err := Match(paths, source.Glob)
+	matchingPaths, err := Match(paths, source.Regexp)
 	if err != nil {
 		s3resource.Fatal("finding matches", err)
 	}
