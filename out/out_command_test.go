@@ -89,7 +89,7 @@ var _ = Describe("Out Command", func() {
 
 		It("uploads the file", func() {
 			request.Params.From = "a/(.*).tgz"
-			request.Params.To = "a-folder"
+			request.Params.To = "a-folder/"
 			createFile("a/file.tgz")
 
 			_, err := command.Run(sourceDir, request)
@@ -103,9 +103,30 @@ var _ = Describe("Out Command", func() {
 			Ω(localPath).Should(Equal(filepath.Join(sourceDir, "a/file.tgz")))
 		})
 
-		It("returns a request", func() {
+		It("can handle templating in the output", func() {
+			request.Params.From = "a/file-(\\d*).tgz"
+			request.Params.To = "folder-${1}/file.tgz"
+			createFile("a/file-123.tgz")
+
+			response, err := command.Run(sourceDir, request)
+			Ω(err).ShouldNot(HaveOccurred())
+
+			Ω(s3client.UploadFileCallCount()).Should(Equal(1))
+			bucketName, remotePath, localPath := s3client.UploadFileArgsForCall(0)
+
+			Ω(bucketName).Should(Equal("bucket-name"))
+			Ω(remotePath).Should(Equal("folder-123/file.tgz"))
+			Ω(localPath).Should(Equal(filepath.Join(sourceDir, "a/file-123.tgz")))
+
+			Ω(response.Version.Path).Should(Equal("folder-123/file.tgz"))
+
+			Ω(response.Metadata[0].Name).Should(Equal("filename"))
+			Ω(response.Metadata[0].Value).Should(Equal("file.tgz"))
+		})
+
+		It("returns a response", func() {
 			request.Params.From = "a/(.*).tgz"
-			request.Params.To = "a-folder"
+			request.Params.To = "a-folder/"
 			createFile("a/file.tgz")
 
 			response, err := command.Run(sourceDir, request)

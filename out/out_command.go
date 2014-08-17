@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"regexp"
+	"strings"
 
 	"github.com/concourse/s3-resource"
 	"github.com/concourse/s3-resource/versions"
@@ -42,8 +44,20 @@ func (command *OutCommand) Run(sourceDir string, request OutRequest) (OutRespons
 
 	match := matches[0]
 
-	remotePath := filepath.Join(request.Params.To, filepath.Base(match))
-	remoteFilename := filepath.Base(remotePath)
+	folderDestination := strings.HasSuffix(request.Params.To, "/")
+
+	var remotePath string
+	var remoteFilename string
+
+	if folderDestination {
+		remotePath = filepath.Join(request.Params.To, filepath.Base(match))
+		remoteFilename = filepath.Base(remotePath)
+	} else {
+		compiled := regexp.MustCompile(request.Params.From)
+		fileName := strings.TrimPrefix(match, sourceDir+"/")
+		remotePath = compiled.ReplaceAllString(fileName, request.Params.To)
+		remoteFilename = filepath.Base(remotePath)
+	}
 
 	err = command.s3client.UploadFile(
 		request.Source.Bucket,
