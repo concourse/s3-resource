@@ -61,7 +61,7 @@ var _ = Describe("In Command", func() {
 		Context("when there is no existing version in the request", func() {
 			BeforeEach(func() {
 				request.Version.Path = ""
-				request.Source.Regexp = "files/abc-.*.tgz"
+				request.Source.Regexp = "files/abc-(.*).tgz"
 
 				s3client.BucketFilesReturns([]string{
 					"files/abc-0.0.1.tgz",
@@ -81,6 +81,13 @@ var _ = Describe("In Command", func() {
 				Ω(bucketName).Should(Equal("bucket-name"))
 				Ω(remotePath).Should(Equal("files/abc-3.53.tgz"))
 				Ω(localPath).Should(Equal(filepath.Join(destDir, "abc-3.53.tgz")))
+			})
+			
+			It("returns an error when the regexp has no groups", func() {
+				request.Source.Regexp = "files/abc-.*.tgz"
+				
+				_, err := command.Run(destDir, request)
+				Ω(err).Should(HaveOccurred())
 			})
 
 			Describe("the response", func() {

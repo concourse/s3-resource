@@ -27,16 +27,15 @@ func Match(paths []string, pattern string) ([]string, error) {
 	return matched, nil
 }
 
-var extractor = regexp.MustCompile("[\\d.]*\\d")
+func Extract(path string, pattern string) (Extraction, bool) {
+	compiled := regexp.MustCompile(pattern)
+	matches := compiled.FindStringSubmatch(path)
 
-func Extract(path string) (Extraction, bool) {
-	match := extractor.FindString(path)
-
-	if len(match) == 0 {
+	if len(matches) != 2 { // whole string and match
 		return Extraction{}, false
 	}
 
-	version, err := version.NewVersion(match)
+	version, err := version.NewVersion(matches[1])
 	if err != nil {
 		panic("version number was not valid: " + err.Error())
 	}
@@ -81,7 +80,7 @@ func GetBucketFileVersions(client s3resource.S3Client, source s3resource.Source)
 
 	var extractions = make(Extractions, 0, len(matchingPaths))
 	for _, path := range matchingPaths {
-		extraction, ok := Extract(path)
+		extraction, ok := Extract(path, source.Regexp)
 
 		if ok {
 			extractions = append(extractions, extraction)

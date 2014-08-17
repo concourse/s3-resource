@@ -46,7 +46,7 @@ var _ = Describe("Out Command", func() {
 		Context("when there is a previous version", func() {
 			It("includes all versions between the previous one and the current one", func() {
 				request.Version.Path = ""
-				request.Source.Regexp = "files/abc-.*.tgz"
+				request.Source.Regexp = "files/abc-(.*).tgz"
 
 				s3client.BucketFilesReturns([]string{
 					"files/abc-0.0.1.tgz",
@@ -70,7 +70,7 @@ var _ = Describe("Out Command", func() {
 		Context("when there is no previous version", func() {
 			It("includes the latest version only", func() {
 				request.Version.Path = "files/abc-2.4.3.tgz"
-				request.Source.Regexp = "files/abc-.*.tgz"
+				request.Source.Regexp = "files/abc-(.*).tgz"
 
 				s3client.BucketFilesReturns([]string{
 					"files/abc-0.0.1.tgz",

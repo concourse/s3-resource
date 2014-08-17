@@ -6,11 +6,6 @@ import (
 	. "github.com/onsi/gomega"
 )
 
-// 1. get all paths
-// 2. keep those which match regexp
-// 3. extract value from paths
-// 4. filter those which are less than or equal to the current version
-
 var _ = Describe("Match", func() {
 	Describe("checking if paths in the bucket should be searched", func() {
 		Context("when given an empty list of paths", func() {
@@ -77,7 +72,7 @@ var _ = Describe("Match", func() {
 var _ = Describe("Extract", func() {
 	Context("when the path does not contain extractable information", func() {
 		It("doesn't extract it", func() {
-			result, ok := versions.Extract("abc.tgz")
+			result, ok := versions.Extract("abc.tgz", "abc-(.*).tgz")
 			Ω(ok).Should(BeFalse())
 			Ω(result).Should(BeZero())
 		})
@@ -85,7 +80,7 @@ var _ = Describe("Extract", func() {
 
 	Context("when the path contains extractable information", func() {
 		It("extracts it", func() {
-			result, ok := versions.Extract("abc-105.tgz")
+			result, ok := versions.Extract("abc-105.tgz", "abc-(.*).tgz")
 			Ω(ok).Should(BeTrue())
 
 			Ω(result.Path).Should(Equal("abc-105.tgz"))
@@ -93,7 +88,7 @@ var _ = Describe("Extract", func() {
 		})
 
 		It("extracts semantics version numbers", func() {
-			result, ok := versions.Extract("abc-1.0.5.tgz")
+			result, ok := versions.Extract("abc-1.0.5.tgz", "abc-(.*).tgz")
 			Ω(ok).Should(BeTrue())
 
 			Ω(result.Path).Should(Equal("abc-1.0.5.tgz"))

@@ -4,6 +4,7 @@ import (
 	"os"
 	"path"
 	"path/filepath"
+	"errors"
 
 	"github.com/concourse/s3-resource"
 	"github.com/concourse/s3-resource/versions"
@@ -25,7 +26,11 @@ func (command *InCommand) Run(destinationDir string, request InRequest) (InRespo
 		return InResponse{}, err
 	}
 
-	remotePath := command.pathToDownload(request)
+	remotePath, err := command.pathToDownload(request)
+	if err != nil {
+		return InResponse{}, err
+	}
+
 	remoteFilename := path.Base(remotePath)
 	err = command.downloadFile(
 		request.Source.Bucket,
@@ -49,14 +54,19 @@ func (command *InCommand) Run(destinationDir string, request InRequest) (InRespo
 	}, nil
 }
 
-func (command *InCommand) pathToDownload(request InRequest) string {
+func (command *InCommand) pathToDownload(request InRequest) (string, error) {
 	if request.Version.Path == "" {
 		extractions := versions.GetBucketFileVersions(command.s3client, request.Source)
+		
+		if len(extractions) == 0 {
+			return "", errors.New("no extractions could be found - is your regexp correct?")
+		}
+		
 		lastExtraction := extractions[len(extractions)-1]
-		return lastExtraction.Path
+		return lastExtraction.Path, nil
 	}
 
-	return request.Version.Path
+	return request.Version.Path, nil
 }
 
 func (command *InCommand) createDirectory(destDir string) error {

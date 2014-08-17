@@ -28,7 +28,7 @@ func (command *CheckCommand) Run(request CheckRequest) (CheckResponse, error) {
 		}
 		response = append(response, version)
 	} else {
-		lastVersion, ok := versions.Extract(request.Version.Path)
+		lastVersion, ok := versions.Extract(request.Version.Path, request.Source.Regexp)
 		if !ok {
 			return response, fmt.Errorf("version number could not be found in: %s", request.Version.Path)
 		}
