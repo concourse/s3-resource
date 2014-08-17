@@ -61,7 +61,7 @@ var _ = Describe("Out Command", func() {
 
 		Describe("finding files to upload", func() {
 			It("does not error if there is a single match", func() {
-				request.Params.From = "a/*.tgz"
+				request.Params.From = "a/(.*).tgz"
 				createFile("a/file.tgz")
 
 				_, err := command.Run(sourceDir, request)
@@ -69,7 +69,7 @@ var _ = Describe("Out Command", func() {
 			})
 
 			It("errors if there are no matches", func() {
-				request.Params.From = "b/*.tgz"
+				request.Params.From = "b/(.*).tgz"
 				createFile("a/file1.tgz")
 				createFile("a/file2.tgz")
 
@@ -78,7 +78,7 @@ var _ = Describe("Out Command", func() {
 			})
 
 			It("errors if there are more than one match", func() {
-				request.Params.From = "a/*.tgz"
+				request.Params.From = "a/(.*).tgz"
 				createFile("a/file1.tgz")
 				createFile("a/file2.tgz")
 
@@ -88,7 +88,7 @@ var _ = Describe("Out Command", func() {
 		})
 
 		It("uploads the file", func() {
-			request.Params.From = "a/*.tgz"
+			request.Params.From = "a/(.*).tgz"
 			request.Params.To = "a-folder"
 			createFile("a/file.tgz")
 
@@ -104,7 +104,7 @@ var _ = Describe("Out Command", func() {
 		})
 
 		It("returns a request", func() {
-			request.Params.From = "a/*.tgz"
+			request.Params.From = "a/(.*).tgz"
 			request.Params.To = "a-folder"
 			createFile("a/file.tgz")
 
