@@ -49,7 +49,7 @@ func (command *OutCommand) Run(sourceDir string, request OutRequest) (OutRespons
 	var remotePath string
 	var remoteFilename string
 
-	if folderDestination {
+	if folderDestination || request.Params.To == "" {
 		remotePath = filepath.Join(request.Params.To, filepath.Base(match))
 		remoteFilename = filepath.Base(remotePath)
 	} else {

@@ -103,6 +103,22 @@ var _ = Describe("Out Command", func() {
 			Ω(localPath).Should(Equal(filepath.Join(sourceDir, "a/file.tgz")))
 		})
 
+		It("can handle empty to to put it in the root", func() {
+			request.Params.From = "a/(.*).tgz"
+			request.Params.To = ""
+			createFile("a/file.tgz")
+
+			_, err := command.Run(sourceDir, request)
+			Ω(err).ShouldNot(HaveOccurred())
+
+			Ω(s3client.UploadFileCallCount()).Should(Equal(1))
+			bucketName, remotePath, localPath := s3client.UploadFileArgsForCall(0)
+
+			Ω(bucketName).Should(Equal("bucket-name"))
+			Ω(remotePath).Should(Equal("file.tgz"))
+			Ω(localPath).Should(Equal(filepath.Join(sourceDir, "a/file.tgz")))
+		})
+
 		It("can handle templating in the output", func() {
 			request.Params.From = "a/file-(\\d*).tgz"
 			request.Params.To = "folder-${1}/file.tgz"
