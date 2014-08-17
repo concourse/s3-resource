@@ -82,10 +82,10 @@ var _ = Describe("In Command", func() {
 				Ω(remotePath).Should(Equal("files/abc-3.53.tgz"))
 				Ω(localPath).Should(Equal(filepath.Join(destDir, "abc-3.53.tgz")))
 			})
-			
+
 			It("returns an error when the regexp has no groups", func() {
 				request.Source.Regexp = "files/abc-.*.tgz"
-				
+
 				_, err := command.Run(destDir, request)
 				Ω(err).Should(HaveOccurred())
 			})

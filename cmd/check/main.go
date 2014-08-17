@@ -11,7 +11,7 @@ import (
 func main() {
 	var request check.CheckRequest
 	inputRequest(&request)
-	
+
 	client := s3resource.NewS3Client(
 		request.Source.AccessKeyID,
 		request.Source.SecretAccessKey,

@@ -33,19 +33,19 @@ func (command *OutCommand) Run(sourceDir string, request OutRequest) (OutRespons
 	}
 
 	match := matches[0]
-	
+
 	remotePath := filepath.Join(request.Params.To, filepath.Base(match))
 	remoteFilename := filepath.Base(remotePath)
-	
+
 	err = command.s3client.UploadFile(
 		request.Source.Bucket,
 		remotePath,
 		match,
 	)
 	if err != nil {
-		return OutResponse{}, err		
+		return OutResponse{}, err
 	}
-	
+
 	return OutResponse{
 		Version: s3resource.Version{
 			Path: remotePath,

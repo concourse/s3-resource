@@ -9,7 +9,7 @@ import (
 
 	"github.com/concourse/s3-resource"
 	"github.com/concourse/s3-resource/fakes"
-	
+
 	. "github.com/concourse/s3-resource/check"
 )
 
@@ -27,7 +27,7 @@ var _ = Describe("Out Command", func() {
 			var err error
 			tmpPath, err = ioutil.TempDir("", "check_command")
 			Ω(err).ShouldNot(HaveOccurred())
-			
+
 			request = CheckRequest{
 				Source: s3resource.Source{
 					Bucket: "bucket-name",
@@ -42,7 +42,7 @@ var _ = Describe("Out Command", func() {
 			err := os.RemoveAll(tmpPath)
 			Ω(err).ShouldNot(HaveOccurred())
 		})
-		
+
 		Context("when there is a previous version", func() {
 			It("includes all versions between the previous one and the current one", func() {
 				request.Version.Path = ""
@@ -54,10 +54,10 @@ var _ = Describe("Out Command", func() {
 					"files/abc-2.4.3.tgz",
 					"files/abc-3.53.tgz",
 				}, nil)
-				
+
 				response, err := command.Run(request)
 				Ω(err).ShouldNot(HaveOccurred())
-				
+
 				Ω(response).Should(HaveLen(1))
 				Ω(response).Should(ConsistOf(
 					s3resource.Version{
@@ -66,7 +66,7 @@ var _ = Describe("Out Command", func() {
 				))
 			})
 		})
-		
+
 		Context("when there is no previous version", func() {
 			It("includes the latest version only", func() {
 				request.Version.Path = "files/abc-2.4.3.tgz"
@@ -78,10 +78,10 @@ var _ = Describe("Out Command", func() {
 					"files/abc-2.33.333.tgz",
 					"files/abc-3.53.tgz",
 				}, nil)
-				
+
 				response, err := command.Run(request)
 				Ω(err).ShouldNot(HaveOccurred())
-				
+
 				Ω(response).Should(HaveLen(2))
 				Ω(response).Should(ConsistOf(
 					s3resource.Version{

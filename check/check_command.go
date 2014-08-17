@@ -2,7 +2,7 @@ package check
 
 import (
 	"fmt"
-	
+
 	"github.com/concourse/s3-resource"
 	"github.com/concourse/s3-resource/versions"
 )
@@ -42,6 +42,6 @@ func (command *CheckCommand) Run(request CheckRequest) (CheckResponse, error) {
 			}
 		}
 	}
-	
+
 	return response, nil
 }

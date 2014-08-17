@@ -7,7 +7,7 @@ import (
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	
+
 	"github.com/onsi/gomega/gexec"
 
 	"github.com/onsi/gomega/types"
@@ -25,7 +25,6 @@ var _ = BeforeSuite(func() {
 var _ = AfterSuite(func() {
 	gexec.CleanupBuildArtifacts()
 })
-
 
 func TestIn(t *testing.T) {
 	RegisterFailHandler(Fail)
