@@ -27,10 +27,10 @@ var _ = Describe("In Command", func() {
 
 		BeforeEach(func() {
 			var err error
-			tmpPath, err = ioutil.TempDir("", "destination")
+			tmpPath, err = ioutil.TempDir("", "in_command")
 			Ω(err).ShouldNot(HaveOccurred())
 
-			destDir = filepath.Join(tmpPath, "directory")
+			destDir = filepath.Join(tmpPath, "destination")
 			request = InRequest{
 				Source: s3resource.Source{
 					Bucket: "bucket-name",
@@ -75,6 +75,7 @@ var _ = Describe("In Command", func() {
 				_, err := command.Run(destDir, request)
 				Ω(err).ShouldNot(HaveOccurred())
 
+				Ω(s3client.DownloadFileCallCount()).Should(Equal(1))
 				bucketName, remotePath, localPath := s3client.DownloadFileArgsForCall(0)
 
 				Ω(bucketName).Should(Equal("bucket-name"))

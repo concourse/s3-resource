@@ -17,6 +17,16 @@ type FakeS3Client struct {
 		result1 []string
 		result2 error
 	}
+	UploadFileStub        func(bucketName string, remotePath string, localPath string) error
+	uploadFileMutex       sync.RWMutex
+	uploadFileArgsForCall []struct {
+		bucketName string
+		remotePath string
+		localPath  string
+	}
+	uploadFileReturns struct {
+		result1 error
+	}
 	DownloadFileStub        func(bucketName string, remotePath string, localPath string) error
 	downloadFileMutex       sync.RWMutex
 	downloadFileArgsForCall []struct {
@@ -60,6 +70,40 @@ func (fake *FakeS3Client) BucketFilesReturns(result1 []string, result2 error) {
 		result1 []string
 		result2 error
 	}{result1, result2}
+}
+
+func (fake *FakeS3Client) UploadFile(bucketName string, remotePath string, localPath string) error {
+	fake.uploadFileMutex.Lock()
+	fake.uploadFileArgsForCall = append(fake.uploadFileArgsForCall, struct {
+		bucketName string
+		remotePath string
+		localPath  string
+	}{bucketName, remotePath, localPath})
+	fake.uploadFileMutex.Unlock()
+	if fake.UploadFileStub != nil {
+		return fake.UploadFileStub(bucketName, remotePath, localPath)
+	} else {
+		return fake.uploadFileReturns.result1
+	}
+}
+
+func (fake *FakeS3Client) UploadFileCallCount() int {
+	fake.uploadFileMutex.RLock()
+	defer fake.uploadFileMutex.RUnlock()
+	return len(fake.uploadFileArgsForCall)
+}
+
+func (fake *FakeS3Client) UploadFileArgsForCall(i int) (string, string, string) {
+	fake.uploadFileMutex.RLock()
+	defer fake.uploadFileMutex.RUnlock()
+	return fake.uploadFileArgsForCall[i].bucketName, fake.uploadFileArgsForCall[i].remotePath, fake.uploadFileArgsForCall[i].localPath
+}
+
+func (fake *FakeS3Client) UploadFileReturns(result1 error) {
+	fake.UploadFileStub = nil
+	fake.uploadFileReturns = struct {
+		result1 error
+	}{result1}
 }
 
 func (fake *FakeS3Client) DownloadFile(bucketName string, remotePath string, localPath string) error {

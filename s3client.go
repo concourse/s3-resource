@@ -6,16 +6,19 @@ import (
 
 	"github.com/mitchellh/goamz/aws"
 	"github.com/mitchellh/goamz/s3"
+	"github.com/rlmcpherson/s3gof3r"
 )
 
 type S3Client interface {
 	BucketFiles(bucketName string) ([]string, error)
 
+	UploadFile(bucketName string, remotePath string, localPath string) error
 	DownloadFile(bucketName string, remotePath string, localPath string) error
 }
 
 type s3client struct {
-	client *s3.S3
+	client       *s3.S3
+	gopherClient *s3gof3r.S3
 }
 
 func NewS3Client(accessKey string, secretKey string) S3Client {
@@ -24,8 +27,14 @@ func NewS3Client(accessKey string, secretKey string) S3Client {
 		SecretKey: secretKey,
 	}
 
+	authGopher := s3gof3r.Keys{
+		AccessKey: accessKey,
+		SecretKey: secretKey,
+	}
+
 	return &s3client{
-		client: s3.New(auth, aws.USEast),
+		client:       s3.New(auth, aws.USEast),
+		gopherClient: s3gof3r.New("", authGopher),
 	}
 }
 
@@ -42,6 +51,34 @@ func (client *s3client) BucketFiles(bucketName string) ([]string, error) {
 	}
 
 	return paths, nil
+}
+
+func (client *s3client) UploadFile(bucketName string, remotePath string, localPath string) error {
+	bucket := client.gopherClient.Bucket(bucketName)
+
+	localFile, err := os.Open(localPath)
+	if err != nil {
+		return err
+	}
+
+	remoteFile, err := bucket.PutWriter(remotePath, nil, nil)
+	if err != nil {
+		return err
+	}
+
+	if _, err = io.Copy(remoteFile, localFile); err != nil {
+		return err
+	}
+
+	if err = remoteFile.Close(); err != nil {
+		return err
+	}
+
+	if err = localFile.Close(); err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func (client *s3client) DownloadFile(bucketName string, remotePath string, localPath string) error {

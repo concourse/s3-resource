@@ -7,9 +7,25 @@ import (
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	
+	"github.com/onsi/gomega/gexec"
 
 	"github.com/onsi/gomega/types"
 )
+
+var inPath string
+
+var _ = BeforeSuite(func() {
+	var err error
+
+	inPath, err = gexec.Build("github.com/concourse/s3-resource/cmd/in")
+	Ω(err).ShouldNot(HaveOccurred())
+})
+
+var _ = AfterSuite(func() {
+	gexec.CleanupBuildArtifacts()
+})
+
 
 func TestIn(t *testing.T) {
 	RegisterFailHandler(Fail)
