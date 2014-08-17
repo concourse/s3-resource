@@ -94,5 +94,21 @@ var _ = Describe("Extract", func() {
 			Ω(result.Path).Should(Equal("abc-1.0.5.tgz"))
 			Ω(result.Version.String()).Should(Equal("1.0.5"))
 		})
+
+		It("takes the first match if there are many", func() {
+			result, ok := versions.Extract("abc-1.0.5-def-2.3.4.tgz", "abc-(.*)-def-(.*).tgz")
+			Ω(ok).Should(BeTrue())
+
+			Ω(result.Path).Should(Equal("abc-1.0.5-def-2.3.4.tgz"))
+			Ω(result.Version.String()).Should(Equal("1.0.5"))
+		})
+
+		It("extracts a named group called 'version' above all others", func() {
+			result, ok := versions.Extract("abc-1.0.5-def-2.3.4.tgz", "abc-(.*)-def-(?P<version>.*).tgz")
+			Ω(ok).Should(BeTrue())
+
+			Ω(result.Path).Should(Equal("abc-1.0.5-def-2.3.4.tgz"))
+			Ω(result.Version.String()).Should(Equal("2.3.4"))
+		})
 	})
 })

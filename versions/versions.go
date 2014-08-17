@@ -31,11 +31,23 @@ func Extract(path string, pattern string) (Extraction, bool) {
 	compiled := regexp.MustCompile(pattern)
 	matches := compiled.FindStringSubmatch(path)
 
-	if len(matches) != 2 { // whole string and match
+	var match string
+	if len(matches) < 2 { // whole string and match
 		return Extraction{}, false
+	} else if len(matches) == 2 {
+		match = matches[1]
+	} else if len(matches) > 2 { // many matches
+		names := compiled.SubexpNames()
+		index := sliceIndex(names, "version")
+
+		if index > 0 {
+			match = matches[index]
+		} else {
+			match = matches[1]
+		}
 	}
 
-	version, err := version.NewVersion(matches[1])
+	version, err := version.NewVersion(match)
 	if err != nil {
 		panic("version number was not valid: " + err.Error())
 	}
@@ -46,6 +58,16 @@ func Extract(path string, pattern string) (Extraction, bool) {
 	}
 
 	return extraction, true
+}
+
+func sliceIndex(haystack []string, needle string) int {
+	for i, element := range haystack {
+		if element == needle {
+			return i
+		}
+	}
+
+	return -1
 }
 
 type Extractions []Extraction
