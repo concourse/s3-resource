@@ -117,11 +117,56 @@ var _ = Describe("In Command", func() {
 				_, err := command.Run(destDir, request)
 				Ω(err).ShouldNot(HaveOccurred())
 
+				Ω(s3client.DownloadFileCallCount()).Should(Equal(1))
 				bucketName, remotePath, localPath := s3client.DownloadFileArgsForCall(0)
 
 				Ω(bucketName).Should(Equal("bucket-name"))
 				Ω(remotePath).Should(Equal("files/a-file-1.3.tgz"))
 				Ω(localPath).Should(Equal(filepath.Join(destDir, "a-file-1.3.tgz")))
+			})
+
+			It("creates a 'url' file that contains the URL", func() {
+				urlPath := filepath.Join(destDir, "url")
+				Ω(urlPath).ShouldNot(ExistOnFilesystem())
+
+				s3client.URLReturns("google.com")
+
+				_, err := command.Run(destDir, request)
+				Ω(err).ShouldNot(HaveOccurred())
+
+				Ω(urlPath).Should(ExistOnFilesystem())
+				contents, err := ioutil.ReadFile(urlPath)
+				Ω(err).ShouldNot(HaveOccurred())
+				Ω(string(contents)).Should(Equal("google.com"))
+
+				Ω(s3client.URLCallCount()).Should(Equal(1))
+				bucketName, remotePath, private := s3client.URLArgsForCall(0)
+				Ω(bucketName).Should(Equal("bucket-name"))
+				Ω(remotePath).Should(Equal("files/a-file-1.3.tgz"))
+				Ω(private).Should(Equal(false))
+			})
+
+			It("creates a 'url' file that contains the private URL if told to do that", func() {
+				request.Source.Private = true
+
+				urlPath := filepath.Join(destDir, "url")
+				Ω(urlPath).ShouldNot(ExistOnFilesystem())
+
+				s3client.URLReturns("google.com")
+
+				_, err := command.Run(destDir, request)
+				Ω(err).ShouldNot(HaveOccurred())
+
+				Ω(urlPath).Should(ExistOnFilesystem())
+				contents, err := ioutil.ReadFile(urlPath)
+				Ω(err).ShouldNot(HaveOccurred())
+				Ω(string(contents)).Should(Equal("google.com"))
+
+				Ω(s3client.URLCallCount()).Should(Equal(1))
+				bucketName, remotePath, private := s3client.URLArgsForCall(0)
+				Ω(bucketName).Should(Equal("bucket-name"))
+				Ω(remotePath).Should(Equal("files/a-file-1.3.tgz"))
+				Ω(private).Should(Equal(true))
 			})
 
 			Describe("the response", func() {

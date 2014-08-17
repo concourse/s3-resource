@@ -3,6 +3,7 @@ package s3resource
 import (
 	"io"
 	"os"
+	"time"
 
 	"github.com/mitchellh/goamz/aws"
 	"github.com/mitchellh/goamz/s3"
@@ -14,6 +15,8 @@ type S3Client interface {
 
 	UploadFile(bucketName string, remotePath string, localPath string) error
 	DownloadFile(bucketName string, remotePath string, localPath string) error
+
+	URL(bucketName string, remotePath string, private bool) string
 }
 
 type s3client struct {
@@ -102,4 +105,14 @@ func (client *s3client) DownloadFile(bucketName string, remotePath string, local
 	}
 
 	return nil
+}
+
+func (client *s3client) URL(bucketName string, remotePath string, private bool) string {
+	bucket := client.client.Bucket(bucketName)
+
+	if private {
+		return bucket.SignedURL(remotePath, time.Now().Add(24*time.Hour))
+	}
+
+	return bucket.URL(remotePath)
 }

@@ -5,6 +5,7 @@ type Source struct {
 	SecretAccessKey string `json:"secret_access_key"`
 	Bucket          string `json:"bucket"`
 	Regexp          string `json:"regexp"`
+	Private         bool   `json:"private"`
 }
 
 type Version struct {

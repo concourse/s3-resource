@@ -2,6 +2,7 @@ package in
 
 import (
 	"errors"
+	"io/ioutil"
 	"os"
 	"path"
 	"path/filepath"
@@ -41,6 +42,16 @@ func (command *InCommand) Run(destinationDir string, request InRequest) (InRespo
 		return InResponse{}, err
 	}
 
+	err = command.writeURLFile(
+		request.Source.Bucket,
+		remotePath,
+		request.Source.Private,
+		destinationDir,
+	)
+	if err != nil {
+		return InResponse{}, err
+	}
+
 	return InResponse{
 		Version: s3resource.Version{
 			Path: remotePath,
@@ -71,6 +82,16 @@ func (command *InCommand) pathToDownload(request InRequest) (string, error) {
 
 func (command *InCommand) createDirectory(destDir string) error {
 	return os.MkdirAll(destDir, 0755)
+}
+
+func (command *InCommand) writeURLFile(bucketName string, remotePath string, private bool, destDir string) error {
+	url := command.s3client.URL(bucketName, remotePath, private)
+	err := ioutil.WriteFile(filepath.Join(destDir, "url"), []byte(url), 0644)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func (command *InCommand) downloadFile(bucketName string, remotePath string, destinationDir string) error {

@@ -37,6 +37,16 @@ type FakeS3Client struct {
 	downloadFileReturns struct {
 		result1 error
 	}
+	URLStub        func(bucketName string, remotePath string, private bool) string
+	uRLMutex       sync.RWMutex
+	uRLArgsForCall []struct {
+		bucketName string
+		remotePath string
+		private    bool
+	}
+	uRLReturns struct {
+		result1 string
+	}
 }
 
 func (fake *FakeS3Client) BucketFiles(bucketName string) ([]string, error) {
@@ -137,6 +147,40 @@ func (fake *FakeS3Client) DownloadFileReturns(result1 error) {
 	fake.DownloadFileStub = nil
 	fake.downloadFileReturns = struct {
 		result1 error
+	}{result1}
+}
+
+func (fake *FakeS3Client) URL(bucketName string, remotePath string, private bool) string {
+	fake.uRLMutex.Lock()
+	fake.uRLArgsForCall = append(fake.uRLArgsForCall, struct {
+		bucketName string
+		remotePath string
+		private    bool
+	}{bucketName, remotePath, private})
+	fake.uRLMutex.Unlock()
+	if fake.URLStub != nil {
+		return fake.URLStub(bucketName, remotePath, private)
+	} else {
+		return fake.uRLReturns.result1
+	}
+}
+
+func (fake *FakeS3Client) URLCallCount() int {
+	fake.uRLMutex.RLock()
+	defer fake.uRLMutex.RUnlock()
+	return len(fake.uRLArgsForCall)
+}
+
+func (fake *FakeS3Client) URLArgsForCall(i int) (string, string, bool) {
+	fake.uRLMutex.RLock()
+	defer fake.uRLMutex.RUnlock()
+	return fake.uRLArgsForCall[i].bucketName, fake.uRLArgsForCall[i].remotePath, fake.uRLArgsForCall[i].private
+}
+
+func (fake *FakeS3Client) URLReturns(result1 string) {
+	fake.URLStub = nil
+	fake.uRLReturns = struct {
+		result1 string
 	}{result1}
 }
 
