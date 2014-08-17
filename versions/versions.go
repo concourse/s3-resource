@@ -6,8 +6,6 @@ import (
 
 	"github.com/concourse/s3-resource"
 	"github.com/hashicorp/go-version"
-	"github.com/mitchellh/goamz/aws"
-	"github.com/mitchellh/goamz/s3"
 )
 
 func Match(paths []string, pattern string) ([]string, error) {
@@ -70,26 +68,10 @@ type Extraction struct {
 	Version *version.Version
 }
 
-func GetBucketFileVersions(source s3resource.Source) Extractions {
-	auth, err := aws.GetAuth(
-		source.AccessKeyID,
-		source.SecretAccessKey,
-	)
+func GetBucketFileVersions(client s3resource.S3Client, source s3resource.Source) Extractions {
+	paths, err := client.BucketFiles(source.Bucket)
 	if err != nil {
-		s3resource.Fatal("setting up aws auth", err)
-	}
-
-	// TODO: more regions
-	client := s3.New(auth, aws.USEast)
-	bucket := client.Bucket(source.Bucket)
-	entries, err := bucket.GetBucketContents()
-	if err != nil {
-		s3resource.Fatal("listing buckets contents", err)
-	}
-
-	paths := make([]string, 0, len(*entries))
-	for entry := range *entries {
-		paths = append(paths, entry)
+		s3resource.Fatal("listing files", err)
 	}
 
 	matchingPaths, err := Match(paths, source.Glob)

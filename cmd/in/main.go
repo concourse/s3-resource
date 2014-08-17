@@ -2,16 +2,10 @@ package main
 
 import (
 	"encoding/json"
-	"io"
 	"os"
-	"path"
-	"path/filepath"
 
 	"github.com/concourse/s3-resource"
 	"github.com/concourse/s3-resource/in"
-	"github.com/concourse/s3-resource/versions"
-	"github.com/mitchellh/goamz/aws"
-	"github.com/mitchellh/goamz/s3"
 )
 
 func main() {
@@ -21,65 +15,32 @@ func main() {
 	}
 
 	destinationDir := os.Args[1]
-	err := os.MkdirAll(destinationDir, 0777)
-	if err != nil {
-		s3resource.Fatal("creating destination directory", err)
-	}
 
 	var request in.InRequest
+	inputRequest(&request)
 
-	if err := json.NewDecoder(os.Stdin).Decode(&request); err != nil {
+	client := s3resource.NewS3Client(
+		request.Source.AccessKeyID,
+		request.Source.SecretAccessKey,
+	)
+
+	command := in.NewInCommand(client)
+
+	response, err := command.Run(destinationDir, request)
+	if err != nil {
+		s3resource.Fatal("running command", err)
+	}
+
+	outputResponse(response)
+}
+
+func inputRequest(request *in.InRequest) {
+	if err := json.NewDecoder(os.Stdin).Decode(request); err != nil {
 		s3resource.Fatal("reading request from stdin", err)
 	}
+}
 
-	auth := aws.Auth{
-		AccessKey: request.Source.AccessKeyID,
-		SecretKey: request.Source.SecretAccessKey,
-	}
-
-	client := s3.New(auth, aws.USEast)
-	bucket := client.Bucket(request.Source.Bucket)
-
-	var filePath string
-	if request.Version.Path == "" {
-		extractions := versions.GetBucketFileVersions(request.Source)
-		lastExtraction := extractions[len(extractions)-1]
-		filePath = lastExtraction.Path
-	} else {
-		filePath = request.Version.Path
-	}
-
-	reader, err := bucket.GetReader(filePath)
-	if err != nil {
-		s3resource.Fatal("getting reader", err)
-	}
-	defer reader.Close()
-
-	filename := path.Base(filePath)
-	dest := filepath.Join(destinationDir, filename)
-	file, err := os.Create(dest)
-	if err != nil {
-		s3resource.Fatal("opening destination file", err)
-	}
-	defer file.Close()
-
-	_, err = io.Copy(file, reader)
-	if err != nil {
-		s3resource.Fatal("writing output file", err)
-	}
-
-	response := in.InResponse{
-		Version: s3resource.Version{
-			Path: filePath,
-		},
-		Metadata: []s3resource.MetadataPair{
-			s3resource.MetadataPair{
-				Name:  "filename",
-				Value: filename,
-			},
-		},
-	}
-
+func outputResponse(response in.InResponse) {
 	if err := json.NewEncoder(os.Stdout).Encode(response); err != nil {
 		s3resource.Fatal("writing response to stdout", err)
 	}
