@@ -21,7 +21,7 @@ func (command *OutCommand) Run(sourceDir string, request OutRequest) (OutRespons
 	sourceGlob := filepath.Join(sourceDir, request.Params.From)
 	matches, err := filepath.Glob(sourceGlob)
 	if err != nil {
-		s3resource.Fatal("getting matches", err)
+		return OutResponse{}, err
 	}
 
 	if len(matches) == 0 {
