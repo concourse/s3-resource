@@ -6,11 +6,14 @@ import (
 	. "github.com/onsi/gomega"
 )
 
-var _ = Describe("Match", func() {
+type MatchFunc func(paths []string, pattern string) ([]string, error)
+
+var ItMatchesPaths = func(matchFunc MatchFunc) {
 	Describe("checking if paths in the bucket should be searched", func() {
 		Context("when given an empty list of paths", func() {
 			It("returns an empty list of matches", func() {
 				result, err := versions.Match([]string{}, "regex")
+
 				Ω(err).ShouldNot(HaveOccurred())
 				Ω(result).Should(BeEmpty())
 			})
@@ -19,7 +22,8 @@ var _ = Describe("Match", func() {
 		Context("when given a single path", func() {
 			It("returns it in a singleton list if it matches the regex", func() {
 				paths := []string{"abc"}
-				regex := "ab"
+				regex := "abc"
+
 				result, err := versions.Match(paths, regex)
 				Ω(err).ShouldNot(HaveOccurred())
 				Ω(result).Should(ConsistOf("abc"))
@@ -28,6 +32,7 @@ var _ = Describe("Match", func() {
 			It("returns an empty list if it does not match the regexp", func() {
 				paths := []string{"abc"}
 				regex := "ad"
+
 				result, err := versions.Match(paths, regex)
 				Ω(err).ShouldNot(HaveOccurred())
 				Ω(result).Should(BeEmpty())
@@ -36,6 +41,7 @@ var _ = Describe("Match", func() {
 			It("accepts full regexes", func() {
 				paths := []string{"abc"}
 				regex := "a.*c"
+
 				result, err := versions.Match(paths, regex)
 				Ω(err).ShouldNot(HaveOccurred())
 				Ω(result).Should(ConsistOf("abc"))
@@ -44,6 +50,7 @@ var _ = Describe("Match", func() {
 			It("errors when the regex is bad", func() {
 				paths := []string{"abc"}
 				regex := "a(c"
+
 				_, err := versions.Match(paths, regex)
 				Ω(err).Should(HaveOccurred())
 			})
@@ -53,6 +60,7 @@ var _ = Describe("Match", func() {
 			It("returns the matches", func() {
 				paths := []string{"abc", "bcd"}
 				regex := ".*bc.*"
+
 				result, err := versions.Match(paths, regex)
 				Ω(err).ShouldNot(HaveOccurred())
 				Ω(result).Should(ConsistOf("abc", "bcd"))
@@ -61,11 +69,31 @@ var _ = Describe("Match", func() {
 			It("returns an empty list if none match the regexp", func() {
 				paths := []string{"abc", "def"}
 				regex := "ge.*h"
+
 				result, err := versions.Match(paths, regex)
 				Ω(err).ShouldNot(HaveOccurred())
 				Ω(result).Should(BeEmpty())
 			})
 		})
+	})
+}
+
+var _ = Describe("Match", func() {
+	Describe("Match", func() {
+		ItMatchesPaths(versions.Match)
+
+		It("does not contain files that are in some subdirectory that is not explicitly mentioned", func() {
+			paths := []string{"folder/abc", "abc"}
+			regex := "abc"
+
+			result, err := versions.Match(paths, regex)
+			Ω(err).ShouldNot(HaveOccurred())
+			Ω(result).Should(ConsistOf("abc"))
+		})
+	})
+
+	Describe("MatchUnanchored", func() {
+		ItMatchesPaths(versions.MatchUnanchored)
 	})
 })
 

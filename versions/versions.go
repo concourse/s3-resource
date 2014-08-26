@@ -9,6 +9,10 @@ import (
 )
 
 func Match(paths []string, pattern string) ([]string, error) {
+	return MatchUnanchored(paths, "^"+pattern+"$")
+}
+
+func MatchUnanchored(paths []string, pattern string) ([]string, error) {
 	matched := []string{}
 
 	regex, err := regexp.Compile(pattern)

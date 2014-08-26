@@ -29,7 +29,7 @@ func (command *OutCommand) Run(sourceDir string, request OutRequest) (OutRespons
 	})
 
 	pattern := request.Params.From
-	matches, err := versions.Match(paths, pattern)
+	matches, err := versions.MatchUnanchored(paths, pattern)
 	if err != nil {
 		return OutResponse{}, err
 	}
