@@ -6,6 +6,7 @@ type Source struct {
 	Bucket          string `json:"bucket"`
 	Regexp          string `json:"regexp"`
 	Private         bool   `json:"private"`
+	RegionName      string `json:"region_name"`
 }
 
 type Version struct {

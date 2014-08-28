@@ -19,10 +19,14 @@ func main() {
 	var request in.InRequest
 	inputRequest(&request)
 
-	client := s3resource.NewS3Client(
+	client, err := s3resource.NewS3Client(
 		request.Source.AccessKeyID,
 		request.Source.SecretAccessKey,
+		request.Source.RegionName,
 	)
+	if err != nil {
+		s3resource.Fatal("building S3 client", err)
+	}
 
 	command := in.NewInCommand(client)
 
