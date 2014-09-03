@@ -1,6 +1,8 @@
 package s3resource
 
 import (
+	"errors"
+	"fmt"
 	"io"
 	"os"
 	"time"
@@ -24,7 +26,7 @@ type s3client struct {
 	gopherClient *s3gof3r.S3
 }
 
-func NewS3Client(accessKey string, secretKey string) S3Client {
+func NewS3Client(accessKey string, secretKey string, regionName string) (S3Client, error) {
 	auth := aws.Auth{
 		AccessKey: accessKey,
 		SecretKey: secretKey,
@@ -35,10 +37,15 @@ func NewS3Client(accessKey string, secretKey string) S3Client {
 		SecretKey: secretKey,
 	}
 
-	return &s3client{
-		client:       s3.New(auth, aws.USEast),
-		gopherClient: s3gof3r.New("", authGopher),
+	region, ok := aws.Regions[regionName]
+	if !ok {
+		return nil, errors.New(fmt.Sprintf("No such region '%s'", regionName))
 	}
+
+	return &s3client{
+		client:       s3.New(auth, region),
+		gopherClient: s3gof3r.New("", authGopher),
+	}, nil
 }
 
 func (client *s3client) BucketFiles(bucketName string) ([]string, error) {
