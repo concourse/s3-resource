@@ -1,6 +1,6 @@
 {
 	"ImportPath": "github.com/concourse/s3-resource",
-	"GoVersion": "go1.3",
+	"GoVersion": "go1.3.1",
 	"Packages": [
 		"./..."
 	],
@@ -15,11 +15,11 @@
 		},
 		{
 			"ImportPath": "github.com/mitchellh/goamz/aws",
-			"Rev": "593841f11feba33e324f62d3d2002072bde9387c"
+			"Rev": "dd7c2af2dfa4aed175d35dc3f06edbf101bdcf9a"
 		},
 		{
 			"ImportPath": "github.com/mitchellh/goamz/s3",
-			"Rev": "593841f11feba33e324f62d3d2002072bde9387c"
+			"Rev": "dd7c2af2dfa4aed175d35dc3f06edbf101bdcf9a"
 		},
 		{
 			"ImportPath": "github.com/onsi/ginkgo",
@@ -35,6 +35,10 @@
 			"ImportPath": "github.com/rlmcpherson/s3gof3r",
 			"Comment": "v0.4.1-2-g70fda93",
 			"Rev": "70fda937be0957e8bebe31f6d43019618ebf234e"
+		},
+		{
+			"ImportPath": "github.com/vaughan0/go-ini",
+			"Rev": "a98ad7ee00ec53921f08832bc06ecf7fd600e6a1"
 		}
 	]
 }
