@@ -6,6 +6,7 @@ import (
 	"encoding/base64"
 	"io"
 	"net/http"
+	"net/url"
 	"sort"
 	"strings"
 	"time"
@@ -36,6 +37,9 @@ var paramsToSign = map[string]bool{
 }
 
 func (b *Bucket) Sign(req *http.Request) {
+	if req.Header == nil {
+		req.Header = http.Header{}
+	}
 	if dateHeader := req.Header.Get("Date"); dateHeader == "" {
 		req.Header.Set("Date", time.Now().UTC().Format(http.TimeFormat))
 	}
@@ -105,7 +109,8 @@ func (b *Bucket) writeCanonicializedResource(w io.Writer, r *http.Request) {
 		w.Write([]byte("/"))
 		w.Write([]byte(b.Name))
 	}
-	w.Write([]byte(r.URL.Path))
+	u := &url.URL{Path: r.URL.Path}
+	w.Write([]byte(u.String()))
 	b.writeSubResource(w, r)
 }
 

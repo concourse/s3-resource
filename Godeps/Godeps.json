@@ -23,18 +23,18 @@
 		},
 		{
 			"ImportPath": "github.com/onsi/ginkgo",
-			"Comment": "v1.1.0-1-g32204a3",
-			"Rev": "32204a3eab0576cbea19f5ff8b27d3a928647ea6"
+			"Comment": "v1.1.0-11-ge809316",
+			"Rev": "e8093161dcbdab0a59dfe56f3f8c867d243ac75f"
 		},
 		{
 			"ImportPath": "github.com/onsi/gomega",
-			"Comment": "v1.0",
-			"Rev": "a78ae492d53aad5a7a232d0d0462c14c400e3ee7"
+			"Comment": "v1.0-12-g3ca2515",
+			"Rev": "3ca2515afb00bc39bc77d27cdbce85a7caaf103e"
 		},
 		{
 			"ImportPath": "github.com/rlmcpherson/s3gof3r",
-			"Comment": "v0.4.1-2-g70fda93",
-			"Rev": "70fda937be0957e8bebe31f6d43019618ebf234e"
+			"Comment": "v0.4.3-7-gf3507fe",
+			"Rev": "f3507fe06a8054883e61176b62b693802d735e98"
 		},
 		{
 			"ImportPath": "github.com/vaughan0/go-ini",

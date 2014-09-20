@@ -15,59 +15,57 @@ const (
 )
 
 var tb = os.Getenv("TEST_BUCKET")
-var defaultCp = &Cp{
-	CommonOpts: CommonOpts{EndPoint: "s3.amazonaws.com",
-		PartSize: mb}}
+var defaultcpOpts = &cpOpts{
+	CommonOpts: CommonOpts{EndPoint: "s3.amazonaws.com"},
+	DataOpts:   DataOpts{PartSize: mb}}
 
 type cpTest struct {
-	*Cp
+	*cpOpts
 	args []string
 	err  error
 }
 
 var cpTests = []cpTest{
-	{defaultCp,
+	{defaultcpOpts,
 		[]string{"cp_test.go", "s3://" + tb + "/t1"},
 		nil},
-	{defaultCp,
+	{defaultcpOpts,
 		[]string{"s3://" + tb + "/t1", "s3://" + tb + "/t2"},
 		nil},
-	{defaultCp,
+	{defaultcpOpts,
 		[]string{"s3://" + tb + "/t1", "s3://" + tb + "//t2"},
 		nil},
-	{defaultCp,
+	{defaultcpOpts,
 		[]string{"s3://" + tb + "/t1", "/dev/null"},
 		nil},
-	{defaultCp,
+	{defaultcpOpts,
 		[]string{"s3://" + tb + "/noexist", "/dev/null"},
 		errors.New("404")},
-	{&Cp{
-		CommonOpts: CommonOpts{EndPoint: "s3-external-1.amazonaws.com",
-			PartSize: mb}},
+	{&cpOpts{
+		CommonOpts: CommonOpts{EndPoint: "s3-external-1.amazonaws.com"},
+		DataOpts:   DataOpts{PartSize: mb}},
 		[]string{"s3://" + tb + "/&exist", "/dev/null"},
 		errors.New("404")},
-	{&Cp{
-		CommonOpts: CommonOpts{NoSSL: true,
+	{&cpOpts{
+		DataOpts: DataOpts{NoSSL: true,
 			PartSize: mb}},
 		[]string{"s3://" + tb + "/t1", "s3://" + tb + "/tdir/.tst"},
 		nil},
-	{&Cp{
-		CommonOpts: CommonOpts{EndPoint: "s3.amazonaws.com",
-			PartSize: mb}},
+	{defaultcpOpts,
 		[]string{"s3://" + tb + "/t1"},
 		errors.New("source and destination arguments required")},
-	{defaultCp,
+	{defaultcpOpts,
 		[]string{"s://" + tb + "/t1", "s3://" + tb + "/tdir/.tst"},
 		errors.New("parse error: s://")},
-	{defaultCp,
+	{defaultcpOpts,
 		[]string{"http://%%s", ""},
 		errors.New("parse error: parse http")},
-	{defaultCp,
+	{defaultcpOpts,
 		[]string{"s3://" + tb + "/t1", "s3://no-bucket/.tst"},
 		errors.New("bucket does not exist")},
 }
 
-func TestCpExecute(t *testing.T) {
+func TestcpOptsExecute(t *testing.T) {
 
 	if tb == "" {
 		t.Fatal("TEST_BUCKET must be set in environment")

@@ -42,7 +42,7 @@ import (
 
 const (
 	name    = "gof3r"
-	version = "0.4.1"
+	version = "0.4.5"
 )
 
 func main() {
@@ -51,8 +51,17 @@ func main() {
 
 	start := time.Now()
 
+	// parse ini file
+	if err := parseIni(); err != nil {
+		fmt.Fprintln(os.Stderr, err)
+	}
+
 	// parser calls the Execute function for the command after parsing the command line options.
 	if _, err := parser.Parse(); err != nil {
+
+		if appOpts.WriteIni {
+			writeIni() // exits
+		}
 
 		// handling for flag parse errors
 		if ferr, ok := err.(*flags.Error); ok {
@@ -71,7 +80,7 @@ func main() {
 		}
 		os.Exit(1)
 	}
-	fmt.Fprintf(os.Stderr, "Duration: %v\n", time.Since(start))
+	fmt.Fprintf(os.Stderr, "duration: %v\n", time.Since(start))
 }
 
 // getAWSKeys gets the AWS Keys from environment variables or the instance-based metadata on EC2
