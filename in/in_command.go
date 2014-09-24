@@ -32,6 +32,14 @@ func (command *InCommand) Run(destinationDir string, request InRequest) (InRespo
 		return InResponse{}, err
 	}
 
+	extraction, ok := versions.Extract(remotePath, request.Source.Regexp)
+	if ok {
+		err = command.writeVersionFile(extraction, destinationDir)
+		if err != nil {
+			return InResponse{}, err
+		}
+	}
+
 	remoteFilename := path.Base(remotePath)
 	err = command.downloadFile(
 		request.Source.Bucket,
@@ -92,6 +100,10 @@ func (command *InCommand) writeURLFile(bucketName string, remotePath string, pri
 	}
 
 	return nil
+}
+
+func (command *InCommand) writeVersionFile(extraction versions.Extraction, destDir string) error {
+	return ioutil.WriteFile(filepath.Join(destDir, "version"), []byte(extraction.VersionNumber), 0644)
 }
 
 func (command *InCommand) downloadFile(bucketName string, remotePath string, destinationDir string) error {

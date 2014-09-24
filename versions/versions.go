@@ -57,8 +57,9 @@ func Extract(path string, pattern string) (Extraction, bool) {
 	}
 
 	extraction := Extraction{
-		Path:    path,
-		Version: version,
+		Path:          path,
+		Version:       version,
+		VersionNumber: match,
 	}
 
 	return extraction, true
@@ -89,8 +90,14 @@ func (e Extractions) Swap(i int, j int) {
 }
 
 type Extraction struct {
-	Path    string
+	// path to s3 object in bucket
+	Path string
+
+	// parsed semantic version
 	Version *version.Version
+
+	// the raw version match
+	VersionNumber string
 }
 
 func GetBucketFileVersions(client s3resource.S3Client, source s3resource.Source) Extractions {

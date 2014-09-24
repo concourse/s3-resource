@@ -34,6 +34,7 @@ var _ = Describe("In Command", func() {
 			request = InRequest{
 				Source: s3resource.Source{
 					Bucket: "bucket-name",
+					Regexp: "files/a-file-(.*).tgz",
 				},
 				Version: s3resource.Version{
 					Path: "files/a-file-1.3.tgz",
@@ -42,6 +43,8 @@ var _ = Describe("In Command", func() {
 
 			s3client = &fakes.FakeS3Client{}
 			command = NewInCommand(s3client)
+
+			s3client.URLReturns("google.com")
 		})
 
 		AfterEach(func() {
@@ -61,13 +64,12 @@ var _ = Describe("In Command", func() {
 		Context("when there is no existing version in the request", func() {
 			BeforeEach(func() {
 				request.Version.Path = ""
-				request.Source.Regexp = "files/abc-(.*).tgz"
 
 				s3client.BucketFilesReturns([]string{
-					"files/abc-0.0.1.tgz",
-					"files/abc-3.53.tgz",
-					"files/abc-2.33.333.tgz",
-					"files/abc-2.4.3.tgz",
+					"files/a-file-0.0.1.tgz",
+					"files/a-file-3.53.tgz",
+					"files/a-file-2.33.333.tgz",
+					"files/a-file-2.4.3.tgz",
 				}, nil)
 			})
 
@@ -79,15 +81,76 @@ var _ = Describe("In Command", func() {
 				bucketName, remotePath, localPath := s3client.DownloadFileArgsForCall(0)
 
 				Ω(bucketName).Should(Equal("bucket-name"))
-				Ω(remotePath).Should(Equal("files/abc-3.53.tgz"))
-				Ω(localPath).Should(Equal(filepath.Join(destDir, "abc-3.53.tgz")))
+				Ω(remotePath).Should(Equal("files/a-file-3.53.tgz"))
+				Ω(localPath).Should(Equal(filepath.Join(destDir, "a-file-3.53.tgz")))
 			})
 
-			It("returns an error when the regexp has no groups", func() {
-				request.Source.Regexp = "files/abc-.*.tgz"
+			It("creates a 'url' file that contains the URL", func() {
+				urlPath := filepath.Join(destDir, "url")
+				Ω(urlPath).ShouldNot(ExistOnFilesystem())
 
 				_, err := command.Run(destDir, request)
-				Ω(err).Should(HaveOccurred())
+				Ω(err).ShouldNot(HaveOccurred())
+
+				Ω(urlPath).Should(ExistOnFilesystem())
+				contents, err := ioutil.ReadFile(urlPath)
+				Ω(err).ShouldNot(HaveOccurred())
+				Ω(string(contents)).Should(Equal("google.com"))
+
+				Ω(s3client.URLCallCount()).Should(Equal(1))
+				bucketName, remotePath, private := s3client.URLArgsForCall(0)
+				Ω(bucketName).Should(Equal("bucket-name"))
+				Ω(remotePath).Should(Equal("files/a-file-3.53.tgz"))
+				Ω(private).Should(Equal(false))
+			})
+
+			Context("when configured with private URLs", func() {
+				BeforeEach(func() {
+					request.Source.Private = true
+				})
+
+				It("creates a 'url' file that contains the private URL if told to do that", func() {
+					urlPath := filepath.Join(destDir, "url")
+					Ω(urlPath).ShouldNot(ExistOnFilesystem())
+
+					_, err := command.Run(destDir, request)
+					Ω(err).ShouldNot(HaveOccurred())
+
+					Ω(urlPath).Should(ExistOnFilesystem())
+					contents, err := ioutil.ReadFile(urlPath)
+					Ω(err).ShouldNot(HaveOccurred())
+					Ω(string(contents)).Should(Equal("google.com"))
+
+					Ω(s3client.URLCallCount()).Should(Equal(1))
+					bucketName, remotePath, private := s3client.URLArgsForCall(0)
+					Ω(bucketName).Should(Equal("bucket-name"))
+					Ω(remotePath).Should(Equal("files/a-file-3.53.tgz"))
+					Ω(private).Should(Equal(true))
+				})
+			})
+
+			It("creates a 'version' file that contains the latest version", func() {
+				versionFile := filepath.Join(destDir, "version")
+				Ω(versionFile).ShouldNot(ExistOnFilesystem())
+
+				_, err := command.Run(destDir, request)
+				Ω(err).ShouldNot(HaveOccurred())
+
+				Ω(versionFile).Should(ExistOnFilesystem())
+				contents, err := ioutil.ReadFile(versionFile)
+				Ω(err).ShouldNot(HaveOccurred())
+				Ω(string(contents)).Should(Equal("3.53"))
+			})
+
+			Context("when the regexp has no groups", func() {
+				BeforeEach(func() {
+					request.Source.Regexp = "files/a-file-.*.tgz"
+				})
+
+				It("returns an error when the regexp has no groups", func() {
+					_, err := command.Run(destDir, request)
+					Ω(err).Should(HaveOccurred())
+				})
 			})
 
 			Describe("the response", func() {
@@ -95,7 +158,7 @@ var _ = Describe("In Command", func() {
 					response, err := command.Run(destDir, request)
 					Ω(err).ShouldNot(HaveOccurred())
 
-					Ω(response.Version.Path).Should(Equal("files/abc-3.53.tgz"))
+					Ω(response.Version.Path).Should(Equal("files/a-file-3.53.tgz"))
 				})
 
 				It("has metadata about the file", func() {
@@ -103,7 +166,7 @@ var _ = Describe("In Command", func() {
 					Ω(err).ShouldNot(HaveOccurred())
 
 					Ω(response.Metadata[0].Name).Should(Equal("filename"))
-					Ω(response.Metadata[0].Value).Should(Equal("abc-3.53.tgz"))
+					Ω(response.Metadata[0].Value).Should(Equal("a-file-3.53.tgz"))
 				})
 			})
 		})
@@ -129,8 +192,6 @@ var _ = Describe("In Command", func() {
 				urlPath := filepath.Join(destDir, "url")
 				Ω(urlPath).ShouldNot(ExistOnFilesystem())
 
-				s3client.URLReturns("google.com")
-
 				_, err := command.Run(destDir, request)
 				Ω(err).ShouldNot(HaveOccurred())
 
@@ -146,27 +207,42 @@ var _ = Describe("In Command", func() {
 				Ω(private).Should(Equal(false))
 			})
 
-			It("creates a 'url' file that contains the private URL if told to do that", func() {
-				request.Source.Private = true
+			Context("when configured with private URLs", func() {
+				BeforeEach(func() {
+					request.Source.Private = true
+				})
 
-				urlPath := filepath.Join(destDir, "url")
-				Ω(urlPath).ShouldNot(ExistOnFilesystem())
+				It("creates a 'url' file that contains the private URL if told to do that", func() {
+					urlPath := filepath.Join(destDir, "url")
+					Ω(urlPath).ShouldNot(ExistOnFilesystem())
 
-				s3client.URLReturns("google.com")
+					_, err := command.Run(destDir, request)
+					Ω(err).ShouldNot(HaveOccurred())
+
+					Ω(urlPath).Should(ExistOnFilesystem())
+					contents, err := ioutil.ReadFile(urlPath)
+					Ω(err).ShouldNot(HaveOccurred())
+					Ω(string(contents)).Should(Equal("google.com"))
+
+					Ω(s3client.URLCallCount()).Should(Equal(1))
+					bucketName, remotePath, private := s3client.URLArgsForCall(0)
+					Ω(bucketName).Should(Equal("bucket-name"))
+					Ω(remotePath).Should(Equal("files/a-file-1.3.tgz"))
+					Ω(private).Should(Equal(true))
+				})
+			})
+
+			It("creates a 'version' file that contains the matched version", func() {
+				versionFile := filepath.Join(destDir, "version")
+				Ω(versionFile).ShouldNot(ExistOnFilesystem())
 
 				_, err := command.Run(destDir, request)
 				Ω(err).ShouldNot(HaveOccurred())
 
-				Ω(urlPath).Should(ExistOnFilesystem())
-				contents, err := ioutil.ReadFile(urlPath)
+				Ω(versionFile).Should(ExistOnFilesystem())
+				contents, err := ioutil.ReadFile(versionFile)
 				Ω(err).ShouldNot(HaveOccurred())
-				Ω(string(contents)).Should(Equal("google.com"))
-
-				Ω(s3client.URLCallCount()).Should(Equal(1))
-				bucketName, remotePath, private := s3client.URLArgsForCall(0)
-				Ω(bucketName).Should(Equal("bucket-name"))
-				Ω(remotePath).Should(Equal("files/a-file-1.3.tgz"))
-				Ω(private).Should(Equal(true))
+				Ω(string(contents)).Should(Equal("1.3"))
 			})
 
 			Describe("the response", func() {

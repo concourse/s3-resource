@@ -113,6 +113,7 @@ var _ = Describe("Extract", func() {
 
 			Ω(result.Path).Should(Equal("abc-105.tgz"))
 			Ω(result.Version.String()).Should(Equal("105.0.0"))
+			Ω(result.VersionNumber).Should(Equal("105"))
 		})
 
 		It("extracts semantics version numbers", func() {
@@ -121,6 +122,7 @@ var _ = Describe("Extract", func() {
 
 			Ω(result.Path).Should(Equal("abc-1.0.5.tgz"))
 			Ω(result.Version.String()).Should(Equal("1.0.5"))
+			Ω(result.VersionNumber).Should(Equal("1.0.5"))
 		})
 
 		It("takes the first match if there are many", func() {
@@ -129,6 +131,7 @@ var _ = Describe("Extract", func() {
 
 			Ω(result.Path).Should(Equal("abc-1.0.5-def-2.3.4.tgz"))
 			Ω(result.Version.String()).Should(Equal("1.0.5"))
+			Ω(result.VersionNumber).Should(Equal("1.0.5"))
 		})
 
 		It("extracts a named group called 'version' above all others", func() {
@@ -137,6 +140,7 @@ var _ = Describe("Extract", func() {
 
 			Ω(result.Path).Should(Equal("abc-1.0.5-def-2.3.4.tgz"))
 			Ω(result.Version.String()).Should(Equal("2.3.4"))
+			Ω(result.VersionNumber).Should(Equal("2.3.4"))
 		})
 	})
 })
