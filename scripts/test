@@ -1,17 +1,15 @@
 #!/bin/bash
 # vim: set ft=sh
 
-export GOROOT=/usr/local/go
-export GOPATH=/tmp/gopath
+set -e
 
+export GOROOT=/usr/src/go
 export PATH=$GOROOT/bin:$PATH
+
+export GOPATH=$PWD/gopath
 export PATH=$GOPATH/bin:$PATH
-export REPO_DIR=$GOPATH/src/github.com/concourse/s3-resource
 
-mkdir -p $(dirname $REPO_DIR)
-ln -s $PWD/$(basename $REPO_DIR) $REPO_DIR
-
-cd $REPO_DIR
+cd $GOPATH/src/github.com/concourse/s3-resource
 
 export GOPATH=${PWD}/Godeps/_workspace:$GOPATH
 export PATH=${PWD}/Godeps/_workspace/bin:$PATH
@@ -19,3 +17,5 @@ export PATH=${PWD}/Godeps/_workspace/bin:$PATH
 go install github.com/onsi/ginkgo/ginkgo
 
 ginkgo -r -p "$@"
+
+./scripts/build

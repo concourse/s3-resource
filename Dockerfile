@@ -1,14 +1,11 @@
-FROM ubuntu:14.04
+FROM progrium/busybox
 
-RUN apt-get update && apt-get -y install wget git
+RUN opkg-install ca-certificates
 
-ENV PATH /usr/local/go/bin:$PATH
-ENV GOPATH /tmp/go/src/github.com/concourse/s3-resource/Godeps/_workspace:/tmp/go
+RUN for cert in `ls -1 /etc/ssl/certs/*.crt | grep -v /etc/ssl/certs/ca-certificates.crt`; \
+      do cat "$cert" >> /etc/ssl/certs/ca-certificates.crt; \
+    done
 
-ADD . /tmp/go/src/github.com/concourse/s3-resource
-
-RUN wget -qO- https://storage.googleapis.com/golang/go1.3.linux-amd64.tar.gz | tar -C /usr/local -xzf - && \
-      go build -o /opt/resource/check github.com/concourse/s3-resource/cmd/check && \
-      go build -o /opt/resource/in github.com/concourse/s3-resource/cmd/in && \
-      go build -o /opt/resource/out github.com/concourse/s3-resource/cmd/out && \
-      rm -rf /tmp/go /usr/local/go
+ADD built-check /opt/resource/check
+ADD built-in /opt/resource/in
+ADD built-out /opt/resource/out

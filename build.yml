@@ -1,5 +1,8 @@
 ---
-image: docker:///mischief/docker-golang
+image: docker:///concourse/static-golang
+
+paths:
+  s3-resource: gopath/src/github.com/concourse/s3-resource
 
 run:
-  path: s3-resource/scripts/test
+  path: gopath/src/github.com/concourse/s3-resource/scripts/test
