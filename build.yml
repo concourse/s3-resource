@@ -1,8 +1,9 @@
 ---
 image: docker:///concourse/static-golang
 
-paths:
-  s3-resource: gopath/src/github.com/concourse/s3-resource
+inputs:
+  - name: s3-resource
+    path: gopath/src/github.com/concourse/s3-resource
 
 run:
   path: gopath/src/github.com/concourse/s3-resource/scripts/test
