@@ -22,45 +22,26 @@ func NewOutCommand(s3client s3resource.S3Client) *OutCommand {
 }
 
 func (command *OutCommand) Run(sourceDir string, request OutRequest) (OutResponse, error) {
-	paths := []string{}
-	filepath.Walk(sourceDir, func(path string, info os.FileInfo, err error) error {
-		paths = append(paths, path)
-		return nil
-	})
-
-	pattern := request.Params.From
-	matches, err := versions.MatchUnanchored(paths, pattern)
+	match, err := command.match(sourceDir, request.Params.From)
 	if err != nil {
 		return OutResponse{}, err
 	}
 
-	if len(matches) == 0 {
-		return OutResponse{}, fmt.Errorf("no matches found for pattern: %s", pattern)
-	}
-
-	if len(matches) > 1 {
-		return OutResponse{}, fmt.Errorf("more than one match found for pattern: %s", pattern)
-	}
-
-	match := matches[0]
+	var remotePath string
 
 	folderDestination := strings.HasSuffix(request.Params.To, "/")
-
-	var remotePath string
-	var remoteFilename string
-
 	if folderDestination || request.Params.To == "" {
 		remotePath = filepath.Join(request.Params.To, filepath.Base(match))
-		remoteFilename = filepath.Base(remotePath)
 	} else {
 		compiled := regexp.MustCompile(request.Params.From)
 		fileName := strings.TrimPrefix(match, sourceDir+"/")
 		remotePath = compiled.ReplaceAllString(fileName, request.Params.To)
-		remoteFilename = filepath.Base(remotePath)
 	}
 
+	bucketName := request.Source.Bucket
+
 	err = command.s3client.UploadFile(
-		request.Source.Bucket,
+		bucketName,
 		remotePath,
 		match,
 	)
@@ -72,11 +53,49 @@ func (command *OutCommand) Run(sourceDir string, request OutRequest) (OutRespons
 		Version: s3resource.Version{
 			Path: remotePath,
 		},
-		Metadata: []s3resource.MetadataPair{
-			s3resource.MetadataPair{
-				Name:  "filename",
-				Value: remoteFilename,
-			},
-		},
+		Metadata: command.metadata(bucketName, remotePath, request.Source.Private),
 	}, nil
+}
+
+func (command *OutCommand) match(sourceDir, pattern string) (string, error) {
+	paths := []string{}
+	filepath.Walk(sourceDir, func(path string, info os.FileInfo, err error) error {
+		paths = append(paths, path)
+		return nil
+	})
+
+	matches, err := versions.MatchUnanchored(paths, pattern)
+	if err != nil {
+		return "", err
+	}
+
+	if len(matches) == 0 {
+		return "", fmt.Errorf("no matches found for pattern: %s", pattern)
+	}
+
+	if len(matches) > 1 {
+		return "", fmt.Errorf("more than one match found for pattern: %s", pattern)
+	}
+
+	return matches[0], nil
+}
+
+func (command *OutCommand) metadata(bucketName, remotePath string, private bool) []s3resource.MetadataPair {
+	remoteFilename := filepath.Base(remotePath)
+
+	metadata := []s3resource.MetadataPair{
+		s3resource.MetadataPair{
+			Name:  "filename",
+			Value: remoteFilename,
+		},
+	}
+
+	if !private {
+		metadata = append(metadata, s3resource.MetadataPair{
+			Name:  "url",
+			Value: command.s3client.URL(bucketName, remotePath, false),
+		})
+	}
+
+	return metadata
 }

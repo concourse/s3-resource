@@ -87,71 +87,103 @@ var _ = Describe("Out Command", func() {
 			})
 		})
 
-		It("uploads the file", func() {
-			request.Params.From = "a/(.*).tgz"
-			request.Params.To = "a-folder/"
-			createFile("a/file.tgz")
+		Describe("uploading the file", func() {
+			It("uploads the file", func() {
+				request.Params.From = "a/(.*).tgz"
+				request.Params.To = "a-folder/"
+				createFile("a/file.tgz")
 
-			_, err := command.Run(sourceDir, request)
-			Ω(err).ShouldNot(HaveOccurred())
+				_, err := command.Run(sourceDir, request)
+				Ω(err).ShouldNot(HaveOccurred())
 
-			Ω(s3client.UploadFileCallCount()).Should(Equal(1))
-			bucketName, remotePath, localPath := s3client.UploadFileArgsForCall(0)
+				Ω(s3client.UploadFileCallCount()).Should(Equal(1))
+				bucketName, remotePath, localPath := s3client.UploadFileArgsForCall(0)
 
-			Ω(bucketName).Should(Equal("bucket-name"))
-			Ω(remotePath).Should(Equal("a-folder/file.tgz"))
-			Ω(localPath).Should(Equal(filepath.Join(sourceDir, "a/file.tgz")))
+				Ω(bucketName).Should(Equal("bucket-name"))
+				Ω(remotePath).Should(Equal("a-folder/file.tgz"))
+				Ω(localPath).Should(Equal(filepath.Join(sourceDir, "a/file.tgz")))
+			})
+
+			It("can handle empty to to put it in the root", func() {
+				request.Params.From = "a/(.*).tgz"
+				request.Params.To = ""
+				createFile("a/file.tgz")
+
+				_, err := command.Run(sourceDir, request)
+				Ω(err).ShouldNot(HaveOccurred())
+
+				Ω(s3client.UploadFileCallCount()).Should(Equal(1))
+				bucketName, remotePath, localPath := s3client.UploadFileArgsForCall(0)
+
+				Ω(bucketName).Should(Equal("bucket-name"))
+				Ω(remotePath).Should(Equal("file.tgz"))
+				Ω(localPath).Should(Equal(filepath.Join(sourceDir, "a/file.tgz")))
+			})
+
+			It("can handle templating in the output", func() {
+				request.Params.From = "a/file-(\\d*).tgz"
+				request.Params.To = "folder-${1}/file.tgz"
+				createFile("a/file-123.tgz")
+
+				response, err := command.Run(sourceDir, request)
+				Ω(err).ShouldNot(HaveOccurred())
+
+				Ω(s3client.UploadFileCallCount()).Should(Equal(1))
+				bucketName, remotePath, localPath := s3client.UploadFileArgsForCall(0)
+
+				Ω(bucketName).Should(Equal("bucket-name"))
+				Ω(remotePath).Should(Equal("folder-123/file.tgz"))
+				Ω(localPath).Should(Equal(filepath.Join(sourceDir, "a/file-123.tgz")))
+
+				Ω(response.Version.Path).Should(Equal("folder-123/file.tgz"))
+
+				Ω(response.Metadata[0].Name).Should(Equal("filename"))
+				Ω(response.Metadata[0].Value).Should(Equal("file.tgz"))
+			})
 		})
 
-		It("can handle empty to to put it in the root", func() {
-			request.Params.From = "a/(.*).tgz"
-			request.Params.To = ""
-			createFile("a/file.tgz")
+		Describe("output metadata", func() {
+			BeforeEach(func() {
+				s3client.URLStub = func(bucketName string, remotePath string, private bool) string {
+					return "http://example.com/" + filepath.Join(bucketName, remotePath)
+				}
+			})
 
-			_, err := command.Run(sourceDir, request)
-			Ω(err).ShouldNot(HaveOccurred())
+			It("returns a response", func() {
+				request.Params.From = "a/(.*).tgz"
+				request.Params.To = "a-folder/"
+				createFile("a/file.tgz")
 
-			Ω(s3client.UploadFileCallCount()).Should(Equal(1))
-			bucketName, remotePath, localPath := s3client.UploadFileArgsForCall(0)
+				response, err := command.Run(sourceDir, request)
+				Ω(err).ShouldNot(HaveOccurred())
 
-			Ω(bucketName).Should(Equal("bucket-name"))
-			Ω(remotePath).Should(Equal("file.tgz"))
-			Ω(localPath).Should(Equal(filepath.Join(sourceDir, "a/file.tgz")))
-		})
+				Ω(s3client.URLCallCount()).Should(Equal(1))
+				bucketName, remotePath, private := s3client.URLArgsForCall(0)
+				Ω(bucketName).Should(Equal("bucket-name"))
+				Ω(remotePath).Should(Equal("a-folder/file.tgz"))
+				Ω(private).Should(Equal(false))
 
-		It("can handle templating in the output", func() {
-			request.Params.From = "a/file-(\\d*).tgz"
-			request.Params.To = "folder-${1}/file.tgz"
-			createFile("a/file-123.tgz")
+				Ω(response.Version.Path).Should(Equal("a-folder/file.tgz"))
 
-			response, err := command.Run(sourceDir, request)
-			Ω(err).ShouldNot(HaveOccurred())
+				Ω(response.Metadata[0].Name).Should(Equal("filename"))
+				Ω(response.Metadata[0].Value).Should(Equal("file.tgz"))
 
-			Ω(s3client.UploadFileCallCount()).Should(Equal(1))
-			bucketName, remotePath, localPath := s3client.UploadFileArgsForCall(0)
+				Ω(response.Metadata[1].Name).Should(Equal("url"))
+				Ω(response.Metadata[1].Value).Should(Equal("http://example.com/bucket-name/a-folder/file.tgz"))
+			})
 
-			Ω(bucketName).Should(Equal("bucket-name"))
-			Ω(remotePath).Should(Equal("folder-123/file.tgz"))
-			Ω(localPath).Should(Equal(filepath.Join(sourceDir, "a/file-123.tgz")))
+			It("doesn't include the URL if the output is private", func() {
+				request.Source.Private = true
+				request.Params.From = "a/(.*).tgz"
+				request.Params.To = "a-folder/"
+				createFile("a/file.tgz")
 
-			Ω(response.Version.Path).Should(Equal("folder-123/file.tgz"))
+				response, err := command.Run(sourceDir, request)
+				Ω(err).ShouldNot(HaveOccurred())
 
-			Ω(response.Metadata[0].Name).Should(Equal("filename"))
-			Ω(response.Metadata[0].Value).Should(Equal("file.tgz"))
-		})
-
-		It("returns a response", func() {
-			request.Params.From = "a/(.*).tgz"
-			request.Params.To = "a-folder/"
-			createFile("a/file.tgz")
-
-			response, err := command.Run(sourceDir, request)
-			Ω(err).ShouldNot(HaveOccurred())
-
-			Ω(response.Version.Path).Should(Equal("a-folder/file.tgz"))
-
-			Ω(response.Metadata[0].Name).Should(Equal("filename"))
-			Ω(response.Metadata[0].Value).Should(Equal("file.tgz"))
+				Ω(response.Metadata).Should(HaveLen(1))
+				Ω(response.Metadata[0].Name).ShouldNot(Equal("url"))
+			})
 		})
 	})
 })
