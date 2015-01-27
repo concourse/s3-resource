@@ -1,6 +1,11 @@
-FROM gliderlabs/alpine
+FROM progrium/busybox
 
-RUN apk-install ca-certificates
+RUN opkg-install ca-certificates
+
+# satisfy go crypto/x509
+RUN for cert in `ls -1 /etc/ssl/certs/*.crt | grep -v /etc/ssl/certs/ca-certificates.crt`; \
+      do cat "$cert" >> /etc/ssl/certs/ca-certificates.crt; \
+    done
 
 ADD built-check /opt/resource/check
 ADD built-in /opt/resource/in
