@@ -1,7 +1,6 @@
 package s3resource
 
 import (
-	"errors"
 	"fmt"
 	"io"
 	"os"
@@ -12,8 +11,10 @@ import (
 	"github.com/rlmcpherson/s3gof3r"
 )
 
+//go:generate counterfeiter . S3Client
+
 type S3Client interface {
-	BucketFiles(bucketName string) ([]string, error)
+	BucketFiles(bucketName string, prefixHint string) ([]string, error)
 
 	UploadFile(bucketName string, remotePath string, localPath string) error
 	DownloadFile(bucketName string, remotePath string, localPath string) error
@@ -39,7 +40,7 @@ func NewS3Client(accessKey string, secretKey string, regionName string) (S3Clien
 
 	region, ok := aws.Regions[regionName]
 	if !ok {
-		return nil, errors.New(fmt.Sprintf("No such region '%s'", regionName))
+		return nil, fmt.Errorf("No such region '%s'", regionName)
 	}
 
 	return &s3client{
@@ -48,9 +49,9 @@ func NewS3Client(accessKey string, secretKey string, regionName string) (S3Clien
 	}, nil
 }
 
-func (client *s3client) BucketFiles(bucketName string) ([]string, error) {
+func (client *s3client) BucketFiles(bucketName string, prefixHint string) ([]string, error) {
 	bucket := client.client.Bucket(bucketName)
-	entries, err := bucket.GetBucketContents()
+	entries, err := client.getBucketContents(bucket, prefixHint)
 	if err != nil {
 		return []string{}, err
 	}
@@ -61,6 +62,40 @@ func (client *s3client) BucketFiles(bucketName string) ([]string, error) {
 	}
 
 	return paths, nil
+}
+
+func (client *s3client) getBucketContents(bucket *s3.Bucket, prefix string) (*map[string]s3.Key, error) {
+	bucketContents := map[string]s3.Key{}
+	separator := ""
+	marker := ""
+
+	for {
+		contents, err := bucket.List(prefix, separator, marker, 1000)
+		if err != nil {
+			return &bucketContents, err
+		}
+
+		lastKey := ""
+		for _, key := range contents.Contents {
+			bucketContents[key.Key] = key
+			lastKey = key.Key
+		}
+
+		if contents.IsTruncated {
+			marker = contents.NextMarker
+			if marker == "" {
+				// From the s3 docs: If response does not include the
+				// NextMarker and it is truncated, you can use the value of the
+				// last Key in the response as the marker in the subsequent
+				// request to get the next set of object keys.
+				marker = lastKey
+			}
+		} else {
+			break
+		}
+	}
+
+	return &bucketContents, nil
 }
 
 func (client *s3client) UploadFile(bucketName string, remotePath string, localPath string) error {

@@ -8,10 +8,11 @@ import (
 )
 
 type FakeS3Client struct {
-	BucketFilesStub        func(bucketName string) ([]string, error)
+	BucketFilesStub        func(bucketName string, prefixHint string) ([]string, error)
 	bucketFilesMutex       sync.RWMutex
 	bucketFilesArgsForCall []struct {
 		bucketName string
+		prefixHint string
 	}
 	bucketFilesReturns struct {
 		result1 []string
@@ -49,14 +50,15 @@ type FakeS3Client struct {
 	}
 }
 
-func (fake *FakeS3Client) BucketFiles(bucketName string) ([]string, error) {
+func (fake *FakeS3Client) BucketFiles(bucketName string, prefixHint string) ([]string, error) {
 	fake.bucketFilesMutex.Lock()
 	fake.bucketFilesArgsForCall = append(fake.bucketFilesArgsForCall, struct {
 		bucketName string
-	}{bucketName})
+		prefixHint string
+	}{bucketName, prefixHint})
 	fake.bucketFilesMutex.Unlock()
 	if fake.BucketFilesStub != nil {
-		return fake.BucketFilesStub(bucketName)
+		return fake.BucketFilesStub(bucketName, prefixHint)
 	} else {
 		return fake.bucketFilesReturns.result1, fake.bucketFilesReturns.result2
 	}
@@ -68,10 +70,10 @@ func (fake *FakeS3Client) BucketFilesCallCount() int {
 	return len(fake.bucketFilesArgsForCall)
 }
 
-func (fake *FakeS3Client) BucketFilesArgsForCall(i int) string {
+func (fake *FakeS3Client) BucketFilesArgsForCall(i int) (string, string) {
 	fake.bucketFilesMutex.RLock()
 	defer fake.bucketFilesMutex.RUnlock()
-	return fake.bucketFilesArgsForCall[i].bucketName
+	return fake.bucketFilesArgsForCall[i].bucketName, fake.bucketFilesArgsForCall[i].prefixHint
 }
 
 func (fake *FakeS3Client) BucketFilesReturns(result1 []string, result2 error) {

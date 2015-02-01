@@ -97,6 +97,16 @@ var _ = Describe("Match", func() {
 	})
 })
 
+var _ = Describe("PrefixHint", func() {
+	It("turns a regexp into a limiter for s3", func() {
+		Ω(versions.PrefixHint("hello/world")).Should(Equal("hello/world"))
+		Ω(versions.PrefixHint("hello/*.tgz")).Should(Equal("hello"))
+		Ω(versions.PrefixHint("")).Should(Equal(""))
+		Ω(versions.PrefixHint("*")).Should(Equal(""))
+		Ω(versions.PrefixHint("hello/*/what.txt")).Should(Equal("hello"))
+	})
+})
+
 var _ = Describe("Extract", func() {
 	Context("when the path does not contain extractable information", func() {
 		It("doesn't extract it", func() {

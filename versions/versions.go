@@ -3,6 +3,7 @@ package versions
 import (
 	"regexp"
 	"sort"
+	"strings"
 
 	"github.com/concourse/s3-resource"
 	"github.com/hashicorp/go-version"
@@ -100,8 +101,28 @@ type Extraction struct {
 	VersionNumber string
 }
 
+func PrefixHint(regex string) string {
+	re := regexp.MustCompile("^[a-zA-Z0-9_]*$")
+	validSections := []string{}
+
+	sections := strings.Split(regex, "/")
+
+	for _, section := range sections {
+		if re.MatchString(section) {
+			validSections = append(validSections, section)
+		} else {
+			break
+		}
+	}
+
+	return strings.Join(validSections, "/")
+}
+
 func GetBucketFileVersions(client s3resource.S3Client, source s3resource.Source) Extractions {
-	paths, err := client.BucketFiles(source.Bucket)
+	regexp := source.Regexp
+	hint := PrefixHint(regexp)
+
+	paths, err := client.BucketFiles(source.Bucket, hint)
 	if err != nil {
 		s3resource.Fatal("listing files", err)
 	}
@@ -113,7 +134,7 @@ func GetBucketFileVersions(client s3resource.S3Client, source s3resource.Source)
 
 	var extractions = make(Extractions, 0, len(matchingPaths))
 	for _, path := range matchingPaths {
-		extraction, ok := Extract(path, source.Regexp)
+		extraction, ok := Extract(path, regexp)
 
 		if ok {
 			extractions = append(extractions, extraction)
