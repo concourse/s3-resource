@@ -97,7 +97,6 @@ var _ = Describe("In Command", func() {
 				Ω(err).ShouldNot(HaveOccurred())
 				Ω(string(contents)).Should(Equal("google.com"))
 
-				Ω(s3client.URLCallCount()).Should(Equal(1))
 				bucketName, remotePath, private := s3client.URLArgsForCall(0)
 				Ω(bucketName).Should(Equal("bucket-name"))
 				Ω(remotePath).Should(Equal("files/a-file-3.53.tgz"))
@@ -167,6 +166,23 @@ var _ = Describe("In Command", func() {
 
 					Ω(response.Metadata[0].Name).Should(Equal("filename"))
 					Ω(response.Metadata[0].Value).Should(Equal("a-file-3.53.tgz"))
+
+					Ω(response.Metadata[1].Name).Should(Equal("url"))
+					Ω(response.Metadata[1].Value).Should(Equal("google.com"))
+				})
+
+				Context("when the output is private", func() {
+					BeforeEach(func() {
+						request.Source.Private = true
+					})
+
+					It("doesn't include the URL in the metadata", func() {
+						response, err := command.Run(destDir, request)
+						Ω(err).ShouldNot(HaveOccurred())
+
+						Ω(response.Metadata).Should(HaveLen(1))
+						Ω(response.Metadata[0].Name).ShouldNot(Equal("url"))
+					})
 				})
 			})
 		})
@@ -200,7 +216,6 @@ var _ = Describe("In Command", func() {
 				Ω(err).ShouldNot(HaveOccurred())
 				Ω(string(contents)).Should(Equal("google.com"))
 
-				Ω(s3client.URLCallCount()).Should(Equal(1))
 				bucketName, remotePath, private := s3client.URLArgsForCall(0)
 				Ω(bucketName).Should(Equal("bucket-name"))
 				Ω(remotePath).Should(Equal("files/a-file-1.3.tgz"))
@@ -259,6 +274,23 @@ var _ = Describe("In Command", func() {
 
 					Ω(response.Metadata[0].Name).Should(Equal("filename"))
 					Ω(response.Metadata[0].Value).Should(Equal("a-file-1.3.tgz"))
+
+					Ω(response.Metadata[1].Name).Should(Equal("url"))
+					Ω(response.Metadata[1].Value).Should(Equal("google.com"))
+				})
+
+				Context("when the output is private", func() {
+					BeforeEach(func() {
+						request.Source.Private = true
+					})
+
+					It("doesn't include the URL in the metadata", func() {
+						response, err := command.Run(destDir, request)
+						Ω(err).ShouldNot(HaveOccurred())
+
+						Ω(response.Metadata).Should(HaveLen(1))
+						Ω(response.Metadata[0].Name).ShouldNot(Equal("url"))
+					})
 				})
 			})
 		})

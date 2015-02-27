@@ -40,7 +40,6 @@ func (command *InCommand) Run(destinationDir string, request InRequest) (InRespo
 		}
 	}
 
-	remoteFilename := path.Base(remotePath)
 	err = command.downloadFile(
 		request.Source.Bucket,
 		remotePath,
@@ -64,12 +63,7 @@ func (command *InCommand) Run(destinationDir string, request InRequest) (InRespo
 		Version: s3resource.Version{
 			Path: remotePath,
 		},
-		Metadata: []s3resource.MetadataPair{
-			s3resource.MetadataPair{
-				Name:  "filename",
-				Value: remoteFilename,
-			},
-		},
+		Metadata: command.metadata(request.Source.Bucket, remotePath, request.Source.Private),
 	}, nil
 }
 
@@ -115,4 +109,24 @@ func (command *InCommand) downloadFile(bucketName string, remotePath string, des
 		remotePath,
 		localPath,
 	)
+}
+
+func (command *InCommand) metadata(bucketName, remotePath string, private bool) []s3resource.MetadataPair {
+	remoteFilename := filepath.Base(remotePath)
+
+	metadata := []s3resource.MetadataPair{
+		s3resource.MetadataPair{
+			Name:  "filename",
+			Value: remoteFilename,
+		},
+	}
+
+	if !private {
+		metadata = append(metadata, s3resource.MetadataPair{
+			Name:  "url",
+			Value: command.s3client.URL(bucketName, remotePath, false),
+		})
+	}
+
+	return metadata
 }
