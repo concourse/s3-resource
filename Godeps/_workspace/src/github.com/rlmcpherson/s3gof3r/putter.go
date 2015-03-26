@@ -11,6 +11,7 @@ import (
 	"math"
 	"net/http"
 	"net/url"
+	"runtime"
 	"strconv"
 	"strings"
 	"sync"
@@ -30,7 +31,7 @@ const (
 type part struct {
 	r   io.ReadSeeker
 	len int64
-	b   *bytes.Buffer
+	b   []byte
 
 	// read by xml encoder
 	PartNumber int
@@ -46,7 +47,8 @@ type putter struct {
 	c   *Config
 
 	bufsz      int64
-	buf        *bytes.Buffer
+	buf        []byte
+	bufbytes   int // bytes written to current buffer
 	ch         chan *part
 	part       int
 	closed     bool
@@ -56,7 +58,7 @@ type putter struct {
 	md5        hash.Hash
 	ETag       string
 
-	bp *bp
+	sp *bp
 
 	makes    int
 	UploadId string // casing matches s3 xml
@@ -64,6 +66,7 @@ type putter struct {
 		XMLName string `xml:"CompleteMultipartUpload"`
 		Part    []*part
 	}
+	putsz int64
 }
 
 // Sends an S3 multipart upload initiation request.
@@ -73,8 +76,8 @@ type putter struct {
 func newPutter(url url.URL, h http.Header, c *Config, b *Bucket) (p *putter, err error) {
 	p = new(putter)
 	p.url = url
-	p.b = b
-	p.c = c
+	p.c, p.b = new(Config), new(Bucket)
+	*p.c, *p.b = *c, *b
 	p.c.Concurrency = max(c.Concurrency, 1)
 	p.c.NTry = max(c.NTry, 1)
 	p.bufsz = max64(minPartSize, c.PartSize)
@@ -97,7 +100,7 @@ func newPutter(url url.URL, h http.Header, c *Config, b *Bucket) (p *putter, err
 	p.md5OfParts = md5.New()
 	p.md5 = md5.New()
 
-	p.bp = newBufferPool(p.bufsz)
+	p.sp = bufferPool(p.bufsz)
 
 	return p, nil
 }
@@ -111,27 +114,31 @@ func (p *putter) Write(b []byte) (int, error) {
 		p.abort()
 		return 0, p.err
 	}
-	if p.buf == nil {
-		p.buf = <-p.bp.get
-		p.buf.Reset()
-	}
-	n, err := p.buf.Write(b)
-	if err != nil {
-		p.abort()
-		return n, err
-	}
+	nw := 0
+	for nw < len(b) {
+		if p.buf == nil {
+			p.buf = <-p.sp.get
+			if int64(cap(p.buf)) < p.bufsz {
+				p.buf = make([]byte, p.bufsz)
+				runtime.GC()
+			}
+		}
+		n := copy(p.buf[p.bufbytes:], b[nw:])
+		p.bufbytes += n
+		nw += n
 
-	if int64(p.buf.Len()) >= p.bufsz {
-		p.flush()
+		if len(p.buf) == p.bufbytes {
+			p.flush()
+		}
 	}
-	return n, nil
+	return nw, nil
 }
 
 func (p *putter) flush() {
 	p.wg.Add(1)
 	p.part++
-	b := *p.buf
-	part := &part{bytes.NewReader(b.Bytes()), int64(b.Len()), p.buf, p.part, "", ""}
+	p.putsz += int64(p.bufbytes)
+	part := &part{bytes.NewReader(p.buf[:p.bufbytes]), int64(p.bufbytes), p.buf, p.part, "", ""}
 	var err error
 	part.contentMd5, part.ETag, err = p.md5Content(part.r)
 	if err != nil {
@@ -140,14 +147,15 @@ func (p *putter) flush() {
 
 	p.xml.Part = append(p.xml.Part, part)
 	p.ch <- part
-	p.buf = nil
-	// double buffer size every 1000 parts to
-	// avoid exceeding the 10000-part AWS limit
-	// while still reaching the 5 Terabyte max object size
-	if p.part%1000 == 0 {
-		p.bufsz = min64(p.bufsz*2, maxPartSize)
-	}
+	p.buf, p.bufbytes = nil, 0
 
+	// if necessary, double buffer size every 2000 parts due to the 10000-part AWS limit
+	// to reach the 5 Terabyte max object size, initial part size must be ~85 MB
+	if p.part%2000 == 0 && p.part < maxNPart && growPartSize(p.part, p.bufsz, p.putsz) {
+		p.bufsz = min64(p.bufsz*2, maxPartSize)
+		p.sp.sizech <- p.bufsz // update pool buffer size
+		logger.debugPrintf("part size doubled to %d", p.bufsz)
+	}
 }
 
 func (p *putter) worker() {
@@ -164,10 +172,11 @@ func (p *putter) retryPutPart(part *part) {
 		time.Sleep(time.Duration(math.Exp2(float64(i))) * 100 * time.Millisecond) // exponential back-off
 		err = p.putPart(part)
 		if err == nil {
-			p.bp.give <- part.b
+			p.sp.give <- part.b
+			part.b = nil
 			return
 		}
-		logger.debugPrintf("Error on attempt %d: Retrying part: %v, Error: %s", i, part, err)
+		logger.debugPrintf("Error on attempt %d: Retrying part: %d, Error: %s", i, part.PartNumber, err)
 	}
 	p.err = err
 }
@@ -196,6 +205,9 @@ func (p *putter) putPart(part *part) error {
 		return newRespError(resp)
 	}
 	s := resp.Header.Get("etag")
+	if len(s) < 2 {
+		return fmt.Errorf("Got Bad etag:%s", s)
+	}
 	s = s[1 : len(s)-1] // includes quote chars for some reason
 	if part.ETag != s {
 		return fmt.Errorf("Response etag does not match. Remote:%s Calculated:%s", s, p.ETag)
@@ -208,21 +220,20 @@ func (p *putter) Close() (err error) {
 		p.abort()
 		return syscall.EINVAL
 	}
-	if p.buf != nil {
-		buf := *p.buf
-		if buf.Len() > 0 {
-			p.flush()
-		}
+	if p.err != nil {
+		p.abort()
+		return p.err
+	}
+	if p.bufbytes > 0 || // partial part
+		p.part == 0 { // 0 length file
+		p.flush()
 	}
 	p.wg.Wait()
 	close(p.ch)
 	p.closed = true
-	close(p.bp.quit)
+	close(p.sp.quit)
 
-	if p.part == 0 {
-		p.abort()
-		return fmt.Errorf("0 bytes written")
-	}
+	// check p.err before completing
 	if p.err != nil {
 		p.abort()
 		return p.err
@@ -256,6 +267,9 @@ func (p *putter) Close() (err error) {
 	}
 	// strip part count from end and '"' from front.
 	remoteMd5ofParts := strings.Split(p.ETag, "-")[0]
+	if len(remoteMd5ofParts) == 0 {
+		return fmt.Errorf("Nil ETag")
+	}
 	remoteMd5ofParts = remoteMd5ofParts[1:len(remoteMd5ofParts)]
 	if calculatedMd5ofParts != remoteMd5ofParts {
 		if err != nil {
@@ -270,7 +284,6 @@ func (p *putter) Close() (err error) {
 				break
 			}
 		}
-		return
 	}
 	return
 }
@@ -315,7 +328,7 @@ func (p *putter) putMd5() (err error) {
 	calcMd5 := fmt.Sprintf("%x", p.md5.Sum(nil))
 	md5Reader := strings.NewReader(calcMd5)
 	md5Path := fmt.Sprint(".md5", p.url.Path, ".md5")
-	md5Url, err := p.b.url(md5Path)
+	md5Url, err := p.b.url(md5Path, p.c)
 	if err != nil {
 		return err
 	}
@@ -363,4 +376,10 @@ func (p *putter) retryRequest(method, urlStr string, body io.ReadSeeker, h http.
 		}
 	}
 	return
+}
+
+// returns true unless partSize is large enough
+// to achieve maxObjSize with remaining parts
+func growPartSize(partIndex int, partSize, putsz int64) bool {
+	return (maxObjSize-putsz)/(maxNPart-int64(partIndex)) > partSize
 }

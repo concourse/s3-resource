@@ -1,7 +1,6 @@
 package s3gof3r
 
 import (
-	"bytes"
 	"crypto/md5"
 	"fmt"
 	"hash"
@@ -16,7 +15,7 @@ import (
 )
 
 const (
-	qWaitSz = 2
+	qWaitMax = 2
 )
 
 type getter struct {
@@ -24,7 +23,6 @@ type getter struct {
 	b     *Bucket
 	bufsz int64
 	err   error
-	wg    sync.WaitGroup
 
 	chunkID    int
 	rChunk     *chunk
@@ -32,17 +30,20 @@ type getter struct {
 	bytesRead  int64
 	chunkTotal int
 
-	readCh chan *chunk
-	getCh  chan *chunk
-	quit   chan struct{}
-	qWait  map[int]*chunk
+	readCh   chan *chunk
+	getCh    chan *chunk
+	quit     chan struct{}
+	qWait    map[int]*chunk
+	qWaitLen uint
+	cond     sync.Cond
 
-	bp *bp
+	sp *bp
 
 	closed bool
 	c      *Config
 
-	md5 hash.Hash
+	md5  hash.Hash
+	cIdx int64
 }
 
 type chunk struct {
@@ -50,14 +51,14 @@ type chunk struct {
 	header http.Header
 	start  int64
 	size   int64
-	b      *bytes.Buffer
-	len    int64
+	b      []byte
 }
 
 func newGetter(getURL url.URL, c *Config, b *Bucket) (io.ReadCloser, http.Header, error) {
 	g := new(getter)
 	g.url = getURL
-	g.c = c
+	g.c, g.b = new(Config), new(Bucket)
+	*g.c, *g.b = *c, *b
 	g.bufsz = max64(c.PartSize, 1)
 	g.c.NTry = max(c.NTry, 1)
 	g.c.Concurrency = max(c.Concurrency, 1)
@@ -68,6 +69,7 @@ func newGetter(getURL url.URL, c *Config, b *Bucket) (io.ReadCloser, http.Header
 	g.qWait = make(map[int]*chunk)
 	g.b = b
 	g.md5 = md5.New()
+	g.cond = sync.Cond{L: &sync.Mutex{}}
 
 	// use get instead of head for error messaging
 	resp, err := g.retryRequest("GET", g.url.String(), nil)
@@ -78,11 +80,18 @@ func newGetter(getURL url.URL, c *Config, b *Bucket) (io.ReadCloser, http.Header
 	if resp.StatusCode != 200 {
 		return nil, nil, newRespError(resp)
 	}
+
+	// Golang changes content-length to -1 when chunked transfer encoding / EOF close response detected
+	if resp.ContentLength == -1 {
+		return nil, nil, fmt.Errorf("Retrieving objects with undefined content-length " +
+			" responses (chunked transfer encoding / EOF close) is not supported")
+	}
+
 	g.contentLen = resp.ContentLength
 	g.chunkTotal = int((g.contentLen + g.bufsz - 1) / g.bufsz) // round up, integer division
 	logger.debugPrintf("object size: %3.2g MB", float64(g.contentLen)/float64((1*mb)))
 
-	g.bp = newBufferPool(g.bufsz)
+	g.sp = bufferPool(g.bufsz)
 
 	for i := 0; i < g.c.Concurrency; i++ {
 		go g.worker()
@@ -116,10 +125,6 @@ func (g *getter) retryRequest(method, urlStr string, body io.ReadSeeker) (resp *
 func (g *getter) initChunks() {
 	id := 0
 	for i := int64(0); i < g.contentLen; {
-		for len(g.qWait) >= qWaitSz {
-			// Limit growth of qWait
-			time.Sleep(100 * time.Millisecond)
-		}
 		size := min64(g.bufsz, g.contentLen-i)
 		c := &chunk{
 			id: id,
@@ -130,10 +135,9 @@ func (g *getter) initChunks() {
 			start: i,
 			size:  size,
 			b:     nil,
-			len:   0}
+		}
 		i += size
 		id++
-		g.wg.Add(1)
 		g.getCh <- c
 	}
 	close(g.getCh)
@@ -147,16 +151,15 @@ func (g *getter) worker() {
 }
 
 func (g *getter) retryGetChunk(c *chunk) {
-	defer g.wg.Done()
 	var err error
-	c.b = <-g.bp.get
+	c.b = <-g.sp.get
 	for i := 0; i < g.c.NTry; i++ {
 		time.Sleep(time.Duration(math.Exp2(float64(i))) * 100 * time.Millisecond) // exponential back-off
 		err = g.getChunk(c)
 		if err == nil {
 			return
 		}
-		logger.debugPrintf("error on attempt %d: retrying chunk: %v, error: %s", i, c, err)
+		logger.debugPrintf("error on attempt %d: retrying chunk: %v, error: %s", i, c.id, err)
 	}
 	g.err = err
 	close(g.quit) // out of tries, ensure quit by closing channel
@@ -164,7 +167,6 @@ func (g *getter) retryGetChunk(c *chunk) {
 
 func (g *getter) getChunk(c *chunk) error {
 	// ensure buffer is empty
-	c.b.Reset()
 
 	r, err := http.NewRequest("GET", g.url.String(), nil)
 	if err != nil {
@@ -180,15 +182,25 @@ func (g *getter) getChunk(c *chunk) error {
 	if resp.StatusCode != 206 {
 		return newRespError(resp)
 	}
-	n, err := c.b.ReadFrom(resp.Body)
+	n, err := io.ReadAtLeast(resp.Body, c.b, int(c.size))
 	if err != nil {
 		return err
 	}
-	if n != c.size {
+	if err := resp.Body.Close(); err != nil {
+		return err
+	}
+	if int64(n) != c.size {
 		return fmt.Errorf("chunk %d: Expected %d bytes, received %d",
 			c.id, c.size, n)
 	}
 	g.readCh <- c
+
+	// wait for qWait to drain before starting next chunk
+	g.cond.L.Lock()
+	for g.qWaitLen >= qWaitMax {
+		g.cond.Wait()
+	}
+	g.cond.L.Unlock()
 	return nil
 }
 
@@ -200,30 +212,44 @@ func (g *getter) Read(p []byte) (int, error) {
 	if g.err != nil {
 		return 0, g.err
 	}
-	if g.rChunk == nil {
-		g.rChunk, err = g.nextChunk()
-		if err != nil {
-			return 0, err
+	nw := 0
+	for nw < len(p) {
+		if g.bytesRead == g.contentLen {
+			return nw, io.EOF
+		} else if g.bytesRead > g.contentLen {
+			// Here for robustness / completeness
+			// Should not occur as golang uses LimitedReader up to content-length
+			return nw, fmt.Errorf("Expected %d bytes, received %d (too many bytes)",
+				g.contentLen, g.bytesRead)
+		}
+
+		// If for some reason no more chunks to be read and bytes are off, error, incomplete result
+		if g.chunkID >= g.chunkTotal {
+			return nw, fmt.Errorf("Expected %d bytes, received %d and chunkID %d >= chunkTotal %d (no more chunks remaining)",
+				g.contentLen, g.bytesRead, g.chunkID, g.chunkTotal)
+		}
+
+		if g.rChunk == nil {
+			g.rChunk, err = g.nextChunk()
+			if err != nil {
+				return 0, err
+			}
+			g.cIdx = 0
+		}
+
+		n := copy(p[nw:], g.rChunk.b[g.cIdx:g.rChunk.size])
+		g.cIdx += int64(n)
+		nw += n
+		g.bytesRead += int64(n)
+
+		if g.cIdx >= g.rChunk.size { // chunk complete
+			g.sp.give <- g.rChunk.b
+			g.chunkID++
+			g.rChunk = nil
 		}
 	}
+	return nw, nil
 
-	n, err := g.rChunk.b.Read(p)
-	if g.c.Md5Check {
-		g.md5.Write(p[0:n])
-	}
-
-	// Empty buffer, move on to next
-	if err == io.EOF {
-		// Do not send EOF for each chunk.
-		if !(g.rChunk.id == g.chunkTotal-1 && g.rChunk.b.Len() == 0) {
-			err = nil
-		}
-		g.bp.give <- g.rChunk.b // recycle buffer
-		g.rChunk = nil
-		g.chunkID++
-	}
-	g.bytesRead = g.bytesRead + int64(n)
-	return n, err
 }
 
 func (g *getter) nextChunk() (*chunk, error) {
@@ -233,12 +259,24 @@ func (g *getter) nextChunk() (*chunk, error) {
 		c := g.qWait[g.chunkID]
 		if c != nil {
 			delete(g.qWait, g.chunkID)
+			g.cond.L.Lock()
+			g.qWaitLen--
+			g.cond.L.Unlock()
+			g.cond.Signal() // wake up waiting worker goroutine
+			if g.c.Md5Check {
+				if _, err := g.md5.Write(c.b[:c.size]); err != nil {
+					return nil, err
+				}
+			}
 			return c, nil
 		}
 		// if next chunk not in qWait, read from channel
 		select {
 		case c := <-g.readCh:
 			g.qWait[c.id] = c
+			g.cond.L.Lock()
+			g.qWaitLen++
+			g.cond.L.Unlock()
 		case <-g.quit:
 			return nil, g.err // fatal error, quit.
 		}
@@ -249,12 +287,11 @@ func (g *getter) Close() error {
 	if g.closed {
 		return syscall.EINVAL
 	}
+	g.closed = true
+	close(g.sp.quit)
 	if g.err != nil {
 		return g.err
 	}
-	g.wg.Wait()
-	g.closed = true
-	close(g.bp.quit)
 	if g.bytesRead != g.contentLen {
 		return fmt.Errorf("read error: %d bytes read. expected: %d", g.bytesRead, g.contentLen)
 	}
@@ -269,7 +306,7 @@ func (g *getter) Close() error {
 func (g *getter) checkMd5() (err error) {
 	calcMd5 := fmt.Sprintf("%x", g.md5.Sum(nil))
 	md5Path := fmt.Sprint(".md5", g.url.Path, ".md5")
-	md5Url, err := g.b.url(md5Path)
+	md5Url, err := g.b.url(md5Path, g.c)
 	if err != nil {
 		return err
 	}

@@ -3,6 +3,7 @@
 package s3gof3r
 
 import (
+	"errors"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -36,7 +37,8 @@ type Config struct {
 	NTry         int   // maximum attempts for each part
 	Md5Check     bool  // The md5 hash of the object is stored in <bucket>/.md5/<object_key>.md5
 	// When true, it is stored on puts and verified on gets
-	Scheme string // url scheme, defaults to 'https'
+	Scheme    string // url scheme, defaults to 'https'
+	PathStyle bool   // use path style bucket addressing instead of virtual host style
 }
 
 // DefaultConfig contains defaults used if *Config is nil
@@ -83,10 +85,13 @@ func (s3 *S3) Bucket(name string) *Bucket {
 // Header data from the downloaded object is also returned, useful for reading object metadata.
 // DefaultConfig is used if c is nil
 func (b *Bucket) GetReader(path string, c *Config) (r io.ReadCloser, h http.Header, err error) {
+	if path == "" {
+		return nil, nil, errors.New("empty path requested")
+	}
 	if c == nil {
 		c = b.conf()
 	}
-	u, err := b.url(path)
+	u, err := b.url(path, c)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -102,7 +107,7 @@ func (b *Bucket) PutWriter(path string, h http.Header, c *Config) (w io.WriteClo
 	if c == nil {
 		c = b.conf()
 	}
-	u, err := b.url(path)
+	u, err := b.url(path, c)
 	if err != nil {
 		return nil, err
 	}
@@ -110,18 +115,18 @@ func (b *Bucket) PutWriter(path string, h http.Header, c *Config) (w io.WriteClo
 	return newPutter(*u, h, c, b)
 }
 
-// Url returns a parsed url to the given path, using the scheme specified in Config.Scheme
+// url returns a parsed url to the given path. c must not be nil
 // Note: Urls containing some special characters will fail due to net/http bug.
 // See https://code.google.com/p/go/issues/detail?id=5684
-func (b *Bucket) url(bPath string) (*url.URL, error) {
+func (b *Bucket) url(bPath string, c *Config) (*url.URL, error) {
 	u, err := url.Parse(bPath)
 	if err != nil {
 		return nil, err
 	}
-	u.Scheme = b.conf().Scheme
+	u.Scheme = c.Scheme
 	// handling for bucket names containing periods
 	// http://docs.aws.amazon.com/AmazonS3/latest/dev/BucketRestrictions.html for details
-	if strings.Contains(b.Name, ".") {
+	if strings.Contains(b.Name, ".") || c.PathStyle {
 		u.Host = b.S3.Domain
 		u.Path = path.Clean(fmt.Sprintf("/%s/%s", b.Name, u.Path))
 	} else {
@@ -139,8 +144,23 @@ func (b *Bucket) conf() *Config {
 	return c
 }
 
+// Delete deletes the key at path
+// If the path does not exist, Delete returns nil (no error).
 func (b *Bucket) Delete(path string) error {
-	u, err := b.url(path)
+	if err := b.delete(path); err != nil {
+		return err
+	}
+	// try to delete md5 file
+	if err := b.delete(fmt.Sprintf("/.md5/%s.md5", path)); err != nil {
+		return err
+	}
+
+	logger.Printf("%s deleted from %s\n", path, b.Name)
+	return nil
+}
+
+func (b *Bucket) delete(path string) error {
+	u, err := b.url(path, b.conf())
 	if err != nil {
 		return err
 	}
@@ -157,8 +177,6 @@ func (b *Bucket) Delete(path string) error {
 	if resp.StatusCode != 204 {
 		return newRespError(resp)
 	}
-	logger.Printf("%s deleted\n", u.String())
-
 	return nil
 }
 

@@ -11,30 +11,30 @@
 		},
 		{
 			"ImportPath": "github.com/mitchellh/colorstring",
-			"Rev": "15fc698eaae194ff160846daf77922a45b9290a7"
+			"Rev": "61164e49940b423ba1f12ddbdf01632ac793e5e9"
 		},
 		{
 			"ImportPath": "github.com/mitchellh/goamz/aws",
-			"Rev": "dd7c2af2dfa4aed175d35dc3f06edbf101bdcf9a"
+			"Rev": "caaaea8b30ee15616494ee68abd5d8ebbbef05cf"
 		},
 		{
 			"ImportPath": "github.com/mitchellh/goamz/s3",
-			"Rev": "dd7c2af2dfa4aed175d35dc3f06edbf101bdcf9a"
+			"Rev": "caaaea8b30ee15616494ee68abd5d8ebbbef05cf"
 		},
 		{
 			"ImportPath": "github.com/onsi/ginkgo",
-			"Comment": "v1.1.0-11-ge809316",
-			"Rev": "e8093161dcbdab0a59dfe56f3f8c867d243ac75f"
+			"Comment": "v1.1.0-38-g5ed93e4",
+			"Rev": "5ed93e443a4b7dfe9f5e95ca87e6082e503021d2"
 		},
 		{
 			"ImportPath": "github.com/onsi/gomega",
-			"Comment": "v1.0-12-g3ca2515",
-			"Rev": "3ca2515afb00bc39bc77d27cdbce85a7caaf103e"
+			"Comment": "v1.0-28-g8adf9e1",
+			"Rev": "8adf9e1730c55cdc590de7d49766cb2acc88d8f2"
 		},
 		{
 			"ImportPath": "github.com/rlmcpherson/s3gof3r",
-			"Comment": "v0.4.3-7-gf3507fe",
-			"Rev": "f3507fe06a8054883e61176b62b693802d735e98"
+			"Comment": "v0.4.10-5-gee766f9",
+			"Rev": "ee766f965e621738006a8e00112dd30234da4cc9"
 		},
 		{
 			"ImportPath": "github.com/vaughan0/go-ini",
