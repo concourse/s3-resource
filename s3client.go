@@ -6,9 +6,9 @@ import (
 	"os"
 	"time"
 
+	"github.com/concourse/s3gof3r"
 	"github.com/mitchellh/goamz/aws"
 	"github.com/mitchellh/goamz/s3"
-	"github.com/rlmcpherson/s3gof3r"
 )
 
 //go:generate counterfeiter . S3Client
