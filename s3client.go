@@ -127,9 +127,9 @@ func (client *s3client) UploadFile(bucketName string, remotePath string, localPa
 }
 
 func (client *s3client) DownloadFile(bucketName string, remotePath string, localPath string) error {
-	bucket := client.client.Bucket(bucketName)
+	bucket := client.gopherClient.Bucket(bucketName)
 
-	remoteFile, err := bucket.GetReader(remotePath)
+	remoteFile, _, err := bucket.GetReader(remotePath, nil)
 	if err != nil {
 		return err
 	}
