@@ -23,7 +23,11 @@ named `version`, that group is used.
 Semantic versions, or just numbers, are supported.
 
 * `private`: *Optional.* Indicates that the bucket is private, so that any
-URLs provided are signed  
+URLs provided are signed.
+
+* `cloudfront_url`: *Optional.* The URL (scheme and domain) of your CloudFront
+distribution that is fronting this bucket. This will be used in the `url` file
+that is given to the following task.
 
 ## Behavior
 

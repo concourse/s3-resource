@@ -7,6 +7,7 @@ type Source struct {
 	Regexp          string `json:"regexp"`
 	Private         bool   `json:"private"`
 	RegionName      string `json:"region_name"`
+	CloudfrontURL   string `json:"cloudfront_url"`
 }
 
 type Version struct {

@@ -7,6 +7,7 @@ import (
 	"path"
 	"path/filepath"
 
+	"github.com/cloudfoundry/gunk/urljoiner"
 	"github.com/concourse/s3-resource"
 	"github.com/concourse/s3-resource/versions"
 )
@@ -50,9 +51,8 @@ func (command *InCommand) Run(destinationDir string, request InRequest) (InRespo
 	}
 
 	err = command.writeURLFile(
-		request.Source.Bucket,
+		request.Source,
 		remotePath,
-		request.Source.Private,
 		destinationDir,
 	)
 	if err != nil {
@@ -86,8 +86,15 @@ func (command *InCommand) createDirectory(destDir string) error {
 	return os.MkdirAll(destDir, 0755)
 }
 
-func (command *InCommand) writeURLFile(bucketName string, remotePath string, private bool, destDir string) error {
-	url := command.s3client.URL(bucketName, remotePath, private)
+func (command *InCommand) writeURLFile(source s3resource.Source, remotePath string, destDir string) error {
+	var url string
+
+	if source.CloudfrontURL == "" {
+		url = command.s3client.URL(source.Bucket, remotePath, source.Private)
+	} else {
+		url = urljoiner.Join(source.CloudfrontURL, remotePath)
+	}
+
 	err := ioutil.WriteFile(filepath.Join(destDir, "url"), []byte(url), 0644)
 	if err != nil {
 		return err

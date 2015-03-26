@@ -44,7 +44,7 @@ var _ = Describe("In Command", func() {
 			s3client = &fakes.FakeS3Client{}
 			command = NewInCommand(s3client)
 
-			s3client.URLReturns("google.com")
+			s3client.URLReturns("http://google.com")
 		})
 
 		AfterEach(func() {
@@ -85,6 +85,25 @@ var _ = Describe("In Command", func() {
 				Ω(localPath).Should(Equal(filepath.Join(destDir, "a-file-3.53.tgz")))
 			})
 
+			Context("when using a CloudFront domain", func() {
+				BeforeEach(func() {
+					request.Source.CloudfrontURL = "https://1234567890.cloudfront.net"
+				})
+
+				It("creates a 'url' file that contains the URL including the CloudFront domain", func() {
+					urlPath := filepath.Join(destDir, "url")
+					Ω(urlPath).ShouldNot(ExistOnFilesystem())
+
+					_, err := command.Run(destDir, request)
+					Ω(err).ShouldNot(HaveOccurred())
+
+					Ω(urlPath).Should(ExistOnFilesystem())
+					contents, err := ioutil.ReadFile(urlPath)
+					Ω(err).ShouldNot(HaveOccurred())
+					Ω(string(contents)).Should(Equal("https://1234567890.cloudfront.net/files/a-file-3.53.tgz"))
+				})
+			})
+
 			It("creates a 'url' file that contains the URL", func() {
 				urlPath := filepath.Join(destDir, "url")
 				Ω(urlPath).ShouldNot(ExistOnFilesystem())
@@ -95,7 +114,7 @@ var _ = Describe("In Command", func() {
 				Ω(urlPath).Should(ExistOnFilesystem())
 				contents, err := ioutil.ReadFile(urlPath)
 				Ω(err).ShouldNot(HaveOccurred())
-				Ω(string(contents)).Should(Equal("google.com"))
+				Ω(string(contents)).Should(Equal("http://google.com"))
 
 				bucketName, remotePath, private := s3client.URLArgsForCall(0)
 				Ω(bucketName).Should(Equal("bucket-name"))
@@ -118,7 +137,7 @@ var _ = Describe("In Command", func() {
 					Ω(urlPath).Should(ExistOnFilesystem())
 					contents, err := ioutil.ReadFile(urlPath)
 					Ω(err).ShouldNot(HaveOccurred())
-					Ω(string(contents)).Should(Equal("google.com"))
+					Ω(string(contents)).Should(Equal("http://google.com"))
 
 					Ω(s3client.URLCallCount()).Should(Equal(1))
 					bucketName, remotePath, private := s3client.URLArgsForCall(0)
@@ -168,7 +187,7 @@ var _ = Describe("In Command", func() {
 					Ω(response.Metadata[0].Value).Should(Equal("a-file-3.53.tgz"))
 
 					Ω(response.Metadata[1].Name).Should(Equal("url"))
-					Ω(response.Metadata[1].Value).Should(Equal("google.com"))
+					Ω(response.Metadata[1].Value).Should(Equal("http://google.com"))
 				})
 
 				Context("when the output is private", func() {
@@ -214,7 +233,7 @@ var _ = Describe("In Command", func() {
 				Ω(urlPath).Should(ExistOnFilesystem())
 				contents, err := ioutil.ReadFile(urlPath)
 				Ω(err).ShouldNot(HaveOccurred())
-				Ω(string(contents)).Should(Equal("google.com"))
+				Ω(string(contents)).Should(Equal("http://google.com"))
 
 				bucketName, remotePath, private := s3client.URLArgsForCall(0)
 				Ω(bucketName).Should(Equal("bucket-name"))
@@ -237,7 +256,7 @@ var _ = Describe("In Command", func() {
 					Ω(urlPath).Should(ExistOnFilesystem())
 					contents, err := ioutil.ReadFile(urlPath)
 					Ω(err).ShouldNot(HaveOccurred())
-					Ω(string(contents)).Should(Equal("google.com"))
+					Ω(string(contents)).Should(Equal("http://google.com"))
 
 					Ω(s3client.URLCallCount()).Should(Equal(1))
 					bucketName, remotePath, private := s3client.URLArgsForCall(0)
@@ -276,7 +295,7 @@ var _ = Describe("In Command", func() {
 					Ω(response.Metadata[0].Value).Should(Equal("a-file-1.3.tgz"))
 
 					Ω(response.Metadata[1].Name).Should(Equal("url"))
-					Ω(response.Metadata[1].Value).Should(Equal("google.com"))
+					Ω(response.Metadata[1].Value).Should(Equal("http://google.com"))
 				})
 
 				Context("when the output is private", func() {
