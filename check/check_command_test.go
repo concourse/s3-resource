@@ -36,6 +36,13 @@ var _ = Describe("Out Command", func() {
 
 			s3client = &fakes.FakeS3Client{}
 			command = NewCheckCommand(s3client)
+
+			s3client.BucketFilesReturns([]string{
+				"files/abc-0.0.1.tgz",
+				"files/abc-2.33.333.tgz",
+				"files/abc-2.4.3.tgz",
+				"files/abc-3.53.tgz",
+			}, nil)
 		})
 
 		AfterEach(func() {
@@ -48,13 +55,6 @@ var _ = Describe("Out Command", func() {
 				request.Version.Path = ""
 				request.Source.Regexp = "files/abc-(.*).tgz"
 
-				s3client.BucketFilesReturns([]string{
-					"files/abc-0.0.1.tgz",
-					"files/abc-2.33.333.tgz",
-					"files/abc-2.4.3.tgz",
-					"files/abc-3.53.tgz",
-				}, nil)
-
 				response, err := command.Run(request)
 				Ω(err).ShouldNot(HaveOccurred())
 
@@ -65,19 +65,22 @@ var _ = Describe("Out Command", func() {
 					},
 				))
 			})
+
+			Context("when the regexp does not match anything", func() {
+				It("does not explode", func() {
+					request.Source.Regexp = "no-files/missing-(.*).tgz"
+					response, err := command.Run(request)
+					Ω(err).ShouldNot(HaveOccurred())
+
+					Ω(response).Should(HaveLen(0))
+				})
+			})
 		})
 
 		Context("when there is no previous version", func() {
 			It("includes the latest version only", func() {
 				request.Version.Path = "files/abc-2.4.3.tgz"
 				request.Source.Regexp = "files/abc-(.*).tgz"
-
-				s3client.BucketFilesReturns([]string{
-					"files/abc-0.0.1.tgz",
-					"files/abc-2.4.3.tgz",
-					"files/abc-2.33.333.tgz",
-					"files/abc-3.53.tgz",
-				}, nil)
 
 				response, err := command.Run(request)
 				Ω(err).ShouldNot(HaveOccurred())

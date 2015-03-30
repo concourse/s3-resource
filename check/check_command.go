@@ -21,6 +21,10 @@ func (command *CheckCommand) Run(request CheckRequest) (CheckResponse, error) {
 	extractions := versions.GetBucketFileVersions(command.s3client, request.Source)
 	response := CheckResponse{}
 
+	if len(extractions) == 0 {
+		return response, nil
+	}
+
 	if request.Version.Path == "" {
 		lastExtraction := extractions[len(extractions)-1]
 		version := s3resource.Version{
