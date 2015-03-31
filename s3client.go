@@ -38,6 +38,10 @@ func NewS3Client(accessKey string, secretKey string, regionName string) (S3Clien
 		SecretKey: secretKey,
 	}
 
+	if len(regionName) == 0 {
+		regionName = aws.USEast.Name
+	}
+
 	region, ok := aws.Regions[regionName]
 	if !ok {
 		return nil, fmt.Errorf("No such region '%s'", regionName)
