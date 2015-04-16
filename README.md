@@ -11,7 +11,8 @@ bucket.
 * `secret_access_key`: *Required.* The AWS secret key to use when accessing
 the bucket.
 
-* `region_name`: *Required.* The region the bucket is in.
+* `region_name`: *Optional.* The region the bucket is in. Defaults to
+`us-east-1`.
 
 * `bucket`: *Required.* The name of the bucket.
 
