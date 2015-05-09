@@ -23,11 +23,12 @@ type S3Client interface {
 }
 
 type s3client struct {
-	client       *s3.S3
-	gopherClient *s3gof3r.S3
+	client         *s3.S3
+	gopherClient   *s3gof3r.S3
+	gopherMd5Check bool
 }
 
-func NewS3Client(accessKey string, secretKey string, regionName string) (S3Client, error) {
+func NewS3Client(accessKey string, secretKey string, regionName string, endpoint string, md5Check bool) (S3Client, error) {
 	auth := aws.Auth{
 		AccessKey: accessKey,
 		SecretKey: secretKey,
@@ -47,9 +48,19 @@ func NewS3Client(accessKey string, secretKey string, regionName string) (S3Clien
 		return nil, fmt.Errorf("No such region '%s'", regionName)
 	}
 
+	client := s3.New(auth, region)
+	gopherClient := s3gof3r.New("", authGopher)
+
+	if len(endpoint) != 0 {
+		endpointURL := fmt.Sprintf("https://%s", endpoint)
+		client = s3.New(auth, aws.Region{S3Endpoint: endpointURL})
+		gopherClient = s3gof3r.New(endpoint, authGopher)
+	}
+
 	return &s3client{
-		client:       s3.New(auth, region),
-		gopherClient: s3gof3r.New("", authGopher),
+		client:         client,
+		gopherClient:   gopherClient,
+		gopherMd5Check: md5Check,
 	}, nil
 }
 
@@ -104,6 +115,7 @@ func (client *s3client) getBucketContents(bucket *s3.Bucket, prefix string) (*ma
 
 func (client *s3client) UploadFile(bucketName string, remotePath string, localPath string) error {
 	bucket := client.gopherClient.Bucket(bucketName)
+	bucket.Config.Md5Check = client.gopherMd5Check
 
 	localFile, err := os.Open(localPath)
 	if err != nil {
@@ -132,6 +144,7 @@ func (client *s3client) UploadFile(bucketName string, remotePath string, localPa
 
 func (client *s3client) DownloadFile(bucketName string, remotePath string, localPath string) error {
 	bucket := client.gopherClient.Bucket(bucketName)
+	bucket.Config.Md5Check = client.gopherMd5Check
 
 	remoteFile, _, err := bucket.GetReader(remotePath, nil)
 	if err != nil {
