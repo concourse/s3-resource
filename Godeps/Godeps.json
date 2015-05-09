@@ -11,8 +11,7 @@
 		},
 		{
 			"ImportPath": "github.com/concourse/s3gof3r",
-			"Comment": "v0.4.10-6-ga0ce373",
-			"Rev": "a0ce37354614537c22db2db58bb52ce6a8aeaf0d"
+			"Rev": "da1d67eb2aee49f5c133d0323372f5baaaa0e4da"
 		},
 		{
 			"ImportPath": "github.com/hashicorp/go-version",

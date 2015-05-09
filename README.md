@@ -30,6 +30,10 @@ URLs provided are signed.
 distribution that is fronting this bucket. This will be used in the `url` file
 that is given to the following task.
 
+* `endpoint`: *Optional.* Custom endpoint for using S3 compatible provider.
+
+* `disable_md5_hash_check`: *Optional.* Disables MD5 hash checking of files while uploading/downloading.
+
 ## Behavior
 
 ### `check`: Extract versions from the bucket.

@@ -74,7 +74,7 @@ func (command *OutCommand) match(sourceDir, pattern string) (string, error) {
 	}
 
 	if len(matches) > 1 {
-		return "", fmt.Errorf("more than one match found for pattern: %s", pattern)
+		return "", fmt.Errorf("more than one match found for pattern: %s\n%v", pattern, matches)
 	}
 
 	return matches[0], nil

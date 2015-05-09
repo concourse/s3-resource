@@ -257,28 +257,30 @@ func (p *putter) Close() (err error) {
 		p.abort()
 		return newRespError(resp)
 	}
-	// Check md5 hash of concatenated part md5 hashes against ETag
-	// more info: https://forums.aws.amazon.com/thread.jspa?messageID=456442&#456442
-	calculatedMd5ofParts := fmt.Sprintf("%x", p.md5OfParts.Sum(nil))
-	// Parse etag from body of response
-	err = xml.NewDecoder(resp.Body).Decode(p)
-	if err != nil {
-		return
-	}
-	// strip part count from end and '"' from front.
-	remoteMd5ofParts := strings.Split(p.ETag, "-")[0]
-	if len(remoteMd5ofParts) == 0 {
-		return fmt.Errorf("Nil ETag")
-	}
-	remoteMd5ofParts = remoteMd5ofParts[1:len(remoteMd5ofParts)]
-	if calculatedMd5ofParts != remoteMd5ofParts {
-		if err != nil {
-			return err
-		}
-		return fmt.Errorf("MD5 hash of part hashes comparison failed. Hash from multipart complete header: %s."+
-			" Calculated multipart hash: %s.", remoteMd5ofParts, calculatedMd5ofParts)
-	}
+
 	if p.c.Md5Check {
+		// Check md5 hash of concatenated part md5 hashes against ETag
+		// more info: https://forums.aws.amazon.com/thread.jspa?messageID=456442&#456442
+		calculatedMd5ofParts := fmt.Sprintf("%x", p.md5OfParts.Sum(nil))
+		// Parse etag from body of response
+		err = xml.NewDecoder(resp.Body).Decode(p)
+		if err != nil {
+			return
+		}
+		// strip part count from end and '"' from front.
+		remoteMd5ofParts := strings.Split(p.ETag, "-")[0]
+		if len(remoteMd5ofParts) == 0 {
+			return fmt.Errorf("Nil ETag")
+		}
+		remoteMd5ofParts = remoteMd5ofParts[1:len(remoteMd5ofParts)]
+		if calculatedMd5ofParts != remoteMd5ofParts {
+			if err != nil {
+				return err
+			}
+			return fmt.Errorf("MD5 hash of part hashes comparison failed. Hash from multipart complete header: %s."+
+				" Calculated multipart hash: %s.", remoteMd5ofParts, calculatedMd5ofParts)
+		}
+
 		for i := 0; i < p.c.NTry; i++ {
 			if err = p.putMd5(); err == nil {
 				break
