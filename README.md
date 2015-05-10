@@ -69,4 +69,4 @@ a directory configured by `to`. The path must identify a single file.
 * `from`: *Required.* A regexp specifying the file to upload. If the regexp
 matches more than one file, the output fails.
 
-* `to`: *Optional.* A destination directory in the bucket.
+* `to`: *Optional.* A destination directory in the bucket (if ends with trailing slash), or destination filename in the bucket.
