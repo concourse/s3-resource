@@ -117,7 +117,7 @@ var _ = Describe("out", func() {
 		BeforeEach(func() {
 			directoryPrefix = "out-request-files-versioned"
 
-			err := ioutil.WriteFile(filepath.Join(sourceDir, "file-to-upload"), []byte("contents"), 0755)
+			err := ioutil.WriteFile(filepath.Join(sourceDir, "file-to-upload-local"), []byte("contents"), 0755)
 			Ω(err).ShouldNot(HaveOccurred())
 
 			outRequest := out.OutRequest{
@@ -126,10 +126,11 @@ var _ = Describe("out", func() {
 					SecretAccessKey: secretAccessKey,
 					Bucket:          versionedBucketName,
 					RegionName:      regionName,
+					VersionedFile:   filepath.Join(directoryPrefix, "file-to-upload"),
 				},
 				Params: out.Params{
-					From: "file-to-upload",
-					To:   directoryPrefix + "/",
+					From: "file-to-upload-local",
+					To:   "something-wrong/",
 				},
 			}
 

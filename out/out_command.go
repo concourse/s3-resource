@@ -29,13 +29,17 @@ func (command *OutCommand) Run(sourceDir string, request OutRequest) (OutRespons
 
 	var remotePath string
 
-	folderDestination := strings.HasSuffix(request.Params.To, "/")
-	if folderDestination || request.Params.To == "" {
-		remotePath = filepath.Join(request.Params.To, filepath.Base(match))
+	if request.Source.VersionedFile != "" {
+		remotePath = request.Source.VersionedFile
 	} else {
-		compiled := regexp.MustCompile(request.Params.From)
-		fileName := strings.TrimPrefix(match, sourceDir+"/")
-		remotePath = compiled.ReplaceAllString(fileName, request.Params.To)
+		folderDestination := strings.HasSuffix(request.Params.To, "/")
+		if folderDestination || request.Params.To == "" {
+			remotePath = filepath.Join(request.Params.To, filepath.Base(match))
+		} else {
+			compiled := regexp.MustCompile(request.Params.From)
+			fileName := strings.TrimPrefix(match, sourceDir+"/")
+			remotePath = compiled.ReplaceAllString(fileName, request.Params.To)
+		}
 	}
 
 	bucketName := request.Source.Bucket
