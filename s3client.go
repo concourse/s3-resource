@@ -36,7 +36,13 @@ type s3client struct {
 
 func NewS3Client(accessKey string, secretKey string, regionName string, endpoint string, md5Check bool) (S3Client, error) {
 
-	creds := credentials.NewStaticCredentials(accessKey, secretKey, "")
+	var creds *credentials.Credentials
+
+	if accessKey == "" && secretKey == "" {
+		creds = credentials.AnonymousCredentials
+	} else {
+		creds = credentials.NewStaticCredentials(accessKey, secretKey, "")
+	}
 
 	authGopher := s3gof3r.Keys{
 		AccessKey: accessKey,
