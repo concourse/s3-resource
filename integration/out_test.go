@@ -13,6 +13,7 @@ import (
 	"github.com/concourse/s3-resource/out"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	"github.com/onsi/gomega/gbytes"
 	"github.com/onsi/gomega/gexec"
 )
 
@@ -48,7 +49,33 @@ var _ = Describe("out", func() {
 		session, err = gexec.Start(command, GinkgoWriter, GinkgoWriter)
 		Ω(err).ShouldNot(HaveOccurred())
 
-		Eventually(session, 10*time.Second).Should(gexec.Exit(expectedExitStatus))
+		Eventually(session, 5*time.Second).Should(gexec.Exit(expectedExitStatus))
+	})
+
+	Context("with a versioned_file and a regex", func() {
+		var outRequest out.OutRequest
+
+		BeforeEach(func() {
+			outRequest = out.OutRequest{
+				Source: s3resource.Source{
+					AccessKeyID:     accessKeyID,
+					SecretAccessKey: secretAccessKey,
+					Bucket:          versionedBucketName,
+					RegionName:      regionName,
+					Regexp:          "some-regex",
+					VersionedFile:   "some-file",
+				},
+			}
+
+			expectedExitStatus = 1
+
+			err := json.NewEncoder(stdin).Encode(outRequest)
+			Ω(err).ShouldNot(HaveOccurred())
+		})
+
+		It("returns an error", func() {
+			Ω(session.Err).Should(gbytes.Say("please specify either regexp or versioned_file"))
+		})
 	})
 
 	Context("with a non-versioned bucket", func() {

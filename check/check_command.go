@@ -1,6 +1,7 @@
 package check
 
 import (
+	"errors"
 	"fmt"
 
 	"github.com/concourse/s3-resource"
@@ -18,6 +19,10 @@ func NewCheckCommand(s3client s3resource.S3Client) *CheckCommand {
 }
 
 func (command *CheckCommand) Run(request CheckRequest) (CheckResponse, error) {
+	if ok, message := request.Source.IsValid(); !ok {
+		return CheckResponse{}, errors.New(message)
+	}
+
 	if request.Source.Regexp != "" {
 		return command.checkByRegex(request)
 	} else {

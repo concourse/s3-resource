@@ -13,6 +13,14 @@ type Source struct {
 	DisableMD5HashCheck bool   `json:"disable_md5_hash_check"`
 }
 
+func (source Source) IsValid() (bool, string) {
+	if source.Regexp != "" && source.VersionedFile != "" {
+		return false, "please specify either regexp or versioned_file"
+	}
+
+	return true, ""
+}
+
 type Version struct {
 	Path      string `json:"path,omitempty"`
 	VersionID string `json:"version_id,omitempty"`

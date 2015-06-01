@@ -1,6 +1,7 @@
 package out
 
 import (
+	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -22,6 +23,10 @@ func NewOutCommand(s3client s3resource.S3Client) *OutCommand {
 }
 
 func (command *OutCommand) Run(sourceDir string, request OutRequest) (OutResponse, error) {
+	if ok, message := request.Source.IsValid(); !ok {
+		return OutResponse{}, errors.New(message)
+	}
+
 	localPath, err := command.match(sourceDir, request.Params.From)
 	if err != nil {
 		return OutResponse{}, err

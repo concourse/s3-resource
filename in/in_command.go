@@ -53,6 +53,10 @@ func NewInCommand(s3client s3resource.S3Client) *InCommand {
 }
 
 func (command *InCommand) Run(destinationDir string, request InRequest) (InResponse, error) {
+	if ok, message := request.Source.IsValid(); !ok {
+		return InResponse{}, errors.New(message)
+	}
+
 	err := command.createDirectory(destinationDir)
 	if err != nil {
 		return InResponse{}, err
