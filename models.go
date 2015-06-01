@@ -5,6 +5,7 @@ type Source struct {
 	SecretAccessKey     string `json:"secret_access_key"`
 	Bucket              string `json:"bucket"`
 	Regexp              string `json:"regexp"`
+	VersionedFile       string `json:"versioned_file"`
 	Private             bool   `json:"private"`
 	RegionName          string `json:"region_name"`
 	CloudfrontURL       string `json:"cloudfront_url"`
@@ -13,7 +14,8 @@ type Source struct {
 }
 
 type Version struct {
-	Path string `json:"path"`
+	Path      string `json:"path"`
+	VersionID string `json:"version_id,omitempty"`
 }
 
 type MetadataPair struct {

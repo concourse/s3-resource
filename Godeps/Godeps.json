@@ -6,12 +6,49 @@
 	],
 	"Deps": [
 		{
+			"ImportPath": "github.com/awslabs/aws-sdk-go/aws",
+			"Rev": "9bc7456a9aa80852397fe324f320a318f9c6231b"
+		},
+		{
+			"ImportPath": "github.com/awslabs/aws-sdk-go/internal/apierr",
+			"Rev": "9bc7456a9aa80852397fe324f320a318f9c6231b"
+		},
+		{
+			"ImportPath": "github.com/awslabs/aws-sdk-go/internal/endpoints",
+			"Rev": "9bc7456a9aa80852397fe324f320a318f9c6231b"
+		},
+		{
+			"ImportPath": "github.com/awslabs/aws-sdk-go/internal/protocol/query",
+			"Rev": "9bc7456a9aa80852397fe324f320a318f9c6231b"
+		},
+		{
+			"ImportPath": "github.com/awslabs/aws-sdk-go/internal/protocol/rest",
+			"Rev": "9bc7456a9aa80852397fe324f320a318f9c6231b"
+		},
+		{
+			"ImportPath": "github.com/awslabs/aws-sdk-go/internal/protocol/restxml",
+			"Rev": "9bc7456a9aa80852397fe324f320a318f9c6231b"
+		},
+		{
+			"ImportPath": "github.com/awslabs/aws-sdk-go/internal/protocol/xml/xmlutil",
+			"Rev": "9bc7456a9aa80852397fe324f320a318f9c6231b"
+		},
+		{
+			"ImportPath": "github.com/awslabs/aws-sdk-go/internal/signer/v4",
+			"Rev": "9bc7456a9aa80852397fe324f320a318f9c6231b"
+		},
+		{
+			"ImportPath": "github.com/awslabs/aws-sdk-go/service/s3",
+			"Rev": "9bc7456a9aa80852397fe324f320a318f9c6231b"
+		},
+		{
 			"ImportPath": "github.com/cloudfoundry/gunk/urljoiner",
 			"Rev": "7e034a7a1f7fb8c2616364d18d51486133fc40a3"
 		},
 		{
 			"ImportPath": "github.com/concourse/s3gof3r",
-			"Rev": "da1d67eb2aee49f5c133d0323372f5baaaa0e4da"
+			"Comment": "v0.4.10-10-g5f1c0fc",
+			"Rev": "5f1c0fc23d4406cb897e99c1755c4ff4813f4916"
 		},
 		{
 			"ImportPath": "github.com/hashicorp/go-version",
@@ -19,25 +56,17 @@
 		},
 		{
 			"ImportPath": "github.com/mitchellh/colorstring",
-			"Rev": "61164e49940b423ba1f12ddbdf01632ac793e5e9"
-		},
-		{
-			"ImportPath": "github.com/mitchellh/goamz/aws",
-			"Rev": "caaaea8b30ee15616494ee68abd5d8ebbbef05cf"
-		},
-		{
-			"ImportPath": "github.com/mitchellh/goamz/s3",
-			"Rev": "caaaea8b30ee15616494ee68abd5d8ebbbef05cf"
+			"Rev": "9797cb57e314a5a2c4d735ff060d5c6dcba57749"
 		},
 		{
 			"ImportPath": "github.com/onsi/ginkgo",
-			"Comment": "v1.1.0-38-g5ed93e4",
-			"Rev": "5ed93e443a4b7dfe9f5e95ca87e6082e503021d2"
+			"Comment": "v1.2.0-beta-17-gc5c7614",
+			"Rev": "c5c761488350e56a28c4a91da87e5db7020bedc8"
 		},
 		{
 			"ImportPath": "github.com/onsi/gomega",
-			"Comment": "v1.0-28-g8adf9e1",
-			"Rev": "8adf9e1730c55cdc590de7d49766cb2acc88d8f2"
+			"Comment": "v1.0-48-g766f404",
+			"Rev": "766f4042b942146e90594d145c5071fa92c0aa9a"
 		},
 		{
 			"ImportPath": "github.com/vaughan0/go-ini",

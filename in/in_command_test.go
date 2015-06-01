@@ -116,9 +116,10 @@ var _ = Describe("In Command", func() {
 				Ω(err).ShouldNot(HaveOccurred())
 				Ω(string(contents)).Should(Equal("http://google.com"))
 
-				bucketName, remotePath, private := s3client.URLArgsForCall(0)
+				bucketName, remotePath, private, versionID := s3client.URLArgsForCall(0)
 				Ω(bucketName).Should(Equal("bucket-name"))
 				Ω(remotePath).Should(Equal("files/a-file-3.53.tgz"))
+				Ω(versionID).Should(BeEmpty())
 				Ω(private).Should(Equal(false))
 			})
 
@@ -140,9 +141,10 @@ var _ = Describe("In Command", func() {
 					Ω(string(contents)).Should(Equal("http://google.com"))
 
 					Ω(s3client.URLCallCount()).Should(Equal(1))
-					bucketName, remotePath, private := s3client.URLArgsForCall(0)
+					bucketName, remotePath, private, versionID := s3client.URLArgsForCall(0)
 					Ω(bucketName).Should(Equal("bucket-name"))
 					Ω(remotePath).Should(Equal("files/a-file-3.53.tgz"))
+					Ω(versionID).Should(BeEmpty())
 					Ω(private).Should(Equal(true))
 				})
 			})
@@ -235,10 +237,11 @@ var _ = Describe("In Command", func() {
 				Ω(err).ShouldNot(HaveOccurred())
 				Ω(string(contents)).Should(Equal("http://google.com"))
 
-				bucketName, remotePath, private := s3client.URLArgsForCall(0)
+				bucketName, remotePath, private, versionID := s3client.URLArgsForCall(0)
 				Ω(bucketName).Should(Equal("bucket-name"))
 				Ω(remotePath).Should(Equal("files/a-file-1.3.tgz"))
 				Ω(private).Should(Equal(false))
+				Ω(versionID).Should(BeEmpty())
 			})
 
 			Context("when configured with private URLs", func() {
@@ -259,10 +262,11 @@ var _ = Describe("In Command", func() {
 					Ω(string(contents)).Should(Equal("http://google.com"))
 
 					Ω(s3client.URLCallCount()).Should(Equal(1))
-					bucketName, remotePath, private := s3client.URLArgsForCall(0)
+					bucketName, remotePath, private, versionID := s3client.URLArgsForCall(0)
 					Ω(bucketName).Should(Equal("bucket-name"))
 					Ω(remotePath).Should(Equal("files/a-file-1.3.tgz"))
 					Ω(private).Should(Equal(true))
+					Ω(versionID).Should(BeEmpty())
 				})
 			})
 

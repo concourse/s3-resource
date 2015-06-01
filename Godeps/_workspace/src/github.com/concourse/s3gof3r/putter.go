@@ -60,9 +60,10 @@ type putter struct {
 
 	sp *bp
 
-	makes    int
-	UploadId string // casing matches s3 xml
-	xml      struct {
+	makes     int
+	UploadId  string // casing matches s3 xml
+	VersionID string
+	xml       struct {
 		XMLName string `xml:"CompleteMultipartUpload"`
 		Part    []*part
 	}
@@ -82,6 +83,7 @@ func newPutter(url url.URL, h http.Header, c *Config, b *Bucket) (p *putter, err
 	p.c.NTry = max(c.NTry, 1)
 	p.bufsz = max64(minPartSize, c.PartSize)
 	resp, err := p.retryRequest("POST", url.String()+"?uploads", nil, h)
+
 	if err != nil {
 		return nil, err
 	}
@@ -89,6 +91,7 @@ func newPutter(url url.URL, h http.Header, c *Config, b *Bucket) (p *putter, err
 	if resp.StatusCode != 200 {
 		return nil, newRespError(resp)
 	}
+
 	err = xml.NewDecoder(resp.Body).Decode(p)
 	if err != nil {
 		return nil, err
@@ -248,6 +251,9 @@ func (p *putter) Close() (err error) {
 	v := url.Values{}
 	v.Set("uploadId", p.UploadId)
 	resp, err := p.retryRequest("POST", p.url.String()+"?"+v.Encode(), b, nil)
+
+	p.VersionID = resp.Header.Get("X-Amz-Version-Id")
+
 	if err != nil {
 		p.abort()
 		return
@@ -257,30 +263,28 @@ func (p *putter) Close() (err error) {
 		p.abort()
 		return newRespError(resp)
 	}
-
-	if p.c.Md5Check {
-		// Check md5 hash of concatenated part md5 hashes against ETag
-		// more info: https://forums.aws.amazon.com/thread.jspa?messageID=456442&#456442
-		calculatedMd5ofParts := fmt.Sprintf("%x", p.md5OfParts.Sum(nil))
-		// Parse etag from body of response
-		err = xml.NewDecoder(resp.Body).Decode(p)
+	// Check md5 hash of concatenated part md5 hashes against ETag
+	// more info: https://forums.aws.amazon.com/thread.jspa?messageID=456442&#456442
+	calculatedMd5ofParts := fmt.Sprintf("%x", p.md5OfParts.Sum(nil))
+	// Parse etag from body of response
+	err = xml.NewDecoder(resp.Body).Decode(p)
+	if err != nil {
+		return
+	}
+	// strip part count from end and '"' from front.
+	remoteMd5ofParts := strings.Split(p.ETag, "-")[0]
+	if len(remoteMd5ofParts) == 0 {
+		return fmt.Errorf("Nil ETag")
+	}
+	remoteMd5ofParts = remoteMd5ofParts[1:len(remoteMd5ofParts)]
+	if calculatedMd5ofParts != remoteMd5ofParts {
 		if err != nil {
-			return
+			return err
 		}
-		// strip part count from end and '"' from front.
-		remoteMd5ofParts := strings.Split(p.ETag, "-")[0]
-		if len(remoteMd5ofParts) == 0 {
-			return fmt.Errorf("Nil ETag")
-		}
-		remoteMd5ofParts = remoteMd5ofParts[1:len(remoteMd5ofParts)]
-		if calculatedMd5ofParts != remoteMd5ofParts {
-			if err != nil {
-				return err
-			}
-			return fmt.Errorf("MD5 hash of part hashes comparison failed. Hash from multipart complete header: %s."+
-				" Calculated multipart hash: %s.", remoteMd5ofParts, calculatedMd5ofParts)
-		}
-
+		return fmt.Errorf("MD5 hash of part hashes comparison failed. Hash from multipart complete header: %s."+
+			" Calculated multipart hash: %s.", remoteMd5ofParts, calculatedMd5ofParts)
+	}
+	if p.c.Md5Check {
 		for i := 0; i < p.c.NTry; i++ {
 			if err = p.putMd5(); err == nil {
 				break

@@ -161,8 +161,12 @@ func (g *getter) retryGetChunk(c *chunk) {
 		}
 		logger.debugPrintf("error on attempt %d: retrying chunk: %v, error: %s", i, c.id, err)
 	}
-	g.err = err
-	close(g.quit) // out of tries, ensure quit by closing channel
+	select {
+	case <-g.quit: // check for closed quit channel before setting error
+		return
+	default:
+		g.err = err
+	}
 }
 
 func (g *getter) getChunk(c *chunk) error {

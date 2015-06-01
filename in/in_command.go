@@ -8,6 +8,7 @@ import (
 	"path/filepath"
 
 	"github.com/cloudfoundry/gunk/urljoiner"
+
 	"github.com/concourse/s3-resource"
 	"github.com/concourse/s3-resource/versions"
 )
@@ -33,25 +34,36 @@ func (command *InCommand) Run(destinationDir string, request InRequest) (InRespo
 		return InResponse{}, err
 	}
 
+	// NEW VERSIONED STUFF GOES HERE
+	if request.Source.Regexp != "" {
+		return command.inByRegex(destinationDir, request, remotePath)
+	} else {
+		return command.inByVersionedFile(destinationDir, request, remotePath)
+	}
+
+}
+
+func (command *InCommand) inByRegex(destinationDir string, request InRequest, remotePath string) (InResponse, error) {
 	extraction, ok := versions.Extract(remotePath, request.Source.Regexp)
 	if ok {
-		err = command.writeVersionFile(extraction, destinationDir)
+		err := command.writeVersionFile(extraction, destinationDir)
 		if err != nil {
 			return InResponse{}, err
 		}
 	}
 
-	err = command.downloadFile(
+	err := command.downloadFile(
 		request.Source.Bucket,
 		remotePath,
 		destinationDir,
+		path.Base(remotePath),
 	)
 	if err != nil {
 		return InResponse{}, err
 	}
 
 	err = command.writeURLFile(
-		request.Source,
+		request,
 		remotePath,
 		destinationDir,
 	)
@@ -63,8 +75,46 @@ func (command *InCommand) Run(destinationDir string, request InRequest) (InRespo
 		Version: s3resource.Version{
 			Path: remotePath,
 		},
-		Metadata: command.metadata(request.Source.Bucket, remotePath, request.Source.Private),
+		Metadata: command.metadata(request.Source.Bucket, remotePath, request.Source.Private, ""),
 	}, nil
+}
+
+func (command *InCommand) inByVersionedFile(destinationDir string, request InRequest, remotePath string) (InResponse, error) {
+	err := ioutil.WriteFile(filepath.Join(destinationDir, "version"), []byte(request.Version.VersionID), 0644)
+	if err != nil {
+		return InResponse{}, err
+	}
+
+	versionedPath := remotePath + "?versionId=" + request.Version.VersionID
+	err = command.downloadFile(
+		request.Source.Bucket,
+		versionedPath,
+		destinationDir,
+		path.Base(remotePath),
+	)
+
+	if err != nil {
+		return InResponse{}, err
+	}
+
+	err = command.writeURLFile(
+		request,
+		remotePath,
+		destinationDir,
+	)
+
+	if err != nil {
+		return InResponse{}, err
+	}
+
+	return InResponse{
+		Version: s3resource.Version{
+			Path:      remotePath,
+			VersionID: request.Version.VersionID,
+		},
+		Metadata: command.metadata(request.Source.Bucket, remotePath, request.Source.Private, request.Version.VersionID),
+	}, nil
+
 }
 
 func (command *InCommand) pathToDownload(request InRequest) (string, error) {
@@ -86,16 +136,20 @@ func (command *InCommand) createDirectory(destDir string) error {
 	return os.MkdirAll(destDir, 0755)
 }
 
-func (command *InCommand) writeURLFile(source s3resource.Source, remotePath string, destDir string) error {
-	var url string
+func (command *InCommand) writeURLFile(request InRequest, remotePath string, destDir string) error {
+	var s3URL string
 
-	if source.CloudfrontURL == "" {
-		url = command.s3client.URL(source.Bucket, remotePath, source.Private)
+	if request.Source.CloudfrontURL == "" {
+		s3URL = command.s3client.URL(request.Source.Bucket, remotePath, request.Source.Private, request.Version.VersionID)
 	} else {
-		url = urljoiner.Join(source.CloudfrontURL, remotePath)
+		if request.Version.VersionID != "" {
+			s3URL = urljoiner.Join(request.Source.CloudfrontURL, remotePath) + "?versionId=" + request.Version.VersionID
+		} else {
+			s3URL = urljoiner.Join(request.Source.CloudfrontURL, remotePath)
+		}
 	}
 
-	err := ioutil.WriteFile(filepath.Join(destDir, "url"), []byte(url), 0644)
+	err := ioutil.WriteFile(filepath.Join(destDir, "url"), []byte(s3URL), 0644)
 	if err != nil {
 		return err
 	}
@@ -107,9 +161,8 @@ func (command *InCommand) writeVersionFile(extraction versions.Extraction, destD
 	return ioutil.WriteFile(filepath.Join(destDir, "version"), []byte(extraction.VersionNumber), 0644)
 }
 
-func (command *InCommand) downloadFile(bucketName string, remotePath string, destinationDir string) error {
-	remoteFilename := path.Base(remotePath)
-	localPath := filepath.Join(destinationDir, remoteFilename)
+func (command *InCommand) downloadFile(bucketName string, remotePath string, destinationDir string, destinationFile string) error {
+	localPath := filepath.Join(destinationDir, destinationFile)
 
 	return command.s3client.DownloadFile(
 		bucketName,
@@ -118,7 +171,7 @@ func (command *InCommand) downloadFile(bucketName string, remotePath string, des
 	)
 }
 
-func (command *InCommand) metadata(bucketName, remotePath string, private bool) []s3resource.MetadataPair {
+func (command *InCommand) metadata(bucketName, remotePath string, private bool, versionID string) []s3resource.MetadataPair {
 	remoteFilename := filepath.Base(remotePath)
 
 	metadata := []s3resource.MetadataPair{
@@ -131,7 +184,7 @@ func (command *InCommand) metadata(bucketName, remotePath string, private bool) 
 	if !private {
 		metadata = append(metadata, s3resource.MetadataPair{
 			Name:  "url",
-			Value: command.s3client.URL(bucketName, remotePath, false),
+			Value: command.s3client.URL(bucketName, remotePath, false, versionID),
 		})
 	}
 

@@ -140,7 +140,6 @@ func GetBucketFileVersions(client s3resource.S3Client, source s3resource.Source)
 			extractions = append(extractions, extraction)
 		}
 	}
-
 	sort.Sort(extractions)
 	return extractions
 }

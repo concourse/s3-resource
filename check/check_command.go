@@ -18,6 +18,14 @@ func NewCheckCommand(s3client s3resource.S3Client) *CheckCommand {
 }
 
 func (command *CheckCommand) Run(request CheckRequest) (CheckResponse, error) {
+	if request.Source.Regexp != "" {
+		return command.checkByRegex(request)
+	} else {
+		return command.checkByVersionedFile(request)
+	}
+}
+
+func (command *CheckCommand) checkByRegex(request CheckRequest) (CheckResponse, error) {
 	extractions := versions.GetBucketFileVersions(command.s3client, request.Source)
 	response := CheckResponse{}
 
@@ -43,6 +51,50 @@ func (command *CheckCommand) Run(request CheckRequest) (CheckResponse, error) {
 					Path: extraction.Path,
 				}
 				response = append(response, version)
+			}
+		}
+	}
+
+	return response, nil
+}
+
+func (command *CheckCommand) checkByVersionedFile(request CheckRequest) (CheckResponse, error) {
+	response := CheckResponse{}
+
+	bucketVersions, err := command.s3client.BucketFileVersions(request.Source.Bucket, request.Source.VersionedFile)
+
+	if err != nil {
+		s3resource.Fatal("finding versions", err)
+	}
+
+	if len(bucketVersions) == 0 {
+		return response, nil
+	}
+
+	if request.Version.VersionID == "" {
+		version := s3resource.Version{
+			Path:      request.Source.VersionedFile,
+			VersionID: bucketVersions[0],
+		}
+
+		response = append(response, version)
+	} else {
+		track := false
+
+		for i := len(bucketVersions) - 1; i >= 0; i-- {
+			bucketVersion := bucketVersions[i]
+
+			if track {
+				version := s3resource.Version{
+					Path:      request.Source.VersionedFile,
+					VersionID: bucketVersion,
+				}
+
+				response = append(response, version)
+			}
+
+			if bucketVersion == request.Version.VersionID {
+				track = true
 			}
 		}
 	}

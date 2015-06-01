@@ -144,7 +144,7 @@ var _ = Describe("Out Command", func() {
 
 		Describe("output metadata", func() {
 			BeforeEach(func() {
-				s3client.URLStub = func(bucketName string, remotePath string, private bool) string {
+				s3client.URLStub = func(bucketName string, remotePath string, private bool, versionID string) string {
 					return "http://example.com/" + filepath.Join(bucketName, remotePath)
 				}
 			})
@@ -158,10 +158,11 @@ var _ = Describe("Out Command", func() {
 				Ω(err).ShouldNot(HaveOccurred())
 
 				Ω(s3client.URLCallCount()).Should(Equal(1))
-				bucketName, remotePath, private := s3client.URLArgsForCall(0)
+				bucketName, remotePath, private, versionID := s3client.URLArgsForCall(0)
 				Ω(bucketName).Should(Equal("bucket-name"))
 				Ω(remotePath).Should(Equal("a-folder/file.tgz"))
 				Ω(private).Should(Equal(false))
+				Ω(versionID).Should(BeEmpty())
 
 				Ω(response.Version.Path).Should(Equal("a-folder/file.tgz"))
 

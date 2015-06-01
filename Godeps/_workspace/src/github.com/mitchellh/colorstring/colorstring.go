@@ -5,7 +5,6 @@ package colorstring
 import (
 	"bytes"
 	"fmt"
-	"io"
 	"regexp"
 )
 
@@ -67,13 +66,15 @@ func (c *Colorize) Color(v string) string {
 		result.WriteString(v[m[1]:nm[0]])
 		m = nm
 
+		// If we're disabled, just ignore the color code information
+		if c.Disable {
+			continue
+		}
+
 		var replace string
 		if code, ok := c.Colors[v[m[0]+1:m[1]-1]]; ok {
 			colored = true
-
-			if !c.Disable {
-				replace = fmt.Sprintf("\033[%sm", code)
-			}
+			replace = fmt.Sprintf("\033[%sm", code)
 		} else {
 			replace = v[m[0]:m[1]]
 		}
@@ -82,7 +83,7 @@ func (c *Colorize) Color(v string) string {
 	}
 	result.WriteString(v[m[1]:])
 
-	if colored && c.Reset && !c.Disable {
+	if colored && c.Reset {
 		// Write the clear byte at the end
 		result.WriteString("\033[0m")
 	}
@@ -160,64 +161,3 @@ func init() {
 
 var def Colorize
 var parseRe = regexp.MustCompile(`(?i)\[[a-z0-9_-]+\]`)
-
-// Print is a convenience wrapper for fmt.Print with support for color codes.
-//
-// Print formats using the default formats for its operands and writes to
-// standard output with support for color codes. Spaces are added between
-// operands when neither is a string. It returns the number of bytes written
-// and any write error encountered.
-func Print(a string) (n int, err error) {
-	return fmt.Print(Color(a))
-}
-
-// Println is a convenience wrapper for fmt.Println with support for color
-// codes.
-//
-// Println formats using the default formats for its operands and writes to
-// standard output with support for color codes. Spaces are always added
-// between operands and a newline is appended. It returns the number of bytes
-// written and any write error encountered.
-func Println(a string) (n int, err error) {
-	return fmt.Println(Color(a))
-}
-
-// Printf is a convenience wrapper for fmt.Printf with support for color codes.
-//
-// Printf formats according to a format specifier and writes to standard output
-// with support for color codes. It returns the number of bytes written and any
-// write error encountered.
-func Printf(format string, a ...interface{}) (n int, err error) {
-	return fmt.Printf(Color(format), a...)
-}
-
-// Fprint is a convenience wrapper for fmt.Fprint with support for color codes.
-//
-// Fprint formats using the default formats for its operands and writes to w
-// with support for color codes. Spaces are added between operands when neither
-// is a string. It returns the number of bytes written and any write error
-// encountered.
-func Fprint(w io.Writer, a string) (n int, err error) {
-	return fmt.Fprint(w, Color(a))
-}
-
-// Fprintln is a convenience wrapper for fmt.Fprintln with support for color
-// codes.
-//
-// Fprintln formats using the default formats for its operands and writes to w
-// with support for color codes. Spaces are always added between operands and a
-// newline is appended. It returns the number of bytes written and any write
-// error encountered.
-func Fprintln(w io.Writer, a string) (n int, err error) {
-	return fmt.Fprintln(w, Color(a))
-}
-
-// Fprintf is a convenience wrapper for fmt.Fprintf with support for color
-// codes.
-//
-// Fprintf formats according to a format specifier and writes to w with support
-// for color codes. It returns the number of bytes written and any write error
-// encountered.
-func Fprintf(w io.Writer, format string, a ...interface{}) (n int, err error) {
-	return fmt.Fprintf(w, Color(format), a...)
-}

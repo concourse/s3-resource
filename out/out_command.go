@@ -40,7 +40,7 @@ func (command *OutCommand) Run(sourceDir string, request OutRequest) (OutRespons
 
 	bucketName := request.Source.Bucket
 
-	err = command.s3client.UploadFile(
+	versionID, err := command.s3client.UploadFile(
 		bucketName,
 		remotePath,
 		match,
@@ -51,9 +51,10 @@ func (command *OutCommand) Run(sourceDir string, request OutRequest) (OutRespons
 
 	return OutResponse{
 		Version: s3resource.Version{
-			Path: remotePath,
+			Path:      remotePath,
+			VersionID: versionID,
 		},
-		Metadata: command.metadata(bucketName, remotePath, request.Source.Private),
+		Metadata: command.metadata(bucketName, remotePath, request.Source.Private, versionID),
 	}, nil
 }
 
@@ -80,7 +81,7 @@ func (command *OutCommand) match(sourceDir, pattern string) (string, error) {
 	return matches[0], nil
 }
 
-func (command *OutCommand) metadata(bucketName, remotePath string, private bool) []s3resource.MetadataPair {
+func (command *OutCommand) metadata(bucketName, remotePath string, private bool, versionID string) []s3resource.MetadataPair {
 	remoteFilename := filepath.Base(remotePath)
 
 	metadata := []s3resource.MetadataPair{
@@ -93,7 +94,7 @@ func (command *OutCommand) metadata(bucketName, remotePath string, private bool)
 	if !private {
 		metadata = append(metadata, s3resource.MetadataPair{
 			Name:  "url",
-			Value: command.s3client.URL(bucketName, remotePath, false),
+			Value: command.s3client.URL(bucketName, remotePath, false, versionID),
 		})
 	}
 
