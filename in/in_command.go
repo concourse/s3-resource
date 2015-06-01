@@ -34,13 +34,11 @@ func (command *InCommand) Run(destinationDir string, request InRequest) (InRespo
 		return InResponse{}, err
 	}
 
-	// NEW VERSIONED STUFF GOES HERE
 	if request.Source.Regexp != "" {
 		return command.inByRegex(destinationDir, request, remotePath)
 	} else {
 		return command.inByVersionedFile(destinationDir, request, remotePath)
 	}
-
 }
 
 func (command *InCommand) inByRegex(destinationDir string, request InRequest, remotePath string) (InResponse, error) {
@@ -109,7 +107,6 @@ func (command *InCommand) inByVersionedFile(destinationDir string, request InReq
 
 	return InResponse{
 		Version: s3resource.Version{
-			Path:      remotePath,
 			VersionID: request.Version.VersionID,
 		},
 		Metadata: command.metadata(request.Source.Bucket, remotePath, request.Source.Private, request.Version.VersionID),
@@ -119,6 +116,11 @@ func (command *InCommand) inByVersionedFile(destinationDir string, request InReq
 
 func (command *InCommand) pathToDownload(request InRequest) (string, error) {
 	if request.Version.Path == "" {
+
+		if request.Version.VersionID != "" {
+			return request.Source.VersionedFile, nil
+		}
+
 		extractions := versions.GetBucketFileVersions(command.s3client, request.Source)
 
 		if len(extractions) == 0 {

@@ -14,7 +14,7 @@ type Source struct {
 }
 
 type Version struct {
-	Path      string `json:"path"`
+	Path      string `json:"path,omitempty"`
 	VersionID string `json:"version_id,omitempty"`
 }
 

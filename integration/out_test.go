@@ -164,7 +164,6 @@ var _ = Describe("out", func() {
 
 			Ω(response).Should(Equal(out.OutResponse{
 				Version: s3resource.Version{
-					Path:      filepath.Join(directoryPrefix, "file-to-upload"),
 					VersionID: versions[0],
 				},
 				Metadata: []s3resource.MetadataPair{

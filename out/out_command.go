@@ -49,11 +49,16 @@ func (command *OutCommand) Run(sourceDir string, request OutRequest) (OutRespons
 		return OutResponse{}, err
 	}
 
+	version := s3resource.Version{
+		VersionID: versionID,
+	}
+
+	if versionID == "" {
+		version.Path = remotePath
+	}
+
 	return OutResponse{
-		Version: s3resource.Version{
-			Path:      remotePath,
-			VersionID: versionID,
-		},
+		Version:  version,
 		Metadata: command.metadata(bucketName, remotePath, request.Source.Private, versionID),
 	}, nil
 }

@@ -268,7 +268,6 @@ var _ = Describe("check", func() {
 
 					Ω(response).Should(Equal(check.CheckResponse{
 						{
-							Path:      filepath.Join(directoryPrefix, "versioned-file"),
 							VersionID: fileVersions[0],
 						},
 					}))
@@ -494,11 +493,9 @@ var _ = Describe("check", func() {
 
 					Ω(response).Should(Equal(check.CheckResponse{
 						{
-							Path:      filepath.Join(directoryPrefix, "versioned-file"),
 							VersionID: fileVersions[1],
 						},
 						{
-							Path:      filepath.Join(directoryPrefix, "versioned-file"),
 							VersionID: fileVersions[0],
 						},
 					}))

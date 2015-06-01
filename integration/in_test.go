@@ -164,11 +164,9 @@ var _ = Describe("in", func() {
 					SecretAccessKey: secretAccessKey,
 					Bucket:          versionedBucketName,
 					RegionName:      regionName,
-					VersionedFile:   "some-file",
+					VersionedFile:   filepath.Join(directoryPrefix, "some-file"),
 				},
-				Version: s3resource.Version{
-					Path: filepath.Join(directoryPrefix, "some-file"),
-				},
+				Version: s3resource.Version{},
 			}
 
 			tempFile, err := ioutil.TempFile("", "file-to-upload")
@@ -223,7 +221,6 @@ var _ = Describe("in", func() {
 
 			Ω(response).Should(Equal(in.InResponse{
 				Version: s3resource.Version{
-					Path:      "in-request-files-versioned/some-file",
 					VersionID: expectedVersion,
 				},
 				Metadata: []s3resource.MetadataPair{

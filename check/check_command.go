@@ -73,7 +73,6 @@ func (command *CheckCommand) checkByVersionedFile(request CheckRequest) (CheckRe
 
 	if request.Version.VersionID == "" {
 		version := s3resource.Version{
-			Path:      request.Source.VersionedFile,
 			VersionID: bucketVersions[0],
 		}
 
@@ -86,7 +85,6 @@ func (command *CheckCommand) checkByVersionedFile(request CheckRequest) (CheckRe
 
 			if track {
 				version := s3resource.Version{
-					Path:      request.Source.VersionedFile,
 					VersionID: bucketVersion,
 				}
 
