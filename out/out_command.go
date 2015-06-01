@@ -22,32 +22,18 @@ func NewOutCommand(s3client s3resource.S3Client) *OutCommand {
 }
 
 func (command *OutCommand) Run(sourceDir string, request OutRequest) (OutResponse, error) {
-	match, err := command.match(sourceDir, request.Params.From)
+	localPath, err := command.match(sourceDir, request.Params.From)
 	if err != nil {
 		return OutResponse{}, err
 	}
 
-	var remotePath string
-
-	if request.Source.VersionedFile != "" {
-		remotePath = request.Source.VersionedFile
-	} else {
-		folderDestination := strings.HasSuffix(request.Params.To, "/")
-		if folderDestination || request.Params.To == "" {
-			remotePath = filepath.Join(request.Params.To, filepath.Base(match))
-		} else {
-			compiled := regexp.MustCompile(request.Params.From)
-			fileName := strings.TrimPrefix(match, sourceDir+"/")
-			remotePath = compiled.ReplaceAllString(fileName, request.Params.To)
-		}
-	}
+	remotePath := command.remotePath(request, localPath, sourceDir)
 
 	bucketName := request.Source.Bucket
-
 	versionID, err := command.s3client.UploadFile(
 		bucketName,
 		remotePath,
-		match,
+		localPath,
 	)
 	if err != nil {
 		return OutResponse{}, err
@@ -65,6 +51,21 @@ func (command *OutCommand) Run(sourceDir string, request OutRequest) (OutRespons
 		Version:  version,
 		Metadata: command.metadata(bucketName, remotePath, request.Source.Private, versionID),
 	}, nil
+}
+
+func (command *OutCommand) remotePath(request OutRequest, localPath string, sourceDir string) string {
+	if request.Source.VersionedFile != "" {
+		return request.Source.VersionedFile
+	}
+
+	folderDestination := strings.HasSuffix(request.Params.To, "/")
+	if folderDestination || request.Params.To == "" {
+		return filepath.Join(request.Params.To, filepath.Base(localPath))
+	}
+
+	compiled := regexp.MustCompile(request.Params.From)
+	fileName := strings.TrimPrefix(localPath, sourceDir+"/")
+	return compiled.ReplaceAllString(fileName, request.Params.To)
 }
 
 func (command *OutCommand) match(sourceDir, pattern string) (string, error) {
