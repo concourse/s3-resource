@@ -95,6 +95,7 @@ func (client *s3client) BucketFiles(bucketName string, prefixHint string) ([]str
 func (client *s3client) getBucketContents(bucketName string, prefix string) (map[string]*s3.Object, error) {
 	bucketContents := map[string]*s3.Object{}
 	marker := ""
+
 	for {
 		listObjectsResponse, err := client.client.ListObjects(&s3.ListObjectsInput{
 			Bucket: aws.String(bucketName),
@@ -115,18 +116,18 @@ func (client *s3client) getBucketContents(bucketName string, prefix string) (map
 		}
 
 		if *listObjectsResponse.IsTruncated {
-			marker = *listObjectsResponse.Marker
-			if marker == "" {
+			if listObjectsResponse.NextMarker == nil {
 				// From the s3 docs: If response does not include the
 				// NextMarker and it is truncated, you can use the value of the
 				// last Key in the response as the marker in the subsequent
 				// request to get the next set of object keys.
 				marker = lastKey
+			} else {
+				marker = *listObjectsResponse.NextMarker
 			}
 		} else {
 			break
 		}
-
 	}
 
 	return bucketContents, nil
