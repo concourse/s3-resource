@@ -80,3 +80,19 @@ a directory configured by `to`. The path must identify a single file.
   matches more than one file, the output fails.
 
 * `to`: *Optional.* A destination directory in the bucket.
+
+## Required IAM Permissions
+
+### Non-versioned Buckets
+
+* `s3:PutObject`
+* `s3:GetObject`
+* `s3:ListBucket`
+
+### Versioned Buckets
+
+Everything above and...
+
+* `s3:GetBucketVersioning`
+* `s3:GetObjectVersion`
+* `s3:ListBucketVersions`
