@@ -7,9 +7,9 @@ import (
 	"os"
 	"time"
 
-	"github.com/awslabs/aws-sdk-go/aws"
-	"github.com/awslabs/aws-sdk-go/aws/credentials"
-	"github.com/awslabs/aws-sdk-go/service/s3"
+	"github.com/aws/aws-sdk-go/aws"
+	"github.com/aws/aws-sdk-go/aws/credentials"
+	"github.com/aws/aws-sdk-go/service/s3"
 	"github.com/concourse/s3gof3r"
 )
 
@@ -35,7 +35,6 @@ type s3client struct {
 }
 
 func NewS3Client(accessKey string, secretKey string, regionName string, endpoint string, md5Check bool) (S3Client, error) {
-
 	var creds *credentials.Credentials
 
 	if accessKey == "" && secretKey == "" {

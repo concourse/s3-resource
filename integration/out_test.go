@@ -83,24 +83,6 @@ var _ = Describe("out", func() {
 
 		BeforeEach(func() {
 			directoryPrefix = "out-request-files"
-			err := ioutil.WriteFile(filepath.Join(sourceDir, "file-to-upload"), []byte("contents"), 0755)
-			Ω(err).ShouldNot(HaveOccurred())
-
-			outRequest := out.OutRequest{
-				Source: s3resource.Source{
-					AccessKeyID:     accessKeyID,
-					SecretAccessKey: secretAccessKey,
-					Bucket:          bucketName,
-					RegionName:      regionName,
-				},
-				Params: out.Params{
-					From: "file-to-upload",
-					To:   directoryPrefix + "/",
-				},
-			}
-
-			err = json.NewEncoder(stdin).Encode(&outRequest)
-			Ω(err).ShouldNot(HaveOccurred())
 		})
 
 		AfterEach(func() {
@@ -108,34 +90,88 @@ var _ = Describe("out", func() {
 			Ω(err).ShouldNot(HaveOccurred())
 		})
 
-		It("uploads the file to the correct bucket and outputs the version", func() {
-			s3files, err := s3client.BucketFiles(bucketName, directoryPrefix)
-			Ω(err).ShouldNot(HaveOccurred())
+		Context("with regexp", func() {
+			BeforeEach(func() {
+				err := ioutil.WriteFile(filepath.Join(sourceDir, "file-to-upload"), []byte("contents"), 0755)
+				Ω(err).ShouldNot(HaveOccurred())
 
-			Ω(s3files).Should(ConsistOf(filepath.Join(directoryPrefix, "file-to-upload")))
-
-			reader := bytes.NewBuffer(session.Buffer().Contents())
-
-			var response out.OutResponse
-			err = json.NewDecoder(reader).Decode(&response)
-			Ω(err).ShouldNot(HaveOccurred())
-
-			Ω(response).Should(Equal(out.OutResponse{
-				Version: s3resource.Version{
-					Path: filepath.Join(directoryPrefix, "file-to-upload"),
-				},
-				Metadata: []s3resource.MetadataPair{
-					{
-						Name:  "filename",
-						Value: "file-to-upload",
+				outRequest := out.OutRequest{
+					Source: s3resource.Source{
+						AccessKeyID:     accessKeyID,
+						SecretAccessKey: secretAccessKey,
+						Bucket:          bucketName,
+						RegionName:      regionName,
 					},
-					{
-						Name:  "url",
-						Value: "https://concourse-s3-resource-test-bucket-non-versioned.s3.amazonaws.com/out-request-files/file-to-upload",
+					Params: out.Params{
+						From: "file-to-upload",
+						To:   directoryPrefix + "/",
 					},
-				},
-			}))
+				}
+
+				err = json.NewEncoder(stdin).Encode(&outRequest)
+				Ω(err).ShouldNot(HaveOccurred())
+			})
+
+			It("uploads the file to the correct bucket and outputs the version", func() {
+				s3files, err := s3client.BucketFiles(bucketName, directoryPrefix)
+				Ω(err).ShouldNot(HaveOccurred())
+
+				Ω(s3files).Should(ConsistOf(filepath.Join(directoryPrefix, "file-to-upload")))
+
+				reader := bytes.NewBuffer(session.Buffer().Contents())
+
+				var response out.OutResponse
+				err = json.NewDecoder(reader).Decode(&response)
+				Ω(err).ShouldNot(HaveOccurred())
+
+				Ω(response).Should(Equal(out.OutResponse{
+					Version: s3resource.Version{
+						Path: filepath.Join(directoryPrefix, "file-to-upload"),
+					},
+					Metadata: []s3resource.MetadataPair{
+						{
+							Name:  "filename",
+							Value: "file-to-upload",
+						},
+						{
+							Name:  "url",
+							Value: "https://" + bucketName + ".s3.amazonaws.com/" + directoryPrefix + "/file-to-upload",
+						},
+					},
+				}))
+			})
 		})
+
+		Context("with versioned_file", func() {
+			BeforeEach(func() {
+				err := ioutil.WriteFile(filepath.Join(sourceDir, "file-to-upload-local"), []byte("contents"), 0755)
+				Ω(err).ShouldNot(HaveOccurred())
+
+				outRequest := out.OutRequest{
+					Source: s3resource.Source{
+						AccessKeyID:     accessKeyID,
+						SecretAccessKey: secretAccessKey,
+						Bucket:          bucketName,
+						RegionName:      regionName,
+						VersionedFile:   filepath.Join(directoryPrefix, "file-to-upload"),
+					},
+					Params: out.Params{
+						From: "file-to-upload-local",
+						To:   "something-wrong/",
+					},
+				}
+
+				expectedExitStatus = 1
+
+				err = json.NewEncoder(stdin).Encode(&outRequest)
+				Ω(err).ShouldNot(HaveOccurred())
+			})
+
+			It("reports that it failed to create a versioned object", func() {
+				Ω(session.Err).Should(gbytes.Say("object versioning not enabled"))
+			})
+		})
+
 	})
 
 	Context("with a versioned bucket", func() {
@@ -143,26 +179,6 @@ var _ = Describe("out", func() {
 
 		BeforeEach(func() {
 			directoryPrefix = "out-request-files-versioned"
-
-			err := ioutil.WriteFile(filepath.Join(sourceDir, "file-to-upload-local"), []byte("contents"), 0755)
-			Ω(err).ShouldNot(HaveOccurred())
-
-			outRequest := out.OutRequest{
-				Source: s3resource.Source{
-					AccessKeyID:     accessKeyID,
-					SecretAccessKey: secretAccessKey,
-					Bucket:          versionedBucketName,
-					RegionName:      regionName,
-					VersionedFile:   filepath.Join(directoryPrefix, "file-to-upload"),
-				},
-				Params: out.Params{
-					From: "file-to-upload-local",
-					To:   "something-wrong/",
-				},
-			}
-
-			err = json.NewEncoder(stdin).Encode(&outRequest)
-			Ω(err).ShouldNot(HaveOccurred())
 		})
 
 		AfterEach(func() {
@@ -175,36 +191,115 @@ var _ = Describe("out", func() {
 			}
 		})
 
-		It("uploads the file to the correct bucket and outputs the version", func() {
-			s3files, err := s3client.BucketFiles(versionedBucketName, directoryPrefix)
-			Ω(err).ShouldNot(HaveOccurred())
+		Context("with versioned_file", func() {
+			BeforeEach(func() {
+				err := ioutil.WriteFile(filepath.Join(sourceDir, "file-to-upload-local"), []byte("contents"), 0755)
+				Ω(err).ShouldNot(HaveOccurred())
 
-			Ω(s3files).Should(ConsistOf(filepath.Join(directoryPrefix, "file-to-upload")))
-
-			reader := bytes.NewBuffer(session.Buffer().Contents())
-
-			var response out.OutResponse
-			err = json.NewDecoder(reader).Decode(&response)
-			Ω(err).ShouldNot(HaveOccurred())
-
-			versions, err := s3client.BucketFileVersions(versionedBucketName, filepath.Join(directoryPrefix, "file-to-upload"))
-			Ω(err).ShouldNot(HaveOccurred())
-
-			Ω(response).Should(Equal(out.OutResponse{
-				Version: s3resource.Version{
-					VersionID: versions[0],
-				},
-				Metadata: []s3resource.MetadataPair{
-					{
-						Name:  "filename",
-						Value: "file-to-upload",
+				outRequest := out.OutRequest{
+					Source: s3resource.Source{
+						AccessKeyID:     accessKeyID,
+						SecretAccessKey: secretAccessKey,
+						Bucket:          versionedBucketName,
+						RegionName:      regionName,
+						VersionedFile:   filepath.Join(directoryPrefix, "file-to-upload"),
 					},
-					{
-						Name:  "url",
-						Value: "https://concourse-s3-resource-test-bucket-versioned.s3.amazonaws.com/out-request-files-versioned/file-to-upload?versionId=" + versions[0],
+					Params: out.Params{
+						From: "file-to-upload-local",
+						To:   "something-wrong/",
 					},
-				},
-			}))
+				}
+
+				err = json.NewEncoder(stdin).Encode(&outRequest)
+				Ω(err).ShouldNot(HaveOccurred())
+			})
+
+			It("uploads the file to the correct bucket and outputs the version", func() {
+				s3files, err := s3client.BucketFiles(versionedBucketName, directoryPrefix)
+				Ω(err).ShouldNot(HaveOccurred())
+
+				Ω(s3files).Should(ConsistOf(filepath.Join(directoryPrefix, "file-to-upload")))
+
+				reader := bytes.NewBuffer(session.Buffer().Contents())
+
+				var response out.OutResponse
+				err = json.NewDecoder(reader).Decode(&response)
+				Ω(err).ShouldNot(HaveOccurred())
+
+				versions, err := s3client.BucketFileVersions(versionedBucketName, filepath.Join(directoryPrefix, "file-to-upload"))
+				Ω(err).ShouldNot(HaveOccurred())
+
+				Ω(response).Should(Equal(out.OutResponse{
+					Version: s3resource.Version{
+						VersionID: versions[0],
+					},
+					Metadata: []s3resource.MetadataPair{
+						{
+							Name:  "filename",
+							Value: "file-to-upload",
+						},
+						{
+							Name:  "url",
+							Value: "https://" + versionedBucketName + ".s3.amazonaws.com/" + directoryPrefix + "/file-to-upload?versionId=" + versions[0],
+						},
+					},
+				}))
+			})
+		})
+
+		Context("with regexp", func() {
+			BeforeEach(func() {
+				err := ioutil.WriteFile(filepath.Join(sourceDir, "file-to-upload"), []byte("contents"), 0755)
+				Ω(err).ShouldNot(HaveOccurred())
+
+				outRequest := out.OutRequest{
+					Source: s3resource.Source{
+						AccessKeyID:     accessKeyID,
+						SecretAccessKey: secretAccessKey,
+						Bucket:          versionedBucketName,
+						RegionName:      regionName,
+					},
+					Params: out.Params{
+						From: "file-to-upload",
+						To:   directoryPrefix + "/",
+					},
+				}
+
+				err = json.NewEncoder(stdin).Encode(&outRequest)
+				Ω(err).ShouldNot(HaveOccurred())
+			})
+
+			It("uploads the file to the correct bucket and outputs the version", func() {
+				s3files, err := s3client.BucketFiles(versionedBucketName, directoryPrefix)
+				Ω(err).ShouldNot(HaveOccurred())
+
+				Ω(s3files).Should(ConsistOf(filepath.Join(directoryPrefix, "file-to-upload")))
+
+				reader := bytes.NewBuffer(session.Buffer().Contents())
+
+				var response out.OutResponse
+				err = json.NewDecoder(reader).Decode(&response)
+				Ω(err).ShouldNot(HaveOccurred())
+
+				versions, err := s3client.BucketFileVersions(versionedBucketName, filepath.Join(directoryPrefix, "file-to-upload"))
+				Ω(err).ShouldNot(HaveOccurred())
+
+				Ω(response).Should(Equal(out.OutResponse{
+					Version: s3resource.Version{
+						Path: filepath.Join(directoryPrefix, "file-to-upload"),
+					},
+					Metadata: []s3resource.MetadataPair{
+						{
+							Name:  "filename",
+							Value: "file-to-upload",
+						},
+						{
+							Name:  "url",
+							Value: "https://" + versionedBucketName + ".s3.amazonaws.com/" + directoryPrefix + "/file-to-upload?versionId=" + versions[0],
+						},
+					},
+				}))
+			})
 		})
 	})
 })

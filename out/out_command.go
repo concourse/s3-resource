@@ -12,6 +12,8 @@ import (
 	"github.com/concourse/s3-resource/versions"
 )
 
+var ErrObjectVersioningNotEnabled = errors.New("object versioning not enabled")
+
 type OutCommand struct {
 	s3client s3resource.S3Client
 }
@@ -44,11 +46,15 @@ func (command *OutCommand) Run(sourceDir string, request OutRequest) (OutRespons
 		return OutResponse{}, err
 	}
 
-	version := s3resource.Version{
-		VersionID: versionID,
-	}
+	version := s3resource.Version{}
 
-	if versionID == "" {
+	if request.Source.VersionedFile != "" {
+		if versionID == "" {
+			return OutResponse{}, ErrObjectVersioningNotEnabled
+		}
+
+		version.VersionID = versionID
+	} else {
 		version.Path = remotePath
 	}
 
