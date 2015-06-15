@@ -1,8 +1,16 @@
 ## HEAD
 
+Bug Fixes:
+
+- Ginkgo tests now fail when you `panic(nil)` (#167)
+
+## 1.2.0 5/31/2015
+
 Improvements
 
 - `ginkgo -coverpkg` calls down to `go test -coverpkg` (#160)
+- `ginkgo -afterSuiteHook COMMAND` invokes the passed-in `COMMAND` after a test suite completes (#152)
+- Relaxed requirement for Go 1.4+.  `ginkgo` now works with Go v1.3+ (#166)
 
 ## 1.2.0-beta
 
