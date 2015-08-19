@@ -81,6 +81,31 @@ a directory configured by `to`. The path must identify a single file.
 
 * `to`: *Optional.* A destination directory in the bucket.
 
+## Example Configuration
+
+### Resource
+
+``` yaml
+- name: release
+  type: s3
+    bucket: releases
+    regexp: release-name-(.*).tgz
+    access_key_id: AKIA-ACCESS-KEY
+    secret_access_key: SECRET
+```
+
+### Plan
+
+``` yaml
+- get: release
+```
+
+``` yaml
+- put: release
+  params:
+    from: a/release/path/release-(.*).tgz
+```
+
 ## Required IAM Permissions
 
 ### Non-versioned Buckets
