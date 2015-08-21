@@ -140,6 +140,37 @@ var _ = Describe("Out Command", func() {
 				Ω(response.Metadata[0].Name).Should(Equal("filename"))
 				Ω(response.Metadata[0].Value).Should(Equal("file.tgz"))
 			})
+
+			Context("when using versioned buckets", func() {
+				BeforeEach(func() {
+					s3client.UploadFileReturns("123", nil)
+				})
+
+				It("renames the local file to match the name of the versioned file", func() {
+					localFileName := "not-the-same-name-as-versioned-file.tgz"
+					remoteFileName := "versioned-file.tgz"
+
+					request.Params.From = localFileName
+					request.Source.VersionedFile = remoteFileName
+					createFile(localFileName)
+
+					response, err := command.Run(sourceDir, request)
+
+					Ω(err).ShouldNot(HaveOccurred())
+
+					Ω(s3client.UploadFileCallCount()).Should(Equal(1))
+					bucketName, remotePath, localPath := s3client.UploadFileArgsForCall(0)
+
+					Ω(bucketName).Should(Equal("bucket-name"))
+					Ω(remotePath).Should(Equal(remoteFileName))
+					Ω(localPath).Should(Equal(filepath.Join(sourceDir, localFileName)))
+
+					Ω(response.Version.VersionID).Should(Equal("123"))
+
+					Ω(response.Metadata[0].Name).Should(Equal("filename"))
+					Ω(response.Metadata[0].Value).Should(Equal(remoteFileName))
+				})
+			})
 		})
 
 		Describe("output metadata", func() {
