@@ -88,6 +88,7 @@ a directory configured by `to`. The path must identify a single file.
 ``` yaml
 - name: release
   type: s3
+  source:
     bucket: releases
     regexp: release-name-(.*).tgz
     access_key_id: AKIA-ACCESS-KEY
