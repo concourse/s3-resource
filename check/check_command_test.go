@@ -13,7 +13,7 @@ import (
 	. "github.com/concourse/s3-resource/check"
 )
 
-var _ = Describe("Out Command", func() {
+var _ = Describe("Check Command", func() {
 	Describe("running the command", func() {
 		var (
 			tmpPath string
