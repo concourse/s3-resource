@@ -76,22 +76,23 @@ func (command *CheckCommand) checkByVersionedFile(request CheckRequest) (CheckRe
 		return response, nil
 	}
 
-	if request.Version.VersionID == "" {
-		version := s3resource.Version{
-			VersionID: bucketVersions[0],
-		}
+	requestVersionIndex := -1
 
-		response = append(response, version)
-	} else {
-		requestVersionIndex := -1
-
+	if request.Version.VersionID != "" {
 		for i, bucketVersion := range bucketVersions {
 			if bucketVersion == request.Version.VersionID {
 				requestVersionIndex = i
 				break
 			}
 		}
+	}
 
+	if requestVersionIndex == -1 {
+		version := s3resource.Version{
+			VersionID: bucketVersions[0],
+		}
+		response = append(response, version)
+	} else {
 		for i := requestVersionIndex - 1; i >= 0; i-- {
 			version := s3resource.Version{
 				VersionID: bucketVersions[i],

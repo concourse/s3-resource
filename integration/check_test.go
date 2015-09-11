@@ -469,64 +469,126 @@ var _ = Describe("check", func() {
 			})
 
 			Context("when the file exists", func() {
-				BeforeEach(func() {
-					directoryPrefix = "files-in-bucket-that-do-match-with-version"
+				Context("when the version exists", func() {
+					BeforeEach(func() {
+						directoryPrefix = "files-in-bucket-that-do-match-with-version"
 
-					tempFile, err := ioutil.TempFile("", "file-to-upload")
-					Ω(err).ShouldNot(HaveOccurred())
-					tempFile.Close()
-
-					_, err = s3client.UploadFile(versionedBucketName, filepath.Join(directoryPrefix, "versioned-file"), tempFile.Name())
-					Ω(err).ShouldNot(HaveOccurred())
-
-					_, err = s3client.UploadFile(versionedBucketName, filepath.Join(directoryPrefix, "versioned-file"), tempFile.Name())
-					Ω(err).ShouldNot(HaveOccurred())
-
-					_, err = s3client.UploadFile(versionedBucketName, filepath.Join(directoryPrefix, "versioned-file"), tempFile.Name())
-					Ω(err).ShouldNot(HaveOccurred())
-
-					checkRequest.Source.VersionedFile = filepath.Join(directoryPrefix, "versioned-file")
-
-					fileVersions, err := s3client.BucketFileVersions(versionedBucketName, filepath.Join(directoryPrefix, "versioned-file"))
-					Ω(err).ShouldNot(HaveOccurred())
-					checkRequest.Version.VersionID = fileVersions[2]
-
-					err = json.NewEncoder(stdin).Encode(checkRequest)
-					Ω(err).ShouldNot(HaveOccurred())
-
-					err = os.Remove(tempFile.Name())
-					Ω(err).ShouldNot(HaveOccurred())
-				})
-
-				AfterEach(func() {
-					fileVersions, err := s3client.BucketFileVersions(versionedBucketName, filepath.Join(directoryPrefix, "versioned-file"))
-					Ω(err).ShouldNot(HaveOccurred())
-
-					for _, fileVersion := range fileVersions {
-						err := s3client.DeleteVersionedFile(versionedBucketName, filepath.Join(directoryPrefix, "versioned-file"), fileVersion)
+						tempFile, err := ioutil.TempFile("", "file-to-upload")
 						Ω(err).ShouldNot(HaveOccurred())
-					}
+						tempFile.Close()
+
+						_, err = s3client.UploadFile(versionedBucketName, filepath.Join(directoryPrefix, "versioned-file"), tempFile.Name())
+						Ω(err).ShouldNot(HaveOccurred())
+
+						_, err = s3client.UploadFile(versionedBucketName, filepath.Join(directoryPrefix, "versioned-file"), tempFile.Name())
+						Ω(err).ShouldNot(HaveOccurred())
+
+						_, err = s3client.UploadFile(versionedBucketName, filepath.Join(directoryPrefix, "versioned-file"), tempFile.Name())
+						Ω(err).ShouldNot(HaveOccurred())
+
+						checkRequest.Source.VersionedFile = filepath.Join(directoryPrefix, "versioned-file")
+
+						fileVersions, err := s3client.BucketFileVersions(versionedBucketName, filepath.Join(directoryPrefix, "versioned-file"))
+						Ω(err).ShouldNot(HaveOccurred())
+						checkRequest.Version.VersionID = fileVersions[2]
+
+						err = json.NewEncoder(stdin).Encode(checkRequest)
+						Ω(err).ShouldNot(HaveOccurred())
+
+						err = os.Remove(tempFile.Name())
+						Ω(err).ShouldNot(HaveOccurred())
+					})
+
+					AfterEach(func() {
+						fileVersions, err := s3client.BucketFileVersions(versionedBucketName, filepath.Join(directoryPrefix, "versioned-file"))
+						Ω(err).ShouldNot(HaveOccurred())
+
+						for _, fileVersion := range fileVersions {
+							err := s3client.DeleteVersionedFile(versionedBucketName, filepath.Join(directoryPrefix, "versioned-file"), fileVersion)
+							Ω(err).ShouldNot(HaveOccurred())
+						}
+					})
+
+					It("returns the most recent version", func() {
+
+						reader := bytes.NewBuffer(session.Buffer().Contents())
+
+						var response check.CheckResponse
+						err := json.NewDecoder(reader).Decode(&response)
+						Ω(err).ShouldNot(HaveOccurred())
+
+						fileVersions, err := s3client.BucketFileVersions(versionedBucketName, filepath.Join(directoryPrefix, "versioned-file"))
+						Ω(err).ShouldNot(HaveOccurred())
+
+						Ω(response).Should(Equal(check.CheckResponse{
+							{
+								VersionID: fileVersions[1],
+							},
+							{
+								VersionID: fileVersions[0],
+							},
+						}))
+					})
 				})
 
-				It("returns the most recent version", func() {
+				Context("When the version has been deleted", func() {
+					var fileVersions []string
 
-					reader := bytes.NewBuffer(session.Buffer().Contents())
+					BeforeEach(func() {
+						directoryPrefix = "files-in-bucket-with-latest-version-deleted"
 
-					var response check.CheckResponse
-					err := json.NewDecoder(reader).Decode(&response)
-					Ω(err).ShouldNot(HaveOccurred())
+						tempFile, err := ioutil.TempFile("", "file-to-upload")
+						Ω(err).ShouldNot(HaveOccurred())
+						tempFile.Close()
 
-					fileVersions, err := s3client.BucketFileVersions(versionedBucketName, filepath.Join(directoryPrefix, "versioned-file"))
-					Ω(err).ShouldNot(HaveOccurred())
+						_, err = s3client.UploadFile(versionedBucketName, filepath.Join(directoryPrefix, "versioned-file"), tempFile.Name())
+						Ω(err).ShouldNot(HaveOccurred())
 
-					Ω(response).Should(Equal(check.CheckResponse{
-						{
-							VersionID: fileVersions[1],
-						},
-						{
-							VersionID: fileVersions[0],
-						},
-					}))
+						_, err = s3client.UploadFile(versionedBucketName, filepath.Join(directoryPrefix, "versioned-file"), tempFile.Name())
+						Ω(err).ShouldNot(HaveOccurred())
+
+						_, err = s3client.UploadFile(versionedBucketName, filepath.Join(directoryPrefix, "versioned-file"), tempFile.Name())
+						Ω(err).ShouldNot(HaveOccurred())
+
+						checkRequest.Source.VersionedFile = filepath.Join(directoryPrefix, "versioned-file")
+
+						fileVersions, err = s3client.BucketFileVersions(versionedBucketName, filepath.Join(directoryPrefix, "versioned-file"))
+						Ω(err).ShouldNot(HaveOccurred())
+						checkRequest.Version.VersionID = fileVersions[0]
+
+						err = json.NewEncoder(stdin).Encode(checkRequest)
+						Ω(err).ShouldNot(HaveOccurred())
+
+						err = os.Remove(tempFile.Name())
+						Ω(err).ShouldNot(HaveOccurred())
+
+						err = s3client.DeleteVersionedFile(versionedBucketName, filepath.Join(directoryPrefix, "versioned-file"), fileVersions[0])
+						Ω(err).ShouldNot(HaveOccurred())
+					})
+
+					AfterEach(func() {
+						fileVersions, err := s3client.BucketFileVersions(versionedBucketName, filepath.Join(directoryPrefix, "versioned-file"))
+						Ω(err).ShouldNot(HaveOccurred())
+
+						for _, fileVersion := range fileVersions {
+							err := s3client.DeleteVersionedFile(versionedBucketName, filepath.Join(directoryPrefix, "versioned-file"), fileVersion)
+							Ω(err).ShouldNot(HaveOccurred())
+						}
+					})
+
+					It("returns the next most recent version", func() {
+						reader := bytes.NewBuffer(session.Buffer().Contents())
+
+						var response check.CheckResponse
+						err := json.NewDecoder(reader).Decode(&response)
+						Ω(err).ShouldNot(HaveOccurred())
+
+						Ω(response).Should(Equal(check.CheckResponse{
+							{
+								VersionID: fileVersions[1],
+							},
+						}))
+					})
 				})
 			})
 		})
