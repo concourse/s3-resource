@@ -70,7 +70,6 @@ var _ = SynchronizedBeforeSuite(func() []byte {
 		secretAccessKey,
 		regionName,
 		"",
-		false,
 	)
 })
 
