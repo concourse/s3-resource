@@ -17,7 +17,6 @@ func main() {
 		request.Source.SecretAccessKey,
 		request.Source.RegionName,
 		request.Source.Endpoint,
-		!request.Source.DisableMD5HashCheck,
 	)
 	if err != nil {
 		s3resource.Fatal("building S3 client", err)

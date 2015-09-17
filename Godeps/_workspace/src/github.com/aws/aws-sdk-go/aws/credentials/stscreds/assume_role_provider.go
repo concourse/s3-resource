@@ -1,11 +1,16 @@
+// Package stscreds are credential Providers to retrieve STS AWS credentials.
+//
+// STS provides multiple ways to retrieve credentials which can be used when making
+// future AWS service API operation calls.
 package stscreds
 
 import (
 	"fmt"
+	"time"
+
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/credentials"
 	"github.com/aws/aws-sdk-go/service/sts"
-	"time"
 )
 
 // AssumeRoler represents the minimal subset of the STS client API used by this provider.
@@ -48,6 +53,9 @@ type AssumeRoleProvider struct {
 
 	// Expiry duration of the STS credentials. Defaults to 15 minutes if not set.
 	Duration time.Duration
+
+	// Optional ExternalID to pass along, defaults to nil if not set.
+	ExternalID *string
 
 	// ExpiryWindow will allow the credentials to trigger refreshing prior to
 	// the credentials actually expiring. This is beneficial so race conditions
@@ -96,9 +104,10 @@ func (p *AssumeRoleProvider) Retrieve() (credentials.Value, error) {
 	}
 
 	roleOutput, err := p.Client.AssumeRole(&sts.AssumeRoleInput{
-		DurationSeconds: aws.Long(int64(p.Duration / time.Second)),
-		RoleARN:         aws.String(p.RoleARN),
+		DurationSeconds: aws.Int64(int64(p.Duration / time.Second)),
+		RoleArn:         aws.String(p.RoleARN),
 		RoleSessionName: aws.String(p.RoleSessionName),
+		ExternalId:      p.ExternalID,
 	})
 
 	if err != nil {
@@ -109,7 +118,7 @@ func (p *AssumeRoleProvider) Retrieve() (credentials.Value, error) {
 	p.SetExpiration(*roleOutput.Credentials.Expiration, p.ExpiryWindow)
 
 	return credentials.Value{
-		AccessKeyID:     *roleOutput.Credentials.AccessKeyID,
+		AccessKeyID:     *roleOutput.Credentials.AccessKeyId,
 		SecretAccessKey: *roleOutput.Credentials.SecretAccessKey,
 		SessionToken:    *roleOutput.Credentials.SessionToken,
 	}, nil

@@ -25,9 +25,6 @@ version numbers.
 
 * `endpoint`: *Optional.* Custom endpoint for using S3 compatible provider.
 
-* `disable_md5_hash_check`: *Optional.* Disables MD5 hash checking of files
-  while uploading/downloading.
-
 ### File Names
 
 One of the following two options must be specified:

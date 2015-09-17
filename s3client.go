@@ -3,14 +3,13 @@ package s3resource
 import (
 	"errors"
 	"fmt"
-	"io"
 	"os"
 	"time"
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/credentials"
 	"github.com/aws/aws-sdk-go/service/s3"
-	"github.com/concourse/s3gof3r"
+	"github.com/aws/aws-sdk-go/service/s3/s3manager"
 )
 
 //go:generate counterfeiter . S3Client
@@ -20,7 +19,7 @@ type S3Client interface {
 	BucketFileVersions(bucketName string, remotePath string) ([]string, error)
 
 	UploadFile(bucketName string, remotePath string, localPath string) (string, error)
-	DownloadFile(bucketName string, remotePath string, localPath string) error
+	DownloadFile(bucketName string, remotePath string, versionID string, localPath string) error
 
 	DeleteFile(bucketName string, remotePath string) error
 	DeleteVersionedFile(bucketName string, remotePath string, versionID string) error
@@ -29,12 +28,10 @@ type S3Client interface {
 }
 
 type s3client struct {
-	client         *s3.S3
-	gopherClient   *s3gof3r.S3
-	gopherMd5Check bool
+	client *s3.S3
 }
 
-func NewS3Client(accessKey string, secretKey string, regionName string, endpoint string, md5Check bool) (S3Client, error) {
+func NewS3Client(accessKey string, secretKey string, regionName string, endpoint string) (S3Client, error) {
 	var creds *credentials.Credentials
 
 	if accessKey == "" && secretKey == "" {
@@ -43,36 +40,24 @@ func NewS3Client(accessKey string, secretKey string, regionName string, endpoint
 		creds = credentials.NewStaticCredentials(accessKey, secretKey, "")
 	}
 
-	authGopher := s3gof3r.Keys{
-		AccessKey: accessKey,
-		SecretKey: secretKey,
-	}
-
 	if len(regionName) == 0 {
 		regionName = "us-east-1"
 	}
 
-	client := s3.New(&aws.Config{
-		Region:      regionName,
+	awsConfig := &aws.Config{
+		Region:      &regionName,
 		Credentials: creds,
-	})
-
-	gopherClient := s3gof3r.New("", authGopher)
-
-	if len(endpoint) != 0 {
-		endpointURL := fmt.Sprintf("https://%s", endpoint)
-		client = s3.New(&aws.Config{
-			Region:      regionName,
-			Credentials: creds,
-			Endpoint:    endpointURL,
-		})
-		gopherClient = s3gof3r.New(endpoint, authGopher)
 	}
 
+	if len(endpoint) != 0 {
+		endpoint := fmt.Sprintf("https://%s", endpoint)
+		awsConfig.Endpoint = &endpoint
+	}
+
+	client := s3.New(awsConfig)
+
 	return &s3client{
-		client:         client,
-		gopherClient:   gopherClient,
-		gopherMd5Check: md5Check,
+		client: client,
 	}, nil
 }
 
@@ -168,7 +153,7 @@ func (client *s3client) BucketFileVersions(bucketName string, remotePath string)
 	versions := make([]string, 0, len(bucketFiles))
 
 	for _, objectVersion := range bucketFiles[remotePath] {
-		versions = append(versions, *objectVersion.VersionID)
+		versions = append(versions, *objectVersion.VersionId)
 	}
 
 	return versions, nil
@@ -187,7 +172,7 @@ func (client *s3client) getVersionedBucketContents(bucketName string, prefix str
 		}
 
 		if versionMarker != "" {
-			params.VersionIDMarker = aws.String(versionMarker)
+			params.VersionIdMarker = aws.String(versionMarker)
 		}
 
 		listObjectVersionsResponse, err := client.client.ListObjectVersions(params)
@@ -202,12 +187,12 @@ func (client *s3client) getVersionedBucketContents(bucketName string, prefix str
 			versionedBucketContents[*objectVersion.Key] = append(versionedBucketContents[*objectVersion.Key], objectVersion)
 
 			lastKey = *objectVersion.Key
-			lastVersionKey = *objectVersion.VersionID
+			lastVersionKey = *objectVersion.VersionId
 		}
 
 		if *listObjectVersionsResponse.IsTruncated {
 			keyMarker = *listObjectVersionsResponse.NextKeyMarker
-			versionMarker = *listObjectVersionsResponse.NextVersionIDMarker
+			versionMarker = *listObjectVersionsResponse.NextVersionIdMarker
 			if keyMarker == "" {
 				// From the s3 docs: If response does not include the
 				// NextMarker and it is truncated, you can use the value of the
@@ -229,43 +214,33 @@ func (client *s3client) getVersionedBucketContents(bucketName string, prefix str
 }
 
 func (client *s3client) UploadFile(bucketName string, remotePath string, localPath string) (string, error) {
-	bucket := client.gopherClient.Bucket(bucketName)
-	bucket.Config.Md5Check = client.gopherMd5Check
+	uploader := s3manager.NewUploader(&s3manager.UploadOptions{
+		S3: client.client,
+	})
 
 	localFile, err := os.Open(localPath)
 	if err != nil {
 		return "", err
 	}
 
-	remoteFile, err := bucket.PutWriter(remotePath, nil, nil)
+	defer localFile.Close()
+
+	uploadOutput, err := uploader.Upload(&s3manager.UploadInput{
+		Bucket: aws.String(bucketName),
+		Key:    aws.String(remotePath),
+		Body:   localFile,
+	})
 	if err != nil {
 		return "", err
 	}
 
-	if _, err = io.Copy(remoteFile, localFile); err != nil {
-		return "", err
-	}
-
-	if err = remoteFile.Close(); err != nil {
-		return "", err
-	}
-
-	if err = localFile.Close(); err != nil {
-		return "", err
-	}
-
-	return remoteFile.VersionID, nil
+	return uploadOutput.VersionID, nil
 }
 
-func (client *s3client) DownloadFile(bucketName string, remotePath string, localPath string) error {
-	bucket := client.gopherClient.Bucket(bucketName)
-	bucket.Config.Md5Check = client.gopherMd5Check
-
-	remoteFile, _, err := bucket.GetReader(remotePath, nil)
-	if err != nil {
-		return err
-	}
-	defer remoteFile.Close()
+func (client *s3client) DownloadFile(bucketName string, remotePath string, versionID string, localPath string) error {
+	downloader := s3manager.NewDownloader(&s3manager.DownloadOptions{
+		S3: client.client,
+	})
 
 	localFile, err := os.Create(localPath)
 	if err != nil {
@@ -273,7 +248,11 @@ func (client *s3client) DownloadFile(bucketName string, remotePath string, local
 	}
 	defer localFile.Close()
 
-	_, err = io.Copy(localFile, remoteFile)
+	_, err = downloader.Download(localFile, &s3.GetObjectInput{
+		Bucket:    aws.String(bucketName),
+		Key:       aws.String(remotePath),
+		VersionId: aws.String(versionID),
+	})
 	if err != nil {
 		return err
 	}
@@ -288,7 +267,7 @@ func (client *s3client) URL(bucketName string, remotePath string, private bool, 
 	}
 
 	if versionID != "" {
-		getObjectInput.VersionID = aws.String(versionID)
+		getObjectInput.VersionId = aws.String(versionID)
 	}
 
 	awsRequest, _ := client.client.GetObjectRequest(getObjectInput)
@@ -309,7 +288,7 @@ func (client *s3client) DeleteVersionedFile(bucketName string, remotePath string
 	_, err := client.client.DeleteObject(&s3.DeleteObjectInput{
 		Bucket:    aws.String(bucketName),
 		Key:       aws.String(remotePath),
-		VersionID: aws.String(versionID),
+		VersionId: aws.String(versionID),
 	})
 
 	return err

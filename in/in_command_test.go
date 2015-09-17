@@ -78,10 +78,11 @@ var _ = Describe("In Command", func() {
 				Ω(err).ShouldNot(HaveOccurred())
 
 				Ω(s3client.DownloadFileCallCount()).Should(Equal(1))
-				bucketName, remotePath, localPath := s3client.DownloadFileArgsForCall(0)
+				bucketName, remotePath, versionID, localPath := s3client.DownloadFileArgsForCall(0)
 
 				Ω(bucketName).Should(Equal("bucket-name"))
 				Ω(remotePath).Should(Equal("files/a-file-3.53.tgz"))
+				Ω(versionID).Should(BeEmpty())
 				Ω(localPath).Should(Equal(filepath.Join(destDir, "a-file-3.53.tgz")))
 			})
 
@@ -218,10 +219,11 @@ var _ = Describe("In Command", func() {
 				Ω(err).ShouldNot(HaveOccurred())
 
 				Ω(s3client.DownloadFileCallCount()).Should(Equal(1))
-				bucketName, remotePath, localPath := s3client.DownloadFileArgsForCall(0)
+				bucketName, remotePath, versionID, localPath := s3client.DownloadFileArgsForCall(0)
 
 				Ω(bucketName).Should(Equal("bucket-name"))
 				Ω(remotePath).Should(Equal("files/a-file-1.3.tgz"))
+				Ω(versionID).Should(BeEmpty())
 				Ω(localPath).Should(Equal(filepath.Join(destDir, "a-file-1.3.tgz")))
 			})
 

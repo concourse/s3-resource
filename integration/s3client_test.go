@@ -34,7 +34,6 @@ var _ = Describe("S3client", func() {
 	})
 
 	AfterEach(func() {
-
 		err := os.RemoveAll(tempDir)
 		Ω(err).ShouldNot(HaveOccurred())
 
@@ -55,7 +54,7 @@ var _ = Describe("S3client", func() {
 		}
 	})
 
-	It("Can interact with buckets", func() {
+	It("can interact with buckets", func() {
 		_, err := s3client.UploadFile(versionedBucketName, filepath.Join(directoryPrefix, "file-to-upload-1"), tempFile.Name())
 		Ω(err).ShouldNot(HaveOccurred())
 
@@ -70,7 +69,7 @@ var _ = Describe("S3client", func() {
 
 		Ω(files).Should(ConsistOf([]string{filepath.Join(directoryPrefix, "file-to-upload-1"), filepath.Join(directoryPrefix, "file-to-upload-2")}))
 
-		err = s3client.DownloadFile(versionedBucketName, filepath.Join(directoryPrefix, "file-to-upload-1"), filepath.Join(tempDir, "downloaded-file"))
+		err = s3client.DownloadFile(versionedBucketName, filepath.Join(directoryPrefix, "file-to-upload-1"), "", filepath.Join(tempDir, "downloaded-file"))
 		Ω(err).ShouldNot(HaveOccurred())
 
 		read, err := ioutil.ReadFile(filepath.Join(tempDir, "downloaded-file"))

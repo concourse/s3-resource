@@ -189,6 +189,9 @@ type UploadOutput struct {
 	// The URL where the object was uploaded to.
 	Location string
 
+	// The version of the object that was uploaded.
+	VersionID string
+
 	// The ID for a multipart upload to S3. In the case of an error the error
 	// can be cast to the MultiUploadFailure interface to extract the upload ID.
 	UploadID string
@@ -331,6 +334,7 @@ func (u *uploader) nextReader() (io.ReadSeeker, error) {
 
 			if bytesLeft == 0 {
 				err = io.EOF
+				n = bytesLeft
 			} else if bytesLeft <= u.opts.PartSize {
 				err = io.ErrUnexpectedEOF
 				n = bytesLeft
@@ -403,7 +407,7 @@ func (u *multiuploader) upload(firstBuf io.ReadSeeker) (*UploadOutput, error) {
 	if err != nil {
 		return nil, err
 	}
-	u.uploadID = *resp.UploadID
+	u.uploadID = *resp.UploadId
 
 	// Create the workers
 	ch := make(chan chunk, u.opts.Concurrency)
@@ -459,8 +463,9 @@ func (u *multiuploader) upload(firstBuf io.ReadSeeker) (*UploadOutput, error) {
 		}
 	}
 	return &UploadOutput{
-		Location: *complete.Location,
-		UploadID: u.uploadID,
+		Location:  *complete.Location,
+		VersionID: *complete.VersionId,
+		UploadID:  u.uploadID,
 	}, nil
 }
 
@@ -490,7 +495,7 @@ func (u *multiuploader) send(c chunk) error {
 		Bucket:     u.in.Bucket,
 		Key:        u.in.Key,
 		Body:       c.buf,
-		UploadID:   &u.uploadID,
+		UploadId:   &u.uploadID,
 		PartNumber: &c.num,
 	})
 
@@ -533,7 +538,7 @@ func (u *multiuploader) fail() {
 	u.opts.S3.AbortMultipartUpload(&s3.AbortMultipartUploadInput{
 		Bucket:   u.in.Bucket,
 		Key:      u.in.Key,
-		UploadID: &u.uploadID,
+		UploadId: &u.uploadID,
 	})
 }
 
@@ -550,7 +555,7 @@ func (u *multiuploader) complete() *s3.CompleteMultipartUploadOutput {
 	resp, err := u.opts.S3.CompleteMultipartUpload(&s3.CompleteMultipartUploadInput{
 		Bucket:          u.in.Bucket,
 		Key:             u.in.Key,
-		UploadID:        &u.uploadID,
+		UploadId:        &u.uploadID,
 		MultipartUpload: &s3.CompletedMultipartUpload{Parts: u.parts},
 	})
 	if err != nil {

@@ -86,6 +86,7 @@ func (command *InCommand) inByRegex(destinationDir string, request InRequest) (I
 	err = command.downloadFile(
 		request.Source.Bucket,
 		remotePath,
+		"",
 		destinationDir,
 		path.Base(remotePath),
 	)
@@ -118,10 +119,11 @@ func (command *InCommand) inByVersionedFile(destinationDir string, request InReq
 	}
 
 	remotePath := request.Source.VersionedFile
-	versionedPath := remotePath + "?versionId=" + request.Version.VersionID
+
 	err = command.downloadFile(
 		request.Source.Bucket,
-		versionedPath,
+		remotePath,
+		request.Version.VersionID,
 		destinationDir,
 		path.Base(remotePath),
 	)
@@ -176,12 +178,13 @@ func (command *InCommand) writeVersionFile(versionNumber string, destDir string)
 	return ioutil.WriteFile(filepath.Join(destDir, "version"), []byte(versionNumber), 0644)
 }
 
-func (command *InCommand) downloadFile(bucketName string, remotePath string, destinationDir string, destinationFile string) error {
+func (command *InCommand) downloadFile(bucketName string, remotePath string, versionID string, destinationDir string, destinationFile string) error {
 	localPath := filepath.Join(destinationDir, destinationFile)
 
 	return command.s3client.DownloadFile(
 		bucketName,
 		remotePath,
+		versionID,
 		localPath,
 	)
 }

@@ -39,11 +39,12 @@ type FakeS3Client struct {
 		result1 string
 		result2 error
 	}
-	DownloadFileStub        func(bucketName string, remotePath string, localPath string) error
+	DownloadFileStub        func(bucketName string, remotePath string, versionID string, localPath string) error
 	downloadFileMutex       sync.RWMutex
 	downloadFileArgsForCall []struct {
 		bucketName string
 		remotePath string
+		versionID  string
 		localPath  string
 	}
 	downloadFileReturns struct {
@@ -184,16 +185,17 @@ func (fake *FakeS3Client) UploadFileReturns(result1 string, result2 error) {
 	}{result1, result2}
 }
 
-func (fake *FakeS3Client) DownloadFile(bucketName string, remotePath string, localPath string) error {
+func (fake *FakeS3Client) DownloadFile(bucketName string, remotePath string, versionID string, localPath string) error {
 	fake.downloadFileMutex.Lock()
 	fake.downloadFileArgsForCall = append(fake.downloadFileArgsForCall, struct {
 		bucketName string
 		remotePath string
+		versionID  string
 		localPath  string
-	}{bucketName, remotePath, localPath})
+	}{bucketName, remotePath, versionID, localPath})
 	fake.downloadFileMutex.Unlock()
 	if fake.DownloadFileStub != nil {
-		return fake.DownloadFileStub(bucketName, remotePath, localPath)
+		return fake.DownloadFileStub(bucketName, remotePath, versionID, localPath)
 	} else {
 		return fake.downloadFileReturns.result1
 	}
@@ -205,10 +207,10 @@ func (fake *FakeS3Client) DownloadFileCallCount() int {
 	return len(fake.downloadFileArgsForCall)
 }
 
-func (fake *FakeS3Client) DownloadFileArgsForCall(i int) (string, string, string) {
+func (fake *FakeS3Client) DownloadFileArgsForCall(i int) (string, string, string, string) {
 	fake.downloadFileMutex.RLock()
 	defer fake.downloadFileMutex.RUnlock()
-	return fake.downloadFileArgsForCall[i].bucketName, fake.downloadFileArgsForCall[i].remotePath, fake.downloadFileArgsForCall[i].localPath
+	return fake.downloadFileArgsForCall[i].bucketName, fake.downloadFileArgsForCall[i].remotePath, fake.downloadFileArgsForCall[i].versionID, fake.downloadFileArgsForCall[i].localPath
 }
 
 func (fake *FakeS3Client) DownloadFileReturns(result1 error) {
