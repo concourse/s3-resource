@@ -190,7 +190,7 @@ type UploadOutput struct {
 	Location string
 
 	// The version of the object that was uploaded.
-	VersionID string
+	VersionID *string
 
 	// The ID for a multipart upload to S3. In the case of an error the error
 	// can be cast to the MultiUploadFailure interface to extract the upload ID.
@@ -363,13 +363,16 @@ func (u *uploader) singlePart(buf io.ReadSeeker) (*UploadOutput, error) {
 	awsutil.Copy(params, u.in)
 	params.Body = buf
 
-	req, _ := u.opts.S3.PutObjectRequest(params)
+	req, out := u.opts.S3.PutObjectRequest(params)
 	if err := req.Send(); err != nil {
 		return nil, err
 	}
 
 	url := req.HTTPRequest.URL.String()
-	return &UploadOutput{Location: url}, nil
+	return &UploadOutput{
+		Location:  url,
+		VersionID: out.VersionId,
+	}, nil
 }
 
 // internal structure to manage a specific multipart upload to S3.
@@ -464,7 +467,7 @@ func (u *multiuploader) upload(firstBuf io.ReadSeeker) (*UploadOutput, error) {
 	}
 	return &UploadOutput{
 		Location:  *complete.Location,
-		VersionID: *complete.VersionId,
+		VersionID: complete.VersionId,
 		UploadID:  u.uploadID,
 	}, nil
 }

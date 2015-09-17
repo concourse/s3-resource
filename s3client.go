@@ -234,7 +234,11 @@ func (client *s3client) UploadFile(bucketName string, remotePath string, localPa
 		return "", err
 	}
 
-	return uploadOutput.VersionID, nil
+	if uploadOutput.VersionID != nil {
+		return *uploadOutput.VersionID, nil
+	}
+
+	return "", nil
 }
 
 func (client *s3client) DownloadFile(bucketName string, remotePath string, versionID string, localPath string) error {
@@ -248,11 +252,16 @@ func (client *s3client) DownloadFile(bucketName string, remotePath string, versi
 	}
 	defer localFile.Close()
 
-	_, err = downloader.Download(localFile, &s3.GetObjectInput{
-		Bucket:    aws.String(bucketName),
-		Key:       aws.String(remotePath),
-		VersionId: aws.String(versionID),
-	})
+	getObject := &s3.GetObjectInput{
+		Bucket: aws.String(bucketName),
+		Key:    aws.String(remotePath),
+	}
+
+	if versionID != "" {
+		getObject.VersionId = aws.String(versionID)
+	}
+
+	_, err = downloader.Download(localFile, getObject)
 	if err != nil {
 		return err
 	}

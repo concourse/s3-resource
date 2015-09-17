@@ -7,43 +7,43 @@
 	"Deps": [
 		{
 			"ImportPath": "github.com/aws/aws-sdk-go/aws",
-			"Comment": "v0.9.9-1-g4e53c16",
-			"Rev": "4e53c16f9f46393c51e376f983c74c66312a2524"
+			"Comment": "v0.9.9-1-gce13a36",
+			"Rev": "ce13a367ca6462cf8bc88b1f00f07b1cad23f280"
 		},
 		{
 			"ImportPath": "github.com/aws/aws-sdk-go/internal/endpoints",
-			"Comment": "v0.9.9-1-g4e53c16",
-			"Rev": "4e53c16f9f46393c51e376f983c74c66312a2524"
+			"Comment": "v0.9.9-1-gce13a36",
+			"Rev": "ce13a367ca6462cf8bc88b1f00f07b1cad23f280"
 		},
 		{
 			"ImportPath": "github.com/aws/aws-sdk-go/internal/protocol/query",
-			"Comment": "v0.9.9-1-g4e53c16",
-			"Rev": "4e53c16f9f46393c51e376f983c74c66312a2524"
+			"Comment": "v0.9.9-1-gce13a36",
+			"Rev": "ce13a367ca6462cf8bc88b1f00f07b1cad23f280"
 		},
 		{
 			"ImportPath": "github.com/aws/aws-sdk-go/internal/protocol/rest",
-			"Comment": "v0.9.9-1-g4e53c16",
-			"Rev": "4e53c16f9f46393c51e376f983c74c66312a2524"
+			"Comment": "v0.9.9-1-gce13a36",
+			"Rev": "ce13a367ca6462cf8bc88b1f00f07b1cad23f280"
 		},
 		{
 			"ImportPath": "github.com/aws/aws-sdk-go/internal/protocol/restxml",
-			"Comment": "v0.9.9-1-g4e53c16",
-			"Rev": "4e53c16f9f46393c51e376f983c74c66312a2524"
+			"Comment": "v0.9.9-1-gce13a36",
+			"Rev": "ce13a367ca6462cf8bc88b1f00f07b1cad23f280"
 		},
 		{
 			"ImportPath": "github.com/aws/aws-sdk-go/internal/protocol/xml/xmlutil",
-			"Comment": "v0.9.9-1-g4e53c16",
-			"Rev": "4e53c16f9f46393c51e376f983c74c66312a2524"
+			"Comment": "v0.9.9-1-gce13a36",
+			"Rev": "ce13a367ca6462cf8bc88b1f00f07b1cad23f280"
 		},
 		{
 			"ImportPath": "github.com/aws/aws-sdk-go/internal/signer/v4",
-			"Comment": "v0.9.9-1-g4e53c16",
-			"Rev": "4e53c16f9f46393c51e376f983c74c66312a2524"
+			"Comment": "v0.9.9-1-gce13a36",
+			"Rev": "ce13a367ca6462cf8bc88b1f00f07b1cad23f280"
 		},
 		{
 			"ImportPath": "github.com/aws/aws-sdk-go/service/s3",
-			"Comment": "v0.9.9-1-g4e53c16",
-			"Rev": "4e53c16f9f46393c51e376f983c74c66312a2524"
+			"Comment": "v0.9.9-1-gce13a36",
+			"Rev": "ce13a367ca6462cf8bc88b1f00f07b1cad23f280"
 		},
 		{
 			"ImportPath": "github.com/cloudfoundry/gunk/urljoiner",

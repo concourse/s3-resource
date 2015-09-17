@@ -74,6 +74,8 @@ func loggingSvc(ignoreOps []string) (*s3.S3, *[]string, *[]interface{}) {
 		case *s3.CompleteMultipartUploadOutput:
 			data.Location = aws.String("https://location")
 			data.VersionId = aws.String("VERSION-ID")
+		case *s3.PutObjectOutput:
+			data.VersionId = aws.String("VERSION-ID")
 		}
 	})
 
@@ -101,7 +103,7 @@ func TestUploadOrderMulti(t *testing.T) {
 	assert.Equal(t, []string{"CreateMultipartUpload", "UploadPart", "UploadPart", "UploadPart", "CompleteMultipartUpload"}, *ops)
 	assert.Equal(t, "https://location", resp.Location)
 	assert.Equal(t, "UPLOAD-ID", resp.UploadID)
-	assert.Equal(t, "VERSION-ID", resp.VersionID)
+	assert.Equal(t, aws.String("VERSION-ID"), resp.VersionID)
 
 	// Validate input values
 
@@ -198,6 +200,7 @@ func TestUploadOrderSingle(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, []string{"PutObject"}, *ops)
 	assert.NotEqual(t, "", resp.Location)
+	assert.Equal(t, aws.String("VERSION-ID"), resp.VersionID)
 	assert.Equal(t, "", resp.UploadID)
 	assert.Equal(t, "AES256", val((*args)[0], "ServerSideEncryption"))
 	assert.Equal(t, "content/type", val((*args)[0], "ContentType"))
