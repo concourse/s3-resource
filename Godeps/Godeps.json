@@ -1,57 +1,58 @@
 {
 	"ImportPath": "github.com/concourse/s3-resource",
-	"GoVersion": "go1.4.2",
+	"GoVersion": "go1.5.1",
 	"Packages": [
 		"./..."
 	],
 	"Deps": [
 		{
 			"ImportPath": "github.com/aws/aws-sdk-go/aws",
-			"Comment": "v0.9.9-4-g2778c83",
-			"Rev": "2778c8354eae199e75678754615f5beb46a77989"
+			"Comment": "v0.9.10",
+			"Rev": "661aeb3339ad9bd5fd420752ebf18a651d40413e"
 		},
 		{
 			"ImportPath": "github.com/aws/aws-sdk-go/internal/endpoints",
-			"Comment": "v0.9.9-4-g2778c83",
-			"Rev": "2778c8354eae199e75678754615f5beb46a77989"
+			"Comment": "v0.9.10",
+			"Rev": "661aeb3339ad9bd5fd420752ebf18a651d40413e"
 		},
 		{
 			"ImportPath": "github.com/aws/aws-sdk-go/internal/protocol/query",
-			"Comment": "v0.9.9-4-g2778c83",
-			"Rev": "2778c8354eae199e75678754615f5beb46a77989"
+			"Comment": "v0.9.10",
+			"Rev": "661aeb3339ad9bd5fd420752ebf18a651d40413e"
 		},
 		{
 			"ImportPath": "github.com/aws/aws-sdk-go/internal/protocol/rest",
-			"Comment": "v0.9.9-4-g2778c83",
-			"Rev": "2778c8354eae199e75678754615f5beb46a77989"
+			"Comment": "v0.9.10",
+			"Rev": "661aeb3339ad9bd5fd420752ebf18a651d40413e"
 		},
 		{
 			"ImportPath": "github.com/aws/aws-sdk-go/internal/protocol/restxml",
-			"Comment": "v0.9.9-4-g2778c83",
-			"Rev": "2778c8354eae199e75678754615f5beb46a77989"
+			"Comment": "v0.9.10",
+			"Rev": "661aeb3339ad9bd5fd420752ebf18a651d40413e"
 		},
 		{
 			"ImportPath": "github.com/aws/aws-sdk-go/internal/protocol/xml/xmlutil",
-			"Comment": "v0.9.9-4-g2778c83",
-			"Rev": "2778c8354eae199e75678754615f5beb46a77989"
+			"Comment": "v0.9.10",
+			"Rev": "661aeb3339ad9bd5fd420752ebf18a651d40413e"
 		},
 		{
 			"ImportPath": "github.com/aws/aws-sdk-go/internal/signer/v4",
-			"Comment": "v0.9.9-4-g2778c83",
-			"Rev": "2778c8354eae199e75678754615f5beb46a77989"
+			"Comment": "v0.9.10",
+			"Rev": "661aeb3339ad9bd5fd420752ebf18a651d40413e"
 		},
 		{
 			"ImportPath": "github.com/aws/aws-sdk-go/service/s3",
-			"Comment": "v0.9.9-4-g2778c83",
-			"Rev": "2778c8354eae199e75678754615f5beb46a77989"
+			"Comment": "v0.9.10",
+			"Rev": "661aeb3339ad9bd5fd420752ebf18a651d40413e"
+		},
+		{
+			"ImportPath": "github.com/blang/semver",
+			"Comment": "v3.0.1",
+			"Rev": "31b736133b98f26d5e078ec9eb591666edfd091f"
 		},
 		{
 			"ImportPath": "github.com/cloudfoundry/gunk/urljoiner",
 			"Rev": "b84f305af4938293a45d4551be00fc4e70a2ce95"
-		},
-		{
-			"ImportPath": "github.com/hashicorp/go-version",
-			"Rev": "2b9865f60ce11e527bd1255ba82036d465570aa3"
 		},
 		{
 			"ImportPath": "github.com/mitchellh/colorstring",
