@@ -51,7 +51,7 @@ func (command *CheckCommand) checkByRegex(request CheckRequest) (CheckResponse, 
 		}
 
 		for _, extraction := range extractions {
-			if extraction.Version.GreaterThan(lastVersion.Version) {
+			if extraction.Version.GT(lastVersion.Version) {
 				version := s3resource.Version{
 					Path: extraction.Path,
 				}

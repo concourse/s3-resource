@@ -61,6 +61,31 @@ var _ = Describe("In Command", func() {
 			Ω(destDir).Should(ExistOnFilesystem())
 		})
 
+		Context("with versions that would fail if lexicographically ordered", func() {
+			BeforeEach(func() {
+				request.Version.Path = ""
+
+				s3client.BucketFilesReturns([]string{
+					"files/a-file-1.5.6-build.10.tgz",
+					"files/a-file-1.5.6-build.100.tgz",
+					"files/a-file-1.5.6-build.9.tgz",
+				}, nil)
+			})
+
+			It("scans the bucket for the latest file to download", func() {
+				_, err := command.Run(destDir, request)
+				Ω(err).ShouldNot(HaveOccurred())
+
+				Ω(s3client.DownloadFileCallCount()).Should(Equal(1))
+				bucketName, remotePath, versionID, localPath := s3client.DownloadFileArgsForCall(0)
+
+				Ω(bucketName).Should(Equal("bucket-name"))
+				Ω(remotePath).Should(Equal("files/a-file-1.5.6-build.100.tgz"))
+				Ω(versionID).Should(BeEmpty())
+				Ω(localPath).Should(Equal(filepath.Join(destDir, "a-file-1.5.6-build.100.tgz")))
+			})
+		})
+
 		Context("when there is no existing version in the request", func() {
 			BeforeEach(func() {
 				request.Version.Path = ""

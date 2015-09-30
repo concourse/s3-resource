@@ -5,8 +5,8 @@ import (
 	"sort"
 	"strings"
 
+	"github.com/blang/semver"
 	"github.com/concourse/s3-resource"
-	"github.com/hashicorp/go-version"
 )
 
 func Match(paths []string, pattern string) ([]string, error) {
@@ -52,7 +52,16 @@ func Extract(path string, pattern string) (Extraction, bool) {
 		}
 	}
 
-	version, err := version.NewVersion(match)
+	probablySemver := match
+	segs := strings.SplitN(probablySemver, ".", 3)
+	switch len(segs) {
+	case 2:
+		probablySemver += ".0"
+	case 1:
+		probablySemver += ".0.0"
+	}
+
+	version, err := semver.Parse(probablySemver)
 	if err != nil {
 		panic("version number was not valid: " + err.Error())
 	}
@@ -83,7 +92,7 @@ func (e Extractions) Len() int {
 }
 
 func (e Extractions) Less(i int, j int) bool {
-	return e[i].Version.LessThan(e[j].Version)
+	return e[i].Version.LT(e[j].Version)
 }
 
 func (e Extractions) Swap(i int, j int) {
@@ -95,7 +104,7 @@ type Extraction struct {
 	Path string
 
 	// parsed semantic version
-	Version *version.Version
+	Version semver.Version
 
 	// the raw version match
 	VersionNumber string
@@ -140,6 +149,8 @@ func GetBucketFileVersions(client s3resource.S3Client, source s3resource.Source)
 			extractions = append(extractions, extraction)
 		}
 	}
+
 	sort.Sort(extractions)
+
 	return extractions
 }
