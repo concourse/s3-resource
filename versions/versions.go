@@ -111,20 +111,26 @@ type Extraction struct {
 }
 
 func PrefixHint(regex string) string {
-	re := regexp.MustCompile("^[a-zA-Z0-9_]*$")
+	nonRE := regexp.MustCompile(`\\(?P<chr>.)|(?P<chr>[^\*\.\[\]\(\)\?])`)
+	re := regexp.MustCompile(`^(` + nonRE.String() + `)*$`)
+
 	validSections := []string{}
 
 	sections := strings.Split(regex, "/")
 
 	for _, section := range sections {
 		if re.MatchString(section) {
-			validSections = append(validSections, section)
+			validSections = append(validSections, nonRE.ReplaceAllString(section, "${chr}"))
 		} else {
 			break
 		}
 	}
 
-	return strings.Join(validSections, "/")
+	if len(validSections) == 0 {
+		return ""
+	}
+
+	return strings.Join(validSections, "/") + "/"
 }
 
 func GetBucketFileVersions(client s3resource.S3Client, source s3resource.Source) Extractions {

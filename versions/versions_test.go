@@ -99,11 +99,20 @@ var _ = Describe("Match", func() {
 
 var _ = Describe("PrefixHint", func() {
 	It("turns a regexp into a limiter for s3", func() {
-		Ω(versions.PrefixHint("hello/world")).Should(Equal("hello/world"))
-		Ω(versions.PrefixHint("hello/*.tgz")).Should(Equal("hello"))
-		Ω(versions.PrefixHint("")).Should(Equal(""))
-		Ω(versions.PrefixHint("*")).Should(Equal(""))
-		Ω(versions.PrefixHint("hello/*/what.txt")).Should(Equal("hello"))
+		By("having a directory prefix in the simple case")
+		Ω(versions.PrefixHint("hello/(.*).tgz")).Should(Equal("hello/"))
+		Ω(versions.PrefixHint("hello/world-(.*)")).Should(Equal("hello/"))
+		Ω(versions.PrefixHint("hello-world/some-file-(.*)")).Should(Equal("hello-world/"))
+
+		By("not having a prefix if there is no parent directory")
+		Ω(versions.PrefixHint("(.*).tgz")).Should(Equal(""))
+		Ω(versions.PrefixHint("hello-(.*).tgz")).Should(Equal(""))
+
+		By("skipping regexp path names")
+		Ω(versions.PrefixHint("hello/(.*)/what.txt")).Should(Equal("hello/"))
+
+		By("handling escaped regexp characters")
+		Ω(versions.PrefixHint(`hello/cruel\[\\\^\$\.\|\?\*\+\(\)world/fizz-(.*).tgz`)).Should(Equal(`hello/cruel[\^$.|?*+()world/`))
 	})
 })
 
