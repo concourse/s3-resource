@@ -113,6 +113,10 @@ var _ = Describe("PrefixHint", func() {
 
 		By("handling escaped regexp characters")
 		Ω(versions.PrefixHint(`hello/cruel\[\\\^\$\.\|\?\*\+\(\)world/fizz-(.*).tgz`)).Should(Equal(`hello/cruel[\^$.|?*+()world/`))
+
+		By("handling regexp-specific escapes")
+		Ω(versions.PrefixHint(`hello/\d{3}/fizz-(.*).tgz`)).Should(Equal(`hello/`))
+		Ω(versions.PrefixHint(`hello/\d/fizz-(.*).tgz`)).Should(Equal(`hello/`))
 	})
 })
 

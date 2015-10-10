@@ -110,8 +110,10 @@ type Extraction struct {
 	VersionNumber string
 }
 
+const regexpSpecialChars = `\\\*\.\[\]\(\)\{\}\?\|\^\$\+`
+
 func PrefixHint(regex string) string {
-	nonRE := regexp.MustCompile(`\\(?P<chr>.)|(?P<chr>[^\*\.\[\]\(\)\?])`)
+	nonRE := regexp.MustCompile(`\\(?P<chr>[` + regexpSpecialChars + `])|(?P<chr>[^` + regexpSpecialChars + `])`)
 	re := regexp.MustCompile(`^(` + nonRE.String() + `)*$`)
 
 	validSections := []string{}
