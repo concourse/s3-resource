@@ -64,6 +64,7 @@ var _ = Describe("out", func() {
 					RegionName:      regionName,
 					Regexp:          "some-regex",
 					VersionedFile:   "some-file",
+					Endpoint:        endpoint,
 				},
 			}
 
@@ -101,6 +102,7 @@ var _ = Describe("out", func() {
 						SecretAccessKey: secretAccessKey,
 						Bucket:          bucketName,
 						RegionName:      regionName,
+						Endpoint:        endpoint,
 					},
 					Params: out.Params{
 						From: "file-to-upload",
@@ -135,7 +137,7 @@ var _ = Describe("out", func() {
 						},
 						{
 							Name:  "url",
-							Value: buildEndpoint(bucketName, "") + directoryPrefix + "/file-to-upload",
+							Value: buildEndpoint(bucketName, endpoint) + directoryPrefix + "/file-to-upload",
 						},
 					},
 				}))
@@ -154,6 +156,7 @@ var _ = Describe("out", func() {
 						Bucket:          bucketName,
 						RegionName:      regionName,
 						VersionedFile:   filepath.Join(directoryPrefix, "file-to-upload"),
+						Endpoint:        endpoint,
 					},
 					Params: out.Params{
 						From: "file-to-upload-local",
@@ -203,6 +206,7 @@ var _ = Describe("out", func() {
 						Bucket:          versionedBucketName,
 						RegionName:      regionName,
 						VersionedFile:   filepath.Join(directoryPrefix, "file-to-upload"),
+						Endpoint:        endpoint,
 					},
 					Params: out.Params{
 						From: "file-to-upload-local",
@@ -240,7 +244,7 @@ var _ = Describe("out", func() {
 						},
 						{
 							Name:  "url",
-							Value: buildEndpoint(versionedBucketName, "") + directoryPrefix + "/file-to-upload?versionId=" + versions[0],
+							Value: buildEndpoint(versionedBucketName, endpoint) + directoryPrefix + "/file-to-upload?versionId=" + versions[0],
 						},
 					},
 				}))
@@ -258,6 +262,7 @@ var _ = Describe("out", func() {
 						SecretAccessKey: secretAccessKey,
 						Bucket:          versionedBucketName,
 						RegionName:      regionName,
+						Endpoint:        endpoint,
 					},
 					Params: out.Params{
 						From: "file-to-upload",
@@ -295,7 +300,7 @@ var _ = Describe("out", func() {
 						},
 						{
 							Name:  "url",
-							Value: buildEndpoint(versionedBucketName, "") + directoryPrefix + "/file-to-upload?versionId=" + versions[0],
+							Value: buildEndpoint(versionedBucketName, endpoint) + directoryPrefix + "/file-to-upload?versionId=" + versions[0],
 						},
 					},
 				}))
@@ -304,6 +309,10 @@ var _ = Describe("out", func() {
 	})
 })
 
-func buildEndpoint(bucket string, _ string) string {
-	return "https://" + bucket + ".s3.amazonaws.com/"
+func buildEndpoint(bucket string, endpoint string) string {
+	if endpoint == "" {
+		return "https://s3.amazonaws.com/" + bucket + "/"
+	} else {
+		return endpoint + "/" + bucket + "/"
+	}
 }
