@@ -157,7 +157,7 @@ var _ = Describe("in", func() {
 					},
 					{
 						Name:  "url",
-						Value: "https://concourse-s3-resource-test-bucket-non-versioned.s3.amazonaws.com/in-request-files/some-file-2",
+						Value: buildEndpoint(bucketName, endpoint) + "/in-request-files/some-file-2",
 					},
 				},
 			}))
@@ -175,7 +175,7 @@ var _ = Describe("in", func() {
 			Ω(filepath.Join(destDir, "url")).Should(BeARegularFile())
 			urlContents, err := ioutil.ReadFile(filepath.Join(destDir, "url"))
 			Ω(err).ShouldNot(HaveOccurred())
-			Ω(urlContents).Should(Equal([]byte("https://concourse-s3-resource-test-bucket-non-versioned.s3.amazonaws.com/in-request-files/some-file-2")))
+			Ω(urlContents).Should(Equal([]byte(buildEndpoint(bucketName, endpoint) + "/in-request-files/some-file-2")))
 		})
 	})
 
@@ -258,7 +258,7 @@ var _ = Describe("in", func() {
 					},
 					{
 						Name:  "url",
-						Value: "https://concourse-s3-resource-test-bucket-versioned.s3.amazonaws.com/in-request-files-versioned/some-file?versionId=" + expectedVersion,
+						Value: buildEndpoint(versionedBucketName, endpoint) + "/in-request-files-versioned/some-file?versionId=" + expectedVersion,
 					},
 				},
 			}))
@@ -276,7 +276,7 @@ var _ = Describe("in", func() {
 			Ω(filepath.Join(destDir, "url")).Should(BeARegularFile())
 			urlContents, err := ioutil.ReadFile(filepath.Join(destDir, "url"))
 			Ω(err).ShouldNot(HaveOccurred())
-			Ω(urlContents).Should(Equal([]byte("https://concourse-s3-resource-test-bucket-versioned.s3.amazonaws.com/in-request-files-versioned/some-file?versionId=" + expectedVersion)))
+			Ω(urlContents).Should(Equal([]byte(buildEndpoint(versionedBucketName, endpoint) + "/in-request-files-versioned/some-file?versionId=" + expectedVersion)))
 		})
 	})
 
