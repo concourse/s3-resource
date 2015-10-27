@@ -35,30 +35,30 @@ type suiteData struct {
 }
 
 var _ = SynchronizedBeforeSuite(func() []byte {
-	checkPath, err := gexec.Build("github.com/concourse/s3-resource/cmd/check")
+	cp, err := gexec.Build("github.com/concourse/s3-resource/cmd/check")
 	Ω(err).ShouldNot(HaveOccurred())
-	inPath, err := gexec.Build("github.com/concourse/s3-resource/cmd/in")
+	ip, err := gexec.Build("github.com/concourse/s3-resource/cmd/in")
 	Ω(err).ShouldNot(HaveOccurred())
-	outPath, err := gexec.Build("github.com/concourse/s3-resource/cmd/out")
+	op, err := gexec.Build("github.com/concourse/s3-resource/cmd/out")
 	Ω(err).ShouldNot(HaveOccurred())
 
 	data, err := json.Marshal(suiteData{
-		CheckPath: checkPath,
-		InPath:    inPath,
-		OutPath:   outPath,
+		CheckPath: cp,
+		InPath:    ip,
+		OutPath:   op,
 	})
 
 	Ω(err).ShouldNot(HaveOccurred())
 
 	return data
 }, func(data []byte) {
-	var suiteData suiteData
-	err := json.Unmarshal(data, &suiteData)
+	var sd suiteData
+	err := json.Unmarshal(data, &sd)
 	Ω(err).ShouldNot(HaveOccurred())
 
-	checkPath = suiteData.CheckPath
-	inPath = suiteData.InPath
-	outPath = suiteData.OutPath
+	checkPath = sd.CheckPath
+	inPath = sd.InPath
+	outPath = sd.OutPath
 
 	Ω(accessKeyID).ShouldNot(BeEmpty(), "must specify $S3_TESTING_ACCESS_KEY_ID")
 	Ω(secretAccessKey).ShouldNot(BeEmpty(), "must specify $S3_TESTING_SECRET_ACCESS_KEY")
@@ -81,4 +81,12 @@ var _ = SynchronizedAfterSuite(func() {}, func() {
 func TestIn(t *testing.T) {
 	RegisterFailHandler(Fail)
 	RunSpecs(t, "Integration Suite")
+}
+
+func buildEndpoint(bucket string, endpoint string) string {
+	if endpoint == "" {
+		return "https://s3.amazonaws.com/" + bucket
+	} else {
+		return endpoint + "/" + bucket
+	}
 }

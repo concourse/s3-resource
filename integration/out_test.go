@@ -137,7 +137,7 @@ var _ = Describe("out", func() {
 						},
 						{
 							Name:  "url",
-							Value: buildEndpoint(bucketName, endpoint) + directoryPrefix + "/file-to-upload",
+							Value: buildEndpoint(bucketName, endpoint) + "/" + directoryPrefix + "/file-to-upload",
 						},
 					},
 				}))
@@ -244,7 +244,7 @@ var _ = Describe("out", func() {
 						},
 						{
 							Name:  "url",
-							Value: buildEndpoint(versionedBucketName, endpoint) + directoryPrefix + "/file-to-upload?versionId=" + versions[0],
+							Value: buildEndpoint(versionedBucketName, endpoint) + "/" + directoryPrefix + "/file-to-upload?versionId=" + versions[0],
 						},
 					},
 				}))
@@ -300,7 +300,7 @@ var _ = Describe("out", func() {
 						},
 						{
 							Name:  "url",
-							Value: buildEndpoint(versionedBucketName, endpoint) + directoryPrefix + "/file-to-upload?versionId=" + versions[0],
+							Value: buildEndpoint(versionedBucketName, endpoint) + "/" + directoryPrefix + "/file-to-upload?versionId=" + versions[0],
 						},
 					},
 				}))
@@ -308,11 +308,3 @@ var _ = Describe("out", func() {
 		})
 	})
 })
-
-func buildEndpoint(bucket string, endpoint string) string {
-	if endpoint == "" {
-		return "https://s3.amazonaws.com/" + bucket + "/"
-	} else {
-		return endpoint + "/" + bucket + "/"
-	}
-}
