@@ -21,6 +21,7 @@ var secretAccessKey = os.Getenv("S3_TESTING_SECRET_ACCESS_KEY")
 var versionedBucketName = os.Getenv("S3_VERSIONED_TESTING_BUCKET")
 var bucketName = os.Getenv("S3_TESTING_BUCKET")
 var regionName = os.Getenv("S3_TESTING_REGION")
+var endpoint = os.Getenv("S3_ENDPOINT")
 var s3client s3resource.S3Client
 
 var checkPath string
@@ -69,7 +70,7 @@ var _ = SynchronizedBeforeSuite(func() []byte {
 		accessKeyID,
 		secretAccessKey,
 		regionName,
-		"",
+		endpoint,
 	)
 })
 

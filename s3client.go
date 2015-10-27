@@ -45,12 +45,13 @@ func NewS3Client(accessKey string, secretKey string, regionName string, endpoint
 	}
 
 	awsConfig := &aws.Config{
-		Region:      &regionName,
-		Credentials: creds,
+		Region:           &regionName,
+		Credentials:      creds,
+		S3ForcePathStyle: aws.Bool(true),
 	}
 
 	if len(endpoint) != 0 {
-		endpoint := fmt.Sprintf("https://%s", endpoint)
+		endpoint := fmt.Sprintf("%s", endpoint)
 		awsConfig.Endpoint = &endpoint
 	}
 
