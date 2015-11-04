@@ -8,6 +8,7 @@ import (
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/credentials"
+	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/s3"
 	"github.com/aws/aws-sdk-go/service/s3/s3manager"
 )
@@ -28,7 +29,8 @@ type S3Client interface {
 }
 
 type s3client struct {
-	client *s3.S3
+	client  *s3.S3
+	session *session.Session
 }
 
 func NewS3Client(accessKey string, secretKey string, regionName string, endpoint string) (S3Client, error) {
@@ -45,7 +47,7 @@ func NewS3Client(accessKey string, secretKey string, regionName string, endpoint
 	}
 
 	awsConfig := &aws.Config{
-		Region:           &regionName,
+		Region:           aws.String(regionName),
 		Credentials:      creds,
 		S3ForcePathStyle: aws.Bool(true),
 	}
@@ -55,10 +57,12 @@ func NewS3Client(accessKey string, secretKey string, regionName string, endpoint
 		awsConfig.Endpoint = &endpoint
 	}
 
-	client := s3.New(awsConfig)
+	sess := session.New(awsConfig)
+	client := s3.New(sess, awsConfig)
 
 	return &s3client{
-		client: client,
+		client:  client,
+		session: sess,
 	}, nil
 }
 
@@ -215,9 +219,7 @@ func (client *s3client) getVersionedBucketContents(bucketName string, prefix str
 }
 
 func (client *s3client) UploadFile(bucketName string, remotePath string, localPath string) (string, error) {
-	uploader := s3manager.NewUploader(&s3manager.UploadOptions{
-		S3: client.client,
-	})
+	uploader := s3manager.NewUploader(client.session)
 
 	localFile, err := os.Open(localPath)
 	if err != nil {
@@ -243,9 +245,7 @@ func (client *s3client) UploadFile(bucketName string, remotePath string, localPa
 }
 
 func (client *s3client) DownloadFile(bucketName string, remotePath string, versionID string, localPath string) error {
-	downloader := s3manager.NewDownloader(&s3manager.DownloadOptions{
-		S3: client.client,
-	})
+	downloader := s3manager.NewDownloader(client.session)
 
 	localFile, err := os.Create(localPath)
 	if err != nil {

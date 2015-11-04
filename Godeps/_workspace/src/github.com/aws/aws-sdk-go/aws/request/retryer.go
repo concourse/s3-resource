@@ -12,18 +12,21 @@ import (
 type Retryer interface {
 	RetryRules(*Request) time.Duration
 	ShouldRetry(*Request) bool
-	MaxRetries() uint
+	MaxRetries() int
 }
 
 // retryableCodes is a collection of service response codes which are retry-able
 // without any further action.
 var retryableCodes = map[string]struct{}{
 	"RequestError":                           {},
+	"RequestTimeout":                         {},
 	"ProvisionedThroughputExceededException": {},
 	"Throttling":                             {},
 	"ThrottlingException":                    {},
 	"RequestLimitExceeded":                   {},
 	"RequestThrottled":                       {},
+	"LimitExceededException":                 {}, // Deleting 10+ DynamoDb tables at once
+	"TooManyRequestsException":               {}, // Lambda functions
 }
 
 // credsExpiredCodes is a collection of error codes which signify the credentials
