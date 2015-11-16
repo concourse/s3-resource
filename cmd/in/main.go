@@ -20,6 +20,7 @@ func main() {
 	inputRequest(&request)
 
 	client, err := s3resource.NewS3Client(
+		os.Stderr,
 		request.Source.AccessKeyID,
 		request.Source.SecretAccessKey,
 		request.Source.RegionName,

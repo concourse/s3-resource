@@ -3,6 +3,7 @@ package s3resource
 import (
 	"errors"
 	"fmt"
+	"io"
 	"os"
 	"time"
 
@@ -11,6 +12,7 @@ import (
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/s3"
 	"github.com/aws/aws-sdk-go/service/s3/s3manager"
+	"github.com/cheggaaa/pb"
 )
 
 //go:generate counterfeiter . S3Client
@@ -31,9 +33,17 @@ type S3Client interface {
 type s3client struct {
 	client  *s3.S3
 	session *session.Session
+
+	progressOutput io.Writer
 }
 
-func NewS3Client(accessKey string, secretKey string, regionName string, endpoint string) (S3Client, error) {
+func NewS3Client(
+	progressOutput io.Writer,
+	accessKey string,
+	secretKey string,
+	regionName string,
+	endpoint string,
+) (S3Client, error) {
 	var creds *credentials.Credentials
 
 	if accessKey == "" && secretKey == "" {
@@ -63,6 +73,8 @@ func NewS3Client(accessKey string, secretKey string, regionName string, endpoint
 	return &s3client{
 		client:  client,
 		session: sess,
+
+		progressOutput: progressOutput,
 	}, nil
 }
 
@@ -79,6 +91,161 @@ func (client *s3client) BucketFiles(bucketName string, prefixHint string) ([]str
 		paths = append(paths, *entry.Key)
 	}
 	return paths, nil
+}
+
+func (client *s3client) BucketFileVersions(bucketName string, remotePath string) ([]string, error) {
+	isBucketVersioned, err := client.getBucketVersioning(bucketName)
+	if err != nil {
+		return []string{}, err
+	}
+
+	if !isBucketVersioned {
+		return []string{}, errors.New("bucket is not versioned")
+	}
+
+	bucketFiles, err := client.getVersionedBucketContents(bucketName, remotePath)
+
+	if err != nil {
+		return []string{}, err
+	}
+
+	versions := make([]string, 0, len(bucketFiles))
+
+	for _, objectVersion := range bucketFiles[remotePath] {
+		versions = append(versions, *objectVersion.VersionId)
+	}
+
+	return versions, nil
+}
+
+func (client *s3client) UploadFile(bucketName string, remotePath string, localPath string) (string, error) {
+	uploader := s3manager.NewUploader(client.session)
+
+	stat, err := os.Stat(localPath)
+	if err != nil {
+		return "", err
+	}
+
+	localFile, err := os.Open(localPath)
+	if err != nil {
+		return "", err
+	}
+
+	defer localFile.Close()
+
+	progress := pb.New64(stat.Size())
+	progress.Output = client.progressOutput
+	progress.ShowSpeed = true
+	progress.Units = pb.U_BYTES
+
+	progress.Start()
+	defer progress.Finish()
+
+	uploadOutput, err := uploader.Upload(&s3manager.UploadInput{
+		Bucket: aws.String(bucketName),
+		Key:    aws.String(remotePath),
+		Body:   progress.NewProxyReader(localFile),
+	})
+	if err != nil {
+		return "", err
+	}
+
+	if uploadOutput.VersionID != nil {
+		return *uploadOutput.VersionID, nil
+	}
+
+	return "", nil
+}
+
+func (client *s3client) DownloadFile(bucketName string, remotePath string, versionID string, localPath string) error {
+	headObject := &s3.HeadObjectInput{
+		Bucket: aws.String(bucketName),
+		Key:    aws.String(remotePath),
+	}
+
+	if versionID != "" {
+		headObject.VersionId = aws.String(versionID)
+	}
+
+	object, err := client.client.HeadObject(headObject)
+	if err != nil {
+		return err
+	}
+
+	progress := pb.New64(*object.ContentLength)
+	progress.Output = client.progressOutput
+	progress.ShowSpeed = true
+	progress.Units = pb.U_BYTES
+
+	downloader := s3manager.NewDownloader(client.session)
+
+	localFile, err := os.Create(localPath)
+	if err != nil {
+		return err
+	}
+	defer localFile.Close()
+
+	getObject := &s3.GetObjectInput{
+		Bucket: aws.String(bucketName),
+		Key:    aws.String(remotePath),
+	}
+
+	if versionID != "" {
+		getObject.VersionId = aws.String(versionID)
+	}
+
+	progress.Start()
+	defer progress.Finish()
+
+	_, err = downloader.Download(progressWriterAt{localFile, progress}, getObject)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (client *s3client) URL(bucketName string, remotePath string, private bool, versionID string) string {
+	getObjectInput := &s3.GetObjectInput{
+		Bucket: aws.String(bucketName),
+		Key:    aws.String(remotePath),
+	}
+
+	if versionID != "" {
+		getObjectInput.VersionId = aws.String(versionID)
+	}
+
+	awsRequest, _ := client.client.GetObjectRequest(getObjectInput)
+
+	var url string
+
+	if private {
+		url, _ = awsRequest.Presign(24 * time.Hour)
+	} else {
+		awsRequest.Build()
+		url = awsRequest.HTTPRequest.URL.String()
+	}
+
+	return url
+}
+
+func (client *s3client) DeleteVersionedFile(bucketName string, remotePath string, versionID string) error {
+	_, err := client.client.DeleteObject(&s3.DeleteObjectInput{
+		Bucket:    aws.String(bucketName),
+		Key:       aws.String(remotePath),
+		VersionId: aws.String(versionID),
+	})
+
+	return err
+}
+
+func (client *s3client) DeleteFile(bucketName string, remotePath string) error {
+	_, err := client.client.DeleteObject(&s3.DeleteObjectInput{
+		Bucket: aws.String(bucketName),
+		Key:    aws.String(remotePath),
+	})
+
+	return err
 }
 
 func (client *s3client) getBucketContents(bucketName string, prefix string) (map[string]*s3.Object, error) {
@@ -139,31 +306,6 @@ func (client *s3client) getBucketVersioning(bucketName string) (bool, error) {
 	return *resp.Status == "Enabled", nil
 }
 
-func (client *s3client) BucketFileVersions(bucketName string, remotePath string) ([]string, error) {
-	isBucketVersioned, err := client.getBucketVersioning(bucketName)
-	if err != nil {
-		return []string{}, err
-	}
-
-	if !isBucketVersioned {
-		return []string{}, errors.New("bucket is not versioned")
-	}
-
-	bucketFiles, err := client.getVersionedBucketContents(bucketName, remotePath)
-
-	if err != nil {
-		return []string{}, err
-	}
-
-	versions := make([]string, 0, len(bucketFiles))
-
-	for _, objectVersion := range bucketFiles[remotePath] {
-		versions = append(versions, *objectVersion.VersionId)
-	}
-
-	return versions, nil
-}
-
 func (client *s3client) getVersionedBucketContents(bucketName string, prefix string) (map[string][]*s3.ObjectVersion, error) {
 	versionedBucketContents := map[string][]*s3.ObjectVersion{}
 	keyMarker := ""
@@ -216,99 +358,4 @@ func (client *s3client) getVersionedBucketContents(bucketName string, prefix str
 	}
 
 	return versionedBucketContents, nil
-}
-
-func (client *s3client) UploadFile(bucketName string, remotePath string, localPath string) (string, error) {
-	uploader := s3manager.NewUploader(client.session)
-
-	localFile, err := os.Open(localPath)
-	if err != nil {
-		return "", err
-	}
-
-	defer localFile.Close()
-
-	uploadOutput, err := uploader.Upload(&s3manager.UploadInput{
-		Bucket: aws.String(bucketName),
-		Key:    aws.String(remotePath),
-		Body:   localFile,
-	})
-	if err != nil {
-		return "", err
-	}
-
-	if uploadOutput.VersionID != nil {
-		return *uploadOutput.VersionID, nil
-	}
-
-	return "", nil
-}
-
-func (client *s3client) DownloadFile(bucketName string, remotePath string, versionID string, localPath string) error {
-	downloader := s3manager.NewDownloader(client.session)
-
-	localFile, err := os.Create(localPath)
-	if err != nil {
-		return err
-	}
-	defer localFile.Close()
-
-	getObject := &s3.GetObjectInput{
-		Bucket: aws.String(bucketName),
-		Key:    aws.String(remotePath),
-	}
-
-	if versionID != "" {
-		getObject.VersionId = aws.String(versionID)
-	}
-
-	_, err = downloader.Download(localFile, getObject)
-	if err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func (client *s3client) URL(bucketName string, remotePath string, private bool, versionID string) string {
-	getObjectInput := &s3.GetObjectInput{
-		Bucket: aws.String(bucketName),
-		Key:    aws.String(remotePath),
-	}
-
-	if versionID != "" {
-		getObjectInput.VersionId = aws.String(versionID)
-	}
-
-	awsRequest, _ := client.client.GetObjectRequest(getObjectInput)
-
-	var url string
-
-	if private {
-		url, _ = awsRequest.Presign(24 * time.Hour)
-	} else {
-		awsRequest.Build()
-		url = awsRequest.HTTPRequest.URL.String()
-	}
-
-	return url
-}
-
-func (client *s3client) DeleteVersionedFile(bucketName string, remotePath string, versionID string) error {
-	_, err := client.client.DeleteObject(&s3.DeleteObjectInput{
-		Bucket:    aws.String(bucketName),
-		Key:       aws.String(remotePath),
-		VersionId: aws.String(versionID),
-	})
-
-	return err
-}
-
-func (client *s3client) DeleteFile(bucketName string, remotePath string) error {
-	_, err := client.client.DeleteObject(&s3.DeleteObjectInput{
-		Bucket: aws.String(bucketName),
-		Key:    aws.String(remotePath),
-	})
-
-	return err
 }

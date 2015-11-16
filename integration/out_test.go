@@ -120,7 +120,7 @@ var _ = Describe("out", func() {
 
 				Ω(s3files).Should(ConsistOf(filepath.Join(directoryPrefix, "file-to-upload")))
 
-				reader := bytes.NewBuffer(session.Buffer().Contents())
+				reader := bytes.NewBuffer(session.Out.Contents())
 
 				var response out.OutResponse
 				err = json.NewDecoder(reader).Decode(&response)
@@ -224,7 +224,7 @@ var _ = Describe("out", func() {
 
 				Ω(s3files).Should(ConsistOf(filepath.Join(directoryPrefix, "file-to-upload")))
 
-				reader := bytes.NewBuffer(session.Buffer().Contents())
+				reader := bytes.NewBuffer(session.Out.Contents())
 
 				var response out.OutResponse
 				err = json.NewDecoder(reader).Decode(&response)
@@ -280,7 +280,7 @@ var _ = Describe("out", func() {
 
 				Ω(s3files).Should(ConsistOf(filepath.Join(directoryPrefix, "file-to-upload")))
 
-				reader := bytes.NewBuffer(session.Buffer().Contents())
+				reader := bytes.NewBuffer(session.Out.Contents())
 
 				var response out.OutResponse
 				err = json.NewDecoder(reader).Decode(&response)

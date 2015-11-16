@@ -140,7 +140,7 @@ var _ = Describe("in", func() {
 		})
 
 		It("downloads the file", func() {
-			reader := bytes.NewBuffer(session.Buffer().Contents())
+			reader := bytes.NewBuffer(session.Out.Contents())
 
 			var response in.InResponse
 			err := json.NewDecoder(reader).Decode(&response)
@@ -242,7 +242,7 @@ var _ = Describe("in", func() {
 		})
 
 		It("downloads the file", func() {
-			reader := bytes.NewBuffer(session.Buffer().Contents())
+			reader := bytes.NewBuffer(session.Out.Contents())
 
 			var response in.InResponse
 			err := json.NewDecoder(reader).Decode(&response)

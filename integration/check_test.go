@@ -112,7 +112,7 @@ var _ = Describe("check", func() {
 				})
 
 				It("returns an empty check response", func() {
-					reader := bytes.NewBuffer(session.Buffer().Contents())
+					reader := bytes.NewBuffer(session.Out.Contents())
 
 					var response check.CheckResponse
 					err := json.NewDecoder(reader).Decode(&response)
@@ -152,7 +152,7 @@ var _ = Describe("check", func() {
 				})
 
 				It("outputs the path of the latest versioned s3 object", func() {
-					reader := bytes.NewBuffer(session.Buffer().Contents())
+					reader := bytes.NewBuffer(session.Out.Contents())
 
 					var response check.CheckResponse
 					err := json.NewDecoder(reader).Decode(&response)
@@ -241,7 +241,7 @@ var _ = Describe("check", func() {
 				})
 
 				It("returns an empty check response", func() {
-					reader := bytes.NewBuffer(session.Buffer().Contents())
+					reader := bytes.NewBuffer(session.Out.Contents())
 
 					var response check.CheckResponse
 					err := json.NewDecoder(reader).Decode(&response)
@@ -285,7 +285,7 @@ var _ = Describe("check", func() {
 
 				It("returns the most recent version", func() {
 
-					reader := bytes.NewBuffer(session.Buffer().Contents())
+					reader := bytes.NewBuffer(session.Out.Contents())
 
 					var response check.CheckResponse
 					err := json.NewDecoder(reader).Decode(&response)
@@ -346,7 +346,7 @@ var _ = Describe("check", func() {
 				})
 
 				It("returns an empty check response", func() {
-					reader := bytes.NewBuffer(session.Buffer().Contents())
+					reader := bytes.NewBuffer(session.Out.Contents())
 
 					var response check.CheckResponse
 					err := json.NewDecoder(reader).Decode(&response)
@@ -393,7 +393,7 @@ var _ = Describe("check", func() {
 				})
 
 				It("outputs the path of the latest versioned s3 object", func() {
-					reader := bytes.NewBuffer(session.Buffer().Contents())
+					reader := bytes.NewBuffer(session.Out.Contents())
 
 					var response check.CheckResponse
 					err := json.NewDecoder(reader).Decode(&response)
@@ -458,7 +458,7 @@ var _ = Describe("check", func() {
 				})
 
 				It("returns an empty check response", func() {
-					reader := bytes.NewBuffer(session.Buffer().Contents())
+					reader := bytes.NewBuffer(session.Out.Contents())
 
 					var response check.CheckResponse
 					err := json.NewDecoder(reader).Decode(&response)
@@ -511,7 +511,7 @@ var _ = Describe("check", func() {
 
 					It("returns the most recent version", func() {
 
-						reader := bytes.NewBuffer(session.Buffer().Contents())
+						reader := bytes.NewBuffer(session.Out.Contents())
 
 						var response check.CheckResponse
 						err := json.NewDecoder(reader).Decode(&response)
@@ -577,7 +577,7 @@ var _ = Describe("check", func() {
 					})
 
 					It("returns the next most recent version", func() {
-						reader := bytes.NewBuffer(session.Buffer().Contents())
+						reader := bytes.NewBuffer(session.Out.Contents())
 
 						var response check.CheckResponse
 						err := json.NewDecoder(reader).Decode(&response)

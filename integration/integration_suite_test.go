@@ -2,6 +2,7 @@ package integration_test
 
 import (
 	"encoding/json"
+	"io/ioutil"
 	"os"
 
 	"github.com/concourse/s3-resource"
@@ -67,6 +68,7 @@ var _ = SynchronizedBeforeSuite(func() []byte {
 	Ω(regionName).ShouldNot(BeEmpty(), "must specify $S3_TESTING_REGION")
 
 	s3client, err = s3resource.NewS3Client(
+		ioutil.Discard,
 		accessKeyID,
 		secretAccessKey,
 		regionName,
