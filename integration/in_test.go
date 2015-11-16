@@ -7,7 +7,6 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
-	"time"
 
 	"github.com/concourse/s3-resource"
 	"github.com/concourse/s3-resource/in"
@@ -50,7 +49,8 @@ var _ = Describe("in", func() {
 		session, err = gexec.Start(command, GinkgoWriter, GinkgoWriter)
 		Ω(err).ShouldNot(HaveOccurred())
 
-		Eventually(session, 5*time.Second).Should(gexec.Exit(expectedExitStatus))
+		<-session.Exited
+		Expect(session.ExitCode()).To(Equal(expectedExitStatus))
 	})
 
 	Context("with a versioned_file and a regex", func() {
