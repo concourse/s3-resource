@@ -133,10 +133,7 @@ func (client *s3client) UploadFile(bucketName string, remotePath string, localPa
 
 	defer localFile.Close()
 
-	progress := pb.New64(stat.Size())
-	progress.Output = client.progressOutput
-	progress.ShowSpeed = true
-	progress.Units = pb.U_BYTES
+	progress := client.newProgressBar(stat.Size())
 
 	progress.Start()
 	defer progress.Finish()
@@ -172,10 +169,7 @@ func (client *s3client) DownloadFile(bucketName string, remotePath string, versi
 		return err
 	}
 
-	progress := pb.New64(*object.ContentLength)
-	progress.Output = client.progressOutput
-	progress.ShowSpeed = true
-	progress.Units = pb.U_BYTES
+	progress := client.newProgressBar(*object.ContentLength)
 
 	downloader := s3manager.NewDownloader(client.session)
 
@@ -358,4 +352,15 @@ func (client *s3client) getVersionedBucketContents(bucketName string, prefix str
 	}
 
 	return versionedBucketContents, nil
+}
+
+func (client *s3client) newProgressBar(total int64) *pb.ProgressBar {
+	progress := pb.New64(total)
+
+	progress.Output = client.progressOutput
+	progress.ShowSpeed = true
+	progress.Units = pb.U_BYTES
+	progress.NotPrint = true
+
+	return progress.SetWidth(80)
 }
