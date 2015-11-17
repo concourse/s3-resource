@@ -7,48 +7,48 @@
 	"Deps": [
 		{
 			"ImportPath": "github.com/aws/aws-sdk-go/aws",
-			"Comment": "v0.10.4-10-ga8e13a9",
-			"Rev": "a8e13a9010d17416ab32ad3154ea49c0960cc541"
+			"Comment": "v0.10.4-11-g896816a",
+			"Rev": "896816ac512e2d0fe184255e75e7a94f602bdc7e"
 		},
 		{
 			"ImportPath": "github.com/aws/aws-sdk-go/private/endpoints",
-			"Comment": "v0.10.4-10-ga8e13a9",
-			"Rev": "a8e13a9010d17416ab32ad3154ea49c0960cc541"
+			"Comment": "v0.10.4-11-g896816a",
+			"Rev": "896816ac512e2d0fe184255e75e7a94f602bdc7e"
 		},
 		{
 			"ImportPath": "github.com/aws/aws-sdk-go/private/protocol/query",
-			"Comment": "v0.10.4-10-ga8e13a9",
-			"Rev": "a8e13a9010d17416ab32ad3154ea49c0960cc541"
+			"Comment": "v0.10.4-11-g896816a",
+			"Rev": "896816ac512e2d0fe184255e75e7a94f602bdc7e"
 		},
 		{
 			"ImportPath": "github.com/aws/aws-sdk-go/private/protocol/rest",
-			"Comment": "v0.10.4-10-ga8e13a9",
-			"Rev": "a8e13a9010d17416ab32ad3154ea49c0960cc541"
+			"Comment": "v0.10.4-11-g896816a",
+			"Rev": "896816ac512e2d0fe184255e75e7a94f602bdc7e"
 		},
 		{
 			"ImportPath": "github.com/aws/aws-sdk-go/private/protocol/restxml",
-			"Comment": "v0.10.4-10-ga8e13a9",
-			"Rev": "a8e13a9010d17416ab32ad3154ea49c0960cc541"
+			"Comment": "v0.10.4-11-g896816a",
+			"Rev": "896816ac512e2d0fe184255e75e7a94f602bdc7e"
 		},
 		{
 			"ImportPath": "github.com/aws/aws-sdk-go/private/protocol/xml/xmlutil",
-			"Comment": "v0.10.4-10-ga8e13a9",
-			"Rev": "a8e13a9010d17416ab32ad3154ea49c0960cc541"
+			"Comment": "v0.10.4-11-g896816a",
+			"Rev": "896816ac512e2d0fe184255e75e7a94f602bdc7e"
 		},
 		{
 			"ImportPath": "github.com/aws/aws-sdk-go/private/signer/v4",
-			"Comment": "v0.10.4-10-ga8e13a9",
-			"Rev": "a8e13a9010d17416ab32ad3154ea49c0960cc541"
+			"Comment": "v0.10.4-11-g896816a",
+			"Rev": "896816ac512e2d0fe184255e75e7a94f602bdc7e"
 		},
 		{
 			"ImportPath": "github.com/aws/aws-sdk-go/private/waiter",
-			"Comment": "v0.10.4-10-ga8e13a9",
-			"Rev": "a8e13a9010d17416ab32ad3154ea49c0960cc541"
+			"Comment": "v0.10.4-11-g896816a",
+			"Rev": "896816ac512e2d0fe184255e75e7a94f602bdc7e"
 		},
 		{
 			"ImportPath": "github.com/aws/aws-sdk-go/service/s3",
-			"Comment": "v0.10.4-10-ga8e13a9",
-			"Rev": "a8e13a9010d17416ab32ad3154ea49c0960cc541"
+			"Comment": "v0.10.4-11-g896816a",
+			"Rev": "896816ac512e2d0fe184255e75e7a94f602bdc7e"
 		},
 		{
 			"ImportPath": "github.com/blang/semver",
@@ -76,6 +76,10 @@
 		{
 			"ImportPath": "github.com/mitchellh/colorstring",
 			"Rev": "8631ce90f28644f54aeedcb3e389a85174e067d1"
+		},
+		{
+			"ImportPath": "github.com/nu7hatch/gouuid",
+			"Rev": "179d4d0c4d8d407a32af483c2354df1d2c91e6c3"
 		},
 		{
 			"ImportPath": "github.com/onsi/ginkgo",
