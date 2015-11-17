@@ -87,6 +87,34 @@ var _ = Describe("Out Command", func() {
 			})
 		})
 
+		Describe("finding files to upload with File param", func() {
+			It("does not error if there is a single match", func() {
+				request.Params.File = "a/*.tgz"
+				createFile("a/file.tgz")
+
+				_, err := command.Run(sourceDir, request)
+				Ω(err).ShouldNot(HaveOccurred())
+			})
+
+			It("errors if there are no matches", func() {
+				request.Params.File = "b/*.tgz"
+				createFile("a/file1.tgz")
+				createFile("a/file2.tgz")
+
+				_, err := command.Run(sourceDir, request)
+				Ω(err).Should(HaveOccurred())
+			})
+
+			It("errors if there are more than one match", func() {
+				request.Params.File = "a/*.tgz"
+				createFile("a/file1.tgz")
+				createFile("a/file2.tgz")
+
+				_, err := command.Run(sourceDir, request)
+				Ω(err).Should(HaveOccurred())
+			})
+		})
+
 		Describe("uploading the file", func() {
 			It("uploads the file", func() {
 				request.Params.From = "a/(.*).tgz"

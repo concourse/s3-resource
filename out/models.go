@@ -11,6 +11,7 @@ type OutRequest struct {
 
 type Params struct {
 	From string `json:"from"`
+	File string `json:"file"`
 	To   string `json:"to"`
 }
 

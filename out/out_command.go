@@ -28,8 +28,11 @@ func (command *OutCommand) Run(sourceDir string, request OutRequest) (OutRespons
 	if ok, message := request.Source.IsValid(); !ok {
 		return OutResponse{}, errors.New(message)
 	}
+	if request.Params.File != "" && request.Params.From != "" {
+		return OutResponse{}, errors.New("contains both file and from")
+	}
 
-	localPath, err := command.match(sourceDir, request.Params.From)
+	localPath, err := command.match(request.Params, sourceDir)
 	if err != nil {
 		return OutResponse{}, err
 	}
@@ -79,14 +82,24 @@ func (command *OutCommand) remotePath(request OutRequest, localPath string, sour
 	return compiled.ReplaceAllString(fileName, request.Params.To)
 }
 
-func (command *OutCommand) match(sourceDir, pattern string) (string, error) {
-	paths := []string{}
-	filepath.Walk(sourceDir, func(path string, info os.FileInfo, err error) error {
-		paths = append(paths, path)
-		return nil
-	})
+func (command *OutCommand) match(params Params, sourceDir string) (string, error) {
+	var matches []string
+	var err error
+	var pattern string
 
-	matches, err := versions.MatchUnanchored(paths, pattern)
+	if params.File != "" {
+		pattern = params.File
+		matches, err = filepath.Glob(filepath.Join(sourceDir, pattern))
+	} else {
+		paths := []string{}
+		filepath.Walk(sourceDir, func(path string, info os.FileInfo, err error) error {
+			paths = append(paths, path)
+			return nil
+		})
+		pattern = params.From
+		matches, err = versions.MatchUnanchored(paths, pattern)
+	}
+
 	if err != nil {
 		return "", err
 	}
