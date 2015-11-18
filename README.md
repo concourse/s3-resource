@@ -72,12 +72,19 @@ Given a path specified by `from`, upload it to the S3 bucket, optionally to
 a directory configured by `to`. The path must identify a single file.
 
 #### Parameters
+  
+* `file`: *Required.* Path to the file to upload. If multiple files are
+  matched by the glob, an error is raised.
 
-* `from`: *Required.* A regexp specifying the file to upload. If the regexp
-  matches more than one file, the output fails.
+The following fields are deprecated and may be specified instead of `file`
+(until we remove them, anyway):
 
-* `to`: *Optional.* A destination directory in the bucket. If this ends in a "/"
-  then the file will keep its name but be uploaded to that directory.
+* `from`: *Optional.* **Deprecated.** A regexp specifying the file to upload.
+  If the regexp matches more than one file, the output fails.
+
+* `to`: *Optional.* **Deprecated.** A destination directory in the bucket.
+  If this ends in a "/" then the file will keep its name but be uploaded to
+  that directory.
 
 ## Example Configuration
 
