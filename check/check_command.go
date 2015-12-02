@@ -25,7 +25,7 @@ func (command *CheckCommand) Run(request CheckRequest) (CheckResponse, error) {
 	if request.Source.Regexp != "" {
 		return command.checkByRegex(request), nil
 	} else {
-		return command.checkByVersionedFile(request)
+		return command.checkByVersionedFile(request), nil
 	}
 }
 
@@ -44,7 +44,7 @@ func (command *CheckCommand) checkByRegex(request CheckRequest) CheckResponse {
 	}
 }
 
-func (command *CheckCommand) checkByVersionedFile(request CheckRequest) (CheckResponse, error) {
+func (command *CheckCommand) checkByVersionedFile(request CheckRequest) CheckResponse {
 	response := CheckResponse{}
 
 	bucketVersions, err := command.s3client.BucketFileVersions(request.Source.Bucket, request.Source.VersionedFile)
@@ -54,7 +54,7 @@ func (command *CheckCommand) checkByVersionedFile(request CheckRequest) (CheckRe
 	}
 
 	if len(bucketVersions) == 0 {
-		return response, nil
+		return response
 	}
 
 	requestVersionIndex := -1
@@ -82,7 +82,7 @@ func (command *CheckCommand) checkByVersionedFile(request CheckRequest) (CheckRe
 		}
 	}
 
-	return response, nil
+	return response
 }
 
 func latestVersion(extractions versions.Extractions) CheckResponse {
