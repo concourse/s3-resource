@@ -409,6 +409,64 @@ var _ = Describe("check", func() {
 					}))
 				})
 			})
+
+			Context("when the previous version does not match the regex", func() {
+				BeforeEach(func() {
+					directoryPrefix = "files-in-bucket-that-do-match-with-version"
+					checkRequest.Source.Regexp = filepath.Join(directoryPrefix, `file-(1\.[2].*)`)
+					checkRequest.Version.Path = filepath.Join(directoryPrefix, "file-1.1.0-rc.1")
+					err := json.NewEncoder(stdin).Encode(checkRequest)
+					Ω(err).ShouldNot(HaveOccurred())
+
+					tempFile, err := ioutil.TempFile("", "file-to-upload")
+					Ω(err).ShouldNot(HaveOccurred())
+					tempFile.Close()
+
+					_, err = s3client.UploadFile(bucketName, filepath.Join(directoryPrefix, "file-1.2.0-rc.2"), tempFile.Name())
+					Ω(err).ShouldNot(HaveOccurred())
+
+					_, err = s3client.UploadFile(bucketName, filepath.Join(directoryPrefix, "file-1.2.0-rc.1"), tempFile.Name())
+					Ω(err).ShouldNot(HaveOccurred())
+
+					_, err = s3client.UploadFile(bucketName, filepath.Join(directoryPrefix, "file-1.1.0-rc.1"), tempFile.Name())
+					Ω(err).ShouldNot(HaveOccurred())
+
+					_, err = s3client.UploadFile(bucketName, filepath.Join(directoryPrefix, "file-1.1.0-rc.2"), tempFile.Name())
+					Ω(err).ShouldNot(HaveOccurred())
+
+					err = os.Remove(tempFile.Name())
+					Ω(err).ShouldNot(HaveOccurred())
+				})
+
+				AfterEach(func() {
+					err := s3client.DeleteFile(bucketName, filepath.Join(directoryPrefix, "file-1.2.0-rc.2"))
+					Ω(err).ShouldNot(HaveOccurred())
+
+					err = s3client.DeleteFile(bucketName, filepath.Join(directoryPrefix, "file-1.2.0-rc.1"))
+					Ω(err).ShouldNot(HaveOccurred())
+
+					err = s3client.DeleteFile(bucketName, filepath.Join(directoryPrefix, "file-1.1.0-rc.1"))
+					Ω(err).ShouldNot(HaveOccurred())
+
+					err = s3client.DeleteFile(bucketName, filepath.Join(directoryPrefix, "file-1.1.0-rc.2"))
+					Ω(err).ShouldNot(HaveOccurred())
+				})
+
+				It("outputs the path of the latest versioned s3 object", func() {
+					reader := bytes.NewBuffer(session.Out.Contents())
+
+					var response check.CheckResponse
+					err := json.NewDecoder(reader).Decode(&response)
+					Ω(err).ShouldNot(HaveOccurred())
+
+					Ω(response).Should(Equal(check.CheckResponse{
+						{
+							Path: filepath.Join(directoryPrefix, "file-1.2.0-rc.2"),
+						},
+					}))
+				})
+			})
+
 		})
 
 		Context("with a versioned_file", func() {

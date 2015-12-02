@@ -2,7 +2,6 @@ package check
 
 import (
 	"errors"
-	"fmt"
 
 	"github.com/concourse/s3-resource"
 	"github.com/concourse/s3-resource/versions"
@@ -24,43 +23,25 @@ func (command *CheckCommand) Run(request CheckRequest) (CheckResponse, error) {
 	}
 
 	if request.Source.Regexp != "" {
-		return command.checkByRegex(request)
+		return command.checkByRegex(request), nil
 	} else {
 		return command.checkByVersionedFile(request)
 	}
 }
 
-func (command *CheckCommand) checkByRegex(request CheckRequest) (CheckResponse, error) {
+func (command *CheckCommand) checkByRegex(request CheckRequest) CheckResponse {
 	extractions := versions.GetBucketFileVersions(command.s3client, request.Source)
-	response := CheckResponse{}
 
 	if len(extractions) == 0 {
-		return response, nil
+		return nil
 	}
 
-	if request.Version.Path == "" {
-		lastExtraction := extractions[len(extractions)-1]
-		version := s3resource.Version{
-			Path: lastExtraction.Path,
-		}
-		response = append(response, version)
+	lastVersion, matched := versions.Extract(request.Version.Path, request.Source.Regexp)
+	if !matched {
+		return latestVersion(extractions)
 	} else {
-		lastVersion, ok := versions.Extract(request.Version.Path, request.Source.Regexp)
-		if !ok {
-			return response, fmt.Errorf("version number could not be found in: %s", request.Version.Path)
-		}
-
-		for _, extraction := range extractions {
-			if extraction.Version.GT(lastVersion.Version) {
-				version := s3resource.Version{
-					Path: extraction.Path,
-				}
-				response = append(response, version)
-			}
-		}
+		return newerVersions(lastVersion, extractions)
 	}
-
-	return response, nil
 }
 
 func (command *CheckCommand) checkByVersionedFile(request CheckRequest) (CheckResponse, error) {
@@ -102,4 +83,24 @@ func (command *CheckCommand) checkByVersionedFile(request CheckRequest) (CheckRe
 	}
 
 	return response, nil
+}
+
+func latestVersion(extractions versions.Extractions) CheckResponse {
+	lastExtraction := extractions[len(extractions)-1]
+	return []s3resource.Version{{Path: lastExtraction.Path}}
+}
+
+func newerVersions(lastVersion versions.Extraction, extractions versions.Extractions) CheckResponse {
+	response := CheckResponse{}
+
+	for _, extraction := range extractions {
+		if extraction.Version.GT(lastVersion.Version) {
+			version := s3resource.Version{
+				Path: extraction.Path,
+			}
+			response = append(response, version)
+		}
+	}
+
+	return response
 }
