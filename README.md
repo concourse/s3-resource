@@ -127,3 +127,12 @@ Everything above and...
 * `s3:GetBucketVersioning`
 * `s3:GetObjectVersion`
 * `s3:ListBucketVersions`
+
+## Developing on this resource
+
+First get the resource via:
+`go get github.com/concourse/s3-resource`
+
+Get the dependencies:
+`go get -d -t ./...`
+
