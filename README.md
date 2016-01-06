@@ -8,10 +8,12 @@ version numbers.
 * `bucket`: *Required.* The name of the bucket.
 
 * `access_key_id`: *Optional.* The AWS access key to use when accessing the
-  bucket.
+  bucket. If empty, the resource will try to retrieve credentials from
+  [AWS instance profile](http://docs.aws.amazon.com/IAM/latest/UserGuide/id_roles_use_switch-role-ec2_instance-profiles.html)
 
 * `secret_access_key`: *Optional.* The AWS secret key to use when accessing
-  the bucket.
+  the bucket. If empty, the resource will try to retrieve credentials from
+  [AWS instance profile](http://docs.aws.amazon.com/IAM/latest/UserGuide/id_roles_use_switch-role-ec2_instance-profiles.html)
 
 * `session_token`: *Optional.* The AWS STS session token to use when
   accessing the bucket.
