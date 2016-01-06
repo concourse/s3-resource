@@ -17,6 +17,7 @@ func TestIntegration(t *testing.T) {
 	RegisterFailHandler(Fail)
 }
 
+var useInstanceProfile = os.Getenv("S3_USE_INSTANCE_PROFILE")
 var accessKeyID = os.Getenv("S3_TESTING_ACCESS_KEY_ID")
 var secretAccessKey = os.Getenv("S3_TESTING_SECRET_ACCESS_KEY")
 var versionedBucketName = os.Getenv("S3_VERSIONED_TESTING_BUCKET")
@@ -61,8 +62,12 @@ var _ = SynchronizedBeforeSuite(func() []byte {
 	inPath = sd.InPath
 	outPath = sd.OutPath
 
-	Ω(accessKeyID).ShouldNot(BeEmpty(), "must specify $S3_TESTING_ACCESS_KEY_ID")
-	Ω(secretAccessKey).ShouldNot(BeEmpty(), "must specify $S3_TESTING_SECRET_ACCESS_KEY")
+	if useInstanceProfile == "" {
+		Ω(accessKeyID).ShouldNot(BeEmpty(),
+			"must specify $S3_TESTING_ACCESS_KEY_ID or $S3_USE_INSTANCE_PROFILE=true")
+		Ω(secretAccessKey).ShouldNot(BeEmpty(),
+			"must specify $S3_TESTING_SECRET_ACCESS_KEY or $S3_USE_INSTANCE_PROFILE=true")
+	}
 	Ω(versionedBucketName).ShouldNot(BeEmpty(), "must specify $S3_VERSIONED_TESTING_BUCKET")
 	Ω(bucketName).ShouldNot(BeEmpty(), "must specify $S3_TESTING_BUCKET")
 	Ω(regionName).ShouldNot(BeEmpty(), "must specify $S3_TESTING_REGION")

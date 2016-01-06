@@ -5,11 +5,13 @@ version numbers.
 
 ## Source Configuration
 
-* `access_key_id`: *Required.* The AWS access key to use when accessing the
-  bucket.
+* `access_key_id`: *Optional.* The AWS access key to use when accessing the
+  bucket. If empty, the resource will try to retrieve credentials from
+  [AWS instance profile](http://docs.aws.amazon.com/IAM/latest/UserGuide/id_roles_use_switch-role-ec2_instance-profiles.html)
 
-* `secret_access_key`: *Required.* The AWS secret key to use when accessing
-  the bucket.
+* `secret_access_key`: *Optional.* The AWS secret key to use when accessing
+  the bucket. If empty, the resource will try to retrieve credentials from
+  [AWS instance profile](http://docs.aws.amazon.com/IAM/latest/UserGuide/id_roles_use_switch-role-ec2_instance-profiles.html)
 
 * `bucket`: *Required.* The name of the bucket.
 
