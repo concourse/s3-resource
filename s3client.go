@@ -13,6 +13,8 @@ import (
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/credentials"
+	"github.com/aws/aws-sdk-go/aws/credentials/ec2rolecreds"
+	"github.com/aws/aws-sdk-go/aws/ec2metadata"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/s3"
 	"github.com/aws/aws-sdk-go/service/s3/s3manager"
@@ -89,10 +91,21 @@ func NewAwsConfig(
 ) *aws.Config {
 	var creds *credentials.Credentials
 
-	if accessKey == "" && secretKey == "" {
-		creds = credentials.AnonymousCredentials
+	if accessKey != "" || secretKey != "" {
+		creds = credentials.NewStaticCredentials(accessKey, secretKey, "")
 	} else {
-		creds = credentials.NewStaticCredentials(accessKey, secretKey, sessionToken)
+		// Try with instance profile
+		creds := credentials.NewCredentials(
+			&ec2rolecreds.EC2RoleProvider{
+				Client: ec2metadata.New(session.New()),
+			},
+		)
+		details, _ := creds.Get()
+
+		// If unsuccessful fall back to anonymous
+		if details == (credentials.Value{}) {
+			creds = credentials.AnonymousCredentials
+		}
 	}
 
 	if len(regionName) == 0 {
@@ -184,7 +197,7 @@ func (client *s3client) UploadFile(bucketName string, remotePath string, localPa
 	}
 
 	defer localFile.Close()
-	
+
 	// Automatically adjust partsize for larger files.
 	fSize := stat.Size()
 	if fSize > int64(uploader.MaxUploadParts) * uploader.PartSize {
