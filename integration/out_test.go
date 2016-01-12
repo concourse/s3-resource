@@ -193,10 +193,10 @@ var _ = Describe("out", func() {
 						Bucket:          bucketName,
 						RegionName:      regionName,
 						Endpoint:        endpoint,
+						Regexp:          filepath.Join(directoryPrefix, "some-file-pattern"),
 					},
 					Params: out.Params{
-						From: "file-to-upload",
-						To:   directoryPrefix + "/",
+						File: "file-to-upload",
 					},
 				}
 
