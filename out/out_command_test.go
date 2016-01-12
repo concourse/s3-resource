@@ -178,7 +178,7 @@ var _ = Describe("Out Command", func() {
 					localFileName := "not-the-same-name-as-versioned-file.tgz"
 					remoteFileName := "versioned-file.tgz"
 
-					request.Params.From = localFileName
+					request.Params.File = localFileName
 					request.Source.VersionedFile = remoteFileName
 					createFile(localFileName)
 
@@ -197,6 +197,26 @@ var _ = Describe("Out Command", func() {
 
 					Ω(response.Metadata[0].Name).Should(Equal("filename"))
 					Ω(response.Metadata[0].Value).Should(Equal(remoteFileName))
+				})
+			})
+
+			Context("when using regexp", func() {
+				It("uploads to the parent directory", func() {
+					request.Params.File = "my/special-file.tgz"
+					request.Source.Regexp = "a-folder/some-file-(.*).tgz"
+					createFile("my/special-file.tgz")
+
+					response, err := command.Run(sourceDir, request)
+					Expect(err).ToNot(HaveOccurred())
+
+					Expect(s3client.UploadFileCallCount()).To(Equal(1))
+					bucketName, remotePath, localPath := s3client.UploadFileArgsForCall(0)
+					Expect(bucketName).To(Equal("bucket-name"))
+					Expect(remotePath).To(Equal("a-folder/special-file.tgz"))
+					Expect(localPath).To(Equal(filepath.Join(sourceDir, "my/special-file.tgz")))
+
+					Expect(response.Metadata[0].Name).To(Equal("filename"))
+					Expect(response.Metadata[0].Value).To(Equal("special-file.tgz"))
 				})
 			})
 		})

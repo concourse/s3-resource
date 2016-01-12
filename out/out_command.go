@@ -72,6 +72,10 @@ func (command *OutCommand) remotePath(request OutRequest, localPath string, sour
 		return request.Source.VersionedFile
 	}
 
+	if request.Params.To == "" && request.Params.From == "" && request.Source.Regexp != "" {
+		return filepath.Join(parentDir(request.Source.Regexp), filepath.Base(localPath))
+	}
+
 	folderDestination := strings.HasSuffix(request.Params.To, "/")
 	if folderDestination || request.Params.To == "" {
 		return filepath.Join(request.Params.To, filepath.Base(localPath))
@@ -80,6 +84,10 @@ func (command *OutCommand) remotePath(request OutRequest, localPath string, sour
 	compiled := regexp.MustCompile(request.Params.From)
 	fileName := strings.TrimPrefix(localPath, sourceDir+"/")
 	return compiled.ReplaceAllString(fileName, request.Params.To)
+}
+
+func parentDir(regexp string) string {
+	return regexp[:strings.LastIndex(regexp, "/")+1]
 }
 
 func (command *OutCommand) match(params Params, sourceDir string) (string, error) {
