@@ -1,63 +1,63 @@
 {
 	"ImportPath": "github.com/concourse/s3-resource",
-	"GoVersion": "go1.5.1",
+	"GoVersion": "go1.5",
 	"Packages": [
 		"./..."
 	],
 	"Deps": [
 		{
 			"ImportPath": "github.com/aws/aws-sdk-go/aws",
-			"Comment": "v0.10.4-11-g896816a",
-			"Rev": "896816ac512e2d0fe184255e75e7a94f602bdc7e"
+			"Comment": "v1.0.11-1-g87b1e60",
+			"Rev": "87b1e60a50b09e4812dee560b33a238f67305804"
 		},
 		{
 			"ImportPath": "github.com/aws/aws-sdk-go/private/endpoints",
-			"Comment": "v0.10.4-11-g896816a",
-			"Rev": "896816ac512e2d0fe184255e75e7a94f602bdc7e"
+			"Comment": "v1.0.11-1-g87b1e60",
+			"Rev": "87b1e60a50b09e4812dee560b33a238f67305804"
 		},
 		{
 			"ImportPath": "github.com/aws/aws-sdk-go/private/protocol/query",
-			"Comment": "v0.10.4-11-g896816a",
-			"Rev": "896816ac512e2d0fe184255e75e7a94f602bdc7e"
+			"Comment": "v1.0.11-1-g87b1e60",
+			"Rev": "87b1e60a50b09e4812dee560b33a238f67305804"
 		},
 		{
 			"ImportPath": "github.com/aws/aws-sdk-go/private/protocol/rest",
-			"Comment": "v0.10.4-11-g896816a",
-			"Rev": "896816ac512e2d0fe184255e75e7a94f602bdc7e"
+			"Comment": "v1.0.11-1-g87b1e60",
+			"Rev": "87b1e60a50b09e4812dee560b33a238f67305804"
 		},
 		{
 			"ImportPath": "github.com/aws/aws-sdk-go/private/protocol/restxml",
-			"Comment": "v0.10.4-11-g896816a",
-			"Rev": "896816ac512e2d0fe184255e75e7a94f602bdc7e"
+			"Comment": "v1.0.11-1-g87b1e60",
+			"Rev": "87b1e60a50b09e4812dee560b33a238f67305804"
 		},
 		{
 			"ImportPath": "github.com/aws/aws-sdk-go/private/protocol/xml/xmlutil",
-			"Comment": "v0.10.4-11-g896816a",
-			"Rev": "896816ac512e2d0fe184255e75e7a94f602bdc7e"
+			"Comment": "v1.0.11-1-g87b1e60",
+			"Rev": "87b1e60a50b09e4812dee560b33a238f67305804"
 		},
 		{
 			"ImportPath": "github.com/aws/aws-sdk-go/private/signer/v4",
-			"Comment": "v0.10.4-11-g896816a",
-			"Rev": "896816ac512e2d0fe184255e75e7a94f602bdc7e"
+			"Comment": "v1.0.11-1-g87b1e60",
+			"Rev": "87b1e60a50b09e4812dee560b33a238f67305804"
 		},
 		{
 			"ImportPath": "github.com/aws/aws-sdk-go/private/waiter",
-			"Comment": "v0.10.4-11-g896816a",
-			"Rev": "896816ac512e2d0fe184255e75e7a94f602bdc7e"
+			"Comment": "v1.0.11-1-g87b1e60",
+			"Rev": "87b1e60a50b09e4812dee560b33a238f67305804"
 		},
 		{
 			"ImportPath": "github.com/aws/aws-sdk-go/service/s3",
-			"Comment": "v0.10.4-11-g896816a",
-			"Rev": "896816ac512e2d0fe184255e75e7a94f602bdc7e"
+			"Comment": "v1.0.11-1-g87b1e60",
+			"Rev": "87b1e60a50b09e4812dee560b33a238f67305804"
 		},
 		{
 			"ImportPath": "github.com/blang/semver",
-			"Comment": "v3.0.1",
-			"Rev": "31b736133b98f26d5e078ec9eb591666edfd091f"
+			"Comment": "v3.1.0",
+			"Rev": "aea32c919a18e5ef4537bbd283ff29594b1b0165"
 		},
 		{
 			"ImportPath": "github.com/cheggaaa/pb",
-			"Rev": "da1f27ad1d9509b16f65f52fd9d8138b0f2dc7b2"
+			"Rev": "a9a708f18ae43493d86f3fd5b0cd04df679b170b"
 		},
 		{
 			"ImportPath": "github.com/cloudfoundry/gunk/urljoiner",
@@ -65,13 +65,13 @@
 		},
 		{
 			"ImportPath": "github.com/go-ini/ini",
-			"Comment": "v0-48-g060d7da",
-			"Rev": "060d7da055ba6ec5ea7a31f116332fe5efa04ce0"
+			"Comment": "v1.8.6",
+			"Rev": "afbd495e5aaea13597b5e14fe514ddeaa4d76fc3"
 		},
 		{
 			"ImportPath": "github.com/jmespath/go-jmespath",
-			"Comment": "0.2.1",
-			"Rev": "53d419364047eb08a64c29471db23c60ea585b85"
+			"Comment": "0.2.2-2-gc01cf91",
+			"Rev": "c01cf91b011868172fdcd9f41838e80c9d716264"
 		},
 		{
 			"ImportPath": "github.com/mitchellh/colorstring",
@@ -82,14 +82,18 @@
 			"Rev": "179d4d0c4d8d407a32af483c2354df1d2c91e6c3"
 		},
 		{
+			"ImportPath": "github.com/olekukonko/ts",
+			"Rev": "ecf753e7c962639ab5a1fb46f7da627d4c0a04b8"
+		},
+		{
 			"ImportPath": "github.com/onsi/ginkgo",
-			"Comment": "v1.2.0-22-g39d2c24",
-			"Rev": "39d2c24f8a92c88f7e7f4d8ec6c80d3cc8f5ac65"
+			"Comment": "v1.2.0-34-ge43390e",
+			"Rev": "e43390e35a4a88f3f95d5ddf9055efb7a1170469"
 		},
 		{
 			"ImportPath": "github.com/onsi/gomega",
-			"Comment": "v1.0-71-g2152b45",
-			"Rev": "2152b45fa28a361beba9aab0885972323a444e28"
+			"Comment": "v1.0-75-g0fe2044",
+			"Rev": "0fe204460da2c8fa1babcaac196e694de8f1aaa1"
 		}
 	]
 }
