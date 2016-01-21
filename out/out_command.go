@@ -40,19 +40,11 @@ func (command *OutCommand) Run(sourceDir string, request OutRequest) (OutRespons
 	remotePath := command.remotePath(request, localPath, sourceDir)
 
 	bucketName := request.Source.Bucket
-
-	var versionID string
-	for i := 0; i < 10; i++ {
-		versionID, err = command.s3client.UploadFile(
-			bucketName,
-			remotePath,
-			localPath,
-		)
-		if err == nil {
-			break
-		}
-	}
-
+	versionID, err := command.s3client.UploadFile(
+		bucketName,
+		remotePath,
+		localPath,
+	)
 	if err != nil {
 		return OutResponse{}, err
 	}
