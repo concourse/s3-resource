@@ -1,6 +1,7 @@
 package out_test
 
 import (
+	"errors"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -28,11 +29,11 @@ var _ = Describe("Out Command", func() {
 		BeforeEach(func() {
 			var err error
 			tmpPath, err = ioutil.TempDir("", "out_command")
-			Ω(err).ShouldNot(HaveOccurred())
+			Expect(err).ToNot(HaveOccurred())
 
 			sourceDir = filepath.Join(tmpPath, "source")
 			err = os.MkdirAll(sourceDir, 0755)
-			Ω(err).ShouldNot(HaveOccurred())
+			Expect(err).ToNot(HaveOccurred())
 
 			request = OutRequest{
 				Source: s3resource.Source{
@@ -46,16 +47,16 @@ var _ = Describe("Out Command", func() {
 
 		AfterEach(func() {
 			err := os.RemoveAll(tmpPath)
-			Ω(err).ShouldNot(HaveOccurred())
+			Expect(err).ToNot(HaveOccurred())
 		})
 
 		createFile := func(path string) {
 			fullPath := filepath.Join(sourceDir, path)
 			err := os.MkdirAll(filepath.Dir(fullPath), 0755)
-			Ω(err).ShouldNot(HaveOccurred())
+			Expect(err).ToNot(HaveOccurred())
 
 			file, err := os.Create(fullPath)
-			Ω(err).ShouldNot(HaveOccurred())
+			Expect(err).ToNot(HaveOccurred())
 			file.Close()
 		}
 
@@ -65,7 +66,7 @@ var _ = Describe("Out Command", func() {
 				createFile("a/file.tgz")
 
 				_, err := command.Run(sourceDir, request)
-				Ω(err).ShouldNot(HaveOccurred())
+				Expect(err).ToNot(HaveOccurred())
 			})
 
 			It("errors if there are no matches", func() {
@@ -74,7 +75,7 @@ var _ = Describe("Out Command", func() {
 				createFile("a/file2.tgz")
 
 				_, err := command.Run(sourceDir, request)
-				Ω(err).Should(HaveOccurred())
+				Expect(err).To(HaveOccurred())
 			})
 
 			It("errors if there are more than one match", func() {
@@ -83,7 +84,7 @@ var _ = Describe("Out Command", func() {
 				createFile("a/file2.tgz")
 
 				_, err := command.Run(sourceDir, request)
-				Ω(err).Should(HaveOccurred())
+				Expect(err).To(HaveOccurred())
 			})
 		})
 
@@ -93,7 +94,7 @@ var _ = Describe("Out Command", func() {
 				createFile("a/file.tgz")
 
 				_, err := command.Run(sourceDir, request)
-				Ω(err).ShouldNot(HaveOccurred())
+				Expect(err).ToNot(HaveOccurred())
 			})
 
 			It("errors if there are no matches", func() {
@@ -102,7 +103,7 @@ var _ = Describe("Out Command", func() {
 				createFile("a/file2.tgz")
 
 				_, err := command.Run(sourceDir, request)
-				Ω(err).Should(HaveOccurred())
+				Expect(err).To(HaveOccurred())
 			})
 
 			It("errors if there are more than one match", func() {
@@ -111,7 +112,7 @@ var _ = Describe("Out Command", func() {
 				createFile("a/file2.tgz")
 
 				_, err := command.Run(sourceDir, request)
-				Ω(err).Should(HaveOccurred())
+				Expect(err).To(HaveOccurred())
 			})
 		})
 
@@ -122,14 +123,48 @@ var _ = Describe("Out Command", func() {
 				createFile("a/file.tgz")
 
 				_, err := command.Run(sourceDir, request)
-				Ω(err).ShouldNot(HaveOccurred())
-
-				Ω(s3client.UploadFileCallCount()).Should(Equal(1))
+				Expect(err).ToNot(HaveOccurred())
+				Expect(s3client.UploadFileCallCount()).To(Equal(1))
 				bucketName, remotePath, localPath := s3client.UploadFileArgsForCall(0)
 
-				Ω(bucketName).Should(Equal("bucket-name"))
-				Ω(remotePath).Should(Equal("a-folder/file.tgz"))
-				Ω(localPath).Should(Equal(filepath.Join(sourceDir, "a/file.tgz")))
+				Expect(bucketName).To(Equal("bucket-name"))
+				Expect(remotePath).To(Equal("a-folder/file.tgz"))
+				Expect(localPath).To(Equal(filepath.Join(sourceDir, "a/file.tgz")))
+			})
+
+			Describe("failure on uploading a file", func() {
+
+				Context("aggressively retry", func() {
+					BeforeEach(func() {
+						request.Params.From = "a/(.*).tgz"
+						request.Params.To = "a-folder/"
+						createFile("a/file.tgz")
+					})
+
+					It("succeeds eventually", func() {
+						counter := 0
+						s3client.UploadFileStub = func(_, _, _ string) (string, error) {
+							counter = counter + 1
+							if counter < 10 {
+								return "", errors.New("failed")
+							} else {
+								return "", nil
+							}
+						}
+
+						_, err := command.Run(sourceDir, request)
+						Expect(err).ToNot(HaveOccurred())
+						Expect(s3client.UploadFileCallCount()).To(Equal(10))
+					})
+
+					It("fails in worst case", func() {
+						s3client.UploadFileReturns("", errors.New("failed"))
+
+						_, err := command.Run(sourceDir, request)
+						Expect(err).To(HaveOccurred())
+						Expect(s3client.UploadFileCallCount()).To(Equal(10))
+					})
+				})
 			})
 
 			It("can handle empty to to put it in the root", func() {
@@ -138,14 +173,14 @@ var _ = Describe("Out Command", func() {
 				createFile("a/file.tgz")
 
 				_, err := command.Run(sourceDir, request)
-				Ω(err).ShouldNot(HaveOccurred())
+				Expect(err).ToNot(HaveOccurred())
 
-				Ω(s3client.UploadFileCallCount()).Should(Equal(1))
+				Expect(s3client.UploadFileCallCount()).To(Equal(1))
 				bucketName, remotePath, localPath := s3client.UploadFileArgsForCall(0)
 
-				Ω(bucketName).Should(Equal("bucket-name"))
-				Ω(remotePath).Should(Equal("file.tgz"))
-				Ω(localPath).Should(Equal(filepath.Join(sourceDir, "a/file.tgz")))
+				Expect(bucketName).To(Equal("bucket-name"))
+				Expect(remotePath).To(Equal("file.tgz"))
+				Expect(localPath).To(Equal(filepath.Join(sourceDir, "a/file.tgz")))
 			})
 
 			It("can handle templating in the output", func() {
@@ -154,19 +189,19 @@ var _ = Describe("Out Command", func() {
 				createFile("a/file-123.tgz")
 
 				response, err := command.Run(sourceDir, request)
-				Ω(err).ShouldNot(HaveOccurred())
+				Expect(err).ToNot(HaveOccurred())
 
-				Ω(s3client.UploadFileCallCount()).Should(Equal(1))
+				Expect(s3client.UploadFileCallCount()).To(Equal(1))
 				bucketName, remotePath, localPath := s3client.UploadFileArgsForCall(0)
 
-				Ω(bucketName).Should(Equal("bucket-name"))
-				Ω(remotePath).Should(Equal("folder-123/file.tgz"))
-				Ω(localPath).Should(Equal(filepath.Join(sourceDir, "a/file-123.tgz")))
+				Expect(bucketName).To(Equal("bucket-name"))
+				Expect(remotePath).To(Equal("folder-123/file.tgz"))
+				Expect(localPath).To(Equal(filepath.Join(sourceDir, "a/file-123.tgz")))
 
-				Ω(response.Version.Path).Should(Equal("folder-123/file.tgz"))
+				Expect(response.Version.Path).To(Equal("folder-123/file.tgz"))
 
-				Ω(response.Metadata[0].Name).Should(Equal("filename"))
-				Ω(response.Metadata[0].Value).Should(Equal("file.tgz"))
+				Expect(response.Metadata[0].Name).To(Equal("filename"))
+				Expect(response.Metadata[0].Value).To(Equal("file.tgz"))
 			})
 
 			Context("when using versioned buckets", func() {
@@ -184,19 +219,19 @@ var _ = Describe("Out Command", func() {
 
 					response, err := command.Run(sourceDir, request)
 
-					Ω(err).ShouldNot(HaveOccurred())
+					Expect(err).ToNot(HaveOccurred())
 
-					Ω(s3client.UploadFileCallCount()).Should(Equal(1))
+					Expect(s3client.UploadFileCallCount()).To(Equal(1))
 					bucketName, remotePath, localPath := s3client.UploadFileArgsForCall(0)
 
-					Ω(bucketName).Should(Equal("bucket-name"))
-					Ω(remotePath).Should(Equal(remoteFileName))
-					Ω(localPath).Should(Equal(filepath.Join(sourceDir, localFileName)))
+					Expect(bucketName).To(Equal("bucket-name"))
+					Expect(remotePath).To(Equal(remoteFileName))
+					Expect(localPath).To(Equal(filepath.Join(sourceDir, localFileName)))
 
-					Ω(response.Version.VersionID).Should(Equal("123"))
+					Expect(response.Version.VersionID).To(Equal("123"))
 
-					Ω(response.Metadata[0].Name).Should(Equal("filename"))
-					Ω(response.Metadata[0].Value).Should(Equal(remoteFileName))
+					Expect(response.Metadata[0].Name).To(Equal("filename"))
+					Expect(response.Metadata[0].Value).To(Equal(remoteFileName))
 				})
 			})
 
@@ -234,22 +269,22 @@ var _ = Describe("Out Command", func() {
 				createFile("a/file.tgz")
 
 				response, err := command.Run(sourceDir, request)
-				Ω(err).ShouldNot(HaveOccurred())
+				Expect(err).ToNot(HaveOccurred())
 
-				Ω(s3client.URLCallCount()).Should(Equal(1))
+				Expect(s3client.URLCallCount()).To(Equal(1))
 				bucketName, remotePath, private, versionID := s3client.URLArgsForCall(0)
-				Ω(bucketName).Should(Equal("bucket-name"))
-				Ω(remotePath).Should(Equal("a-folder/file.tgz"))
-				Ω(private).Should(Equal(false))
-				Ω(versionID).Should(BeEmpty())
+				Expect(bucketName).To(Equal("bucket-name"))
+				Expect(remotePath).To(Equal("a-folder/file.tgz"))
+				Expect(private).To(Equal(false))
+				Expect(versionID).To(BeEmpty())
 
-				Ω(response.Version.Path).Should(Equal("a-folder/file.tgz"))
+				Expect(response.Version.Path).To(Equal("a-folder/file.tgz"))
 
-				Ω(response.Metadata[0].Name).Should(Equal("filename"))
-				Ω(response.Metadata[0].Value).Should(Equal("file.tgz"))
+				Expect(response.Metadata[0].Name).To(Equal("filename"))
+				Expect(response.Metadata[0].Value).To(Equal("file.tgz"))
 
-				Ω(response.Metadata[1].Name).Should(Equal("url"))
-				Ω(response.Metadata[1].Value).Should(Equal("http://example.com/bucket-name/a-folder/file.tgz"))
+				Expect(response.Metadata[1].Name).To(Equal("url"))
+				Expect(response.Metadata[1].Value).To(Equal("http://example.com/bucket-name/a-folder/file.tgz"))
 			})
 
 			It("doesn't include the URL if the output is private", func() {
@@ -259,10 +294,10 @@ var _ = Describe("Out Command", func() {
 				createFile("a/file.tgz")
 
 				response, err := command.Run(sourceDir, request)
-				Ω(err).ShouldNot(HaveOccurred())
+				Expect(err).ToNot(HaveOccurred())
 
-				Ω(response.Metadata).Should(HaveLen(1))
-				Ω(response.Metadata[0].Name).ShouldNot(Equal("url"))
+				Expect(response.Metadata).To(HaveLen(1))
+				Expect(response.Metadata[0].Name).ToNot(Equal("url"))
 			})
 		})
 	})
