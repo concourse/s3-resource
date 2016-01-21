@@ -57,7 +57,7 @@
 		},
 		{
 			"ImportPath": "github.com/cheggaaa/pb",
-			"Rev": "a9a708f18ae43493d86f3fd5b0cd04df679b170b"
+			"Rev": "4567e280f6e03f65013a955c17fb8b72837c8dfd"
 		},
 		{
 			"ImportPath": "github.com/cloudfoundry/gunk/urljoiner",

@@ -63,10 +63,10 @@ bar.ShowTimeLeft = true
 bar.ShowSpeed = true
 
 // sets the width of the progress bar
-bar.SetWidth(80)
+bar.SetWith(80)
 
-// sets the width of the progress bar, but if terminal size smaller will be ignored
-bar.SetMaxWidth(80)
+// sets the width of the progress bar, but if the terminal size is smaller, it will be ignored
+bar.SetMaxWith(80)
 
 // convert output to readable format (like KB, MB)
 bar.SetUnits(pb.U_BYTES)
@@ -88,30 +88,13 @@ r := myReader
 // my io.Writer
 w := myWriter
 
-// create proxy reader
-reader := bar.NewProxyReader(r)
-
-// and copy from pb reader
-io.Copy(w, reader)
-
-```
-
-```go
-// create and start bar
-bar := pb.New(myDataLen).SetUnits(pb.U_BYTES)
-bar.Start()
-
-// my io.Reader
-r := myReader
-
-// my io.Writer
-w := myWriter
-
 // create multi writer
 writer := io.MultiWriter(w, bar)
 
 // and copy
 io.Copy(writer, r)
+
+// show example/copy/copy.go for advanced example
 ```
 
 ## Custom Progress Bar Look-and-feel
@@ -120,11 +103,7 @@ io.Copy(writer, r)
 bar.Format("<.- >")
 ```
 
-## Multiple Progress Bars (experimental and unstable)
-
-#####Multiple bars do not works at Windows!!!
-
-Do not print to terminal while pool is active.
+## Multiple Progress Bars
 
 ```go
 package main
@@ -136,31 +115,26 @@ import (
     "time"
 )
 
-// create bars
-first := pb.New(200).Prefix("First ")
-second := pb.New(200).Prefix("Second ")
-third := pb.New(200).Prefix("Third ")
-// start pool
-pool, err := pb.StartPool(first, second, third)
-if err != nil {
-	panic(err)
-}
-// update bars
-wg := new(sync.WaitGroup)
-for _, bar := range []*pb.ProgressBar{first, second, third} {
-	wg.Add(1)
-	go func(cb *pb.ProgressBar) {
-		for n := 0; n < 200; n++ {
-			cb.Increment()
-			time.Sleep(time.Millisecond * time.Duration(rand.Intn(100)))
-		}
-		cb.Finish()
-		wg.Done()
-	}(bar)
-}
-wg.Wait()
-// close pool
-pool.Stop()
+func main() {
+    pool := &pb.Pool{}
+    first := pb.New(1000).Prefix("First ")
+    second := pb.New(1000).Prefix("Second ")
+    third := pb.New(1000).Prefix("Third ")
+    pool.Add(first, second, third)
+    pool.Start()
+    wg := new(sync.WaitGroup)
+    for _, bar := range []*pb.ProgressBar{first, second, third} {
+        wg.Add(1)
+        go func(cb *pb.ProgressBar) {
+            for n := 0; n < 1000; n++ {
+                cb.Increment()
+                time.Sleep(time.Millisecond * time.Duration(rand.Intn(100)))
+            }
+            cb.Finish()
+            wg.Done()
+        }(bar)
+    }
+    wg.Wait()
 ```
 
 The result will be as follows:
