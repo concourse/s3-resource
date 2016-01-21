@@ -30,6 +30,10 @@ type S3Client interface {
 	URL(bucketName string, remotePath string, private bool, versionID string) string
 }
 
+// 12 retries works out to ~5 mins of total backoff time, though AWS randomizes
+// the backoff to some extent so it may be as low as 4 or as high as 8 minutes
+const maxRetries = 12
+
 type s3client struct {
 	client  *s3.S3
 	session *session.Session
@@ -60,6 +64,7 @@ func NewS3Client(
 		Region:           aws.String(regionName),
 		Credentials:      creds,
 		S3ForcePathStyle: aws.Bool(true),
+		MaxRetries:       aws.Int(maxRetries),
 	}
 
 	if len(endpoint) != 0 {
