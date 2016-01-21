@@ -6,7 +6,9 @@ import (
 	"github.com/olekukonko/ts"
 )
 
-var tty = os.Stdin
+func bold(str string) string {
+	return str
+}
 
 func terminalWidth() (int, error) {
 	size, err := ts.GetSize()
