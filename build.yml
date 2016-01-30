@@ -10,8 +10,11 @@ params:
   S3_TESTING_REGION:
 
 inputs:
-  - name: s3-resource
-    path: gopath/src/github.com/concourse/s3-resource
+- name: s3-resource
+  path: gopath/src/github.com/concourse/s3-resource
+
+outputs:
+- name: built-resource
 
 run:
   path: gopath/src/github.com/concourse/s3-resource/scripts/ci
