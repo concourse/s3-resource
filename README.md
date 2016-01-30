@@ -87,8 +87,8 @@ a new version of that file.
   type: s3
   source:
     bucket: releases
-    regexp: release-name-(.*).tgz
-    access_key_id: AKIA-ACCESS-KEY
+    regexp: release-(.*).tgz
+    access_key_id: ACCESS-KEY
     secret_access_key: SECRET
 ```
 
@@ -101,7 +101,7 @@ a new version of that file.
 ``` yaml
 - put: release
   params:
-    from: a/release/path/release-(.*).tgz
+    file: path/to/release-*.tgz
 ```
 
 ## Required IAM Permissions
