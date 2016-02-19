@@ -29,7 +29,7 @@ version numbers.
 
 One of the following two options must be specified:
 
-* `regexp`: *Optional.* The pattern to match filenames against. The first
+* `regexp`: *Optional.* The pattern to match filenames against within S3. The first
   grouped match is used to extract the version, or if a group is explicitly
   named `version`, that group is used.
 
@@ -75,8 +75,10 @@ a new version of that file.
 
 #### Parameters
 
-* `file`: *Required.* Path to the file to upload. If multiple files are
-  matched by the glob, an error is raised.
+* `file`: *Required.* Path to the file to upload, provided by an output of a task.
+  If multiple files are matched by the glob, an error is raised. The file which
+  matches will be placed into the directory structure on S3 as defined in `regexp`
+  in the resource definition.
 
 ## Example Configuration
 
@@ -87,7 +89,7 @@ a new version of that file.
   type: s3
   source:
     bucket: releases
-    regexp: release-(.*).tgz
+    regexp: directory_on_s3/release-(.*).tgz
     access_key_id: ACCESS-KEY
     secret_access_key: SECRET
 ```
