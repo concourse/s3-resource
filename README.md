@@ -34,7 +34,8 @@ One of the following two options must be specified:
   named `version`, that group is used.
 
   The version extracted from this pattern is used to version the resource.
-  Semantic versions, or just numbers, are supported.
+  Semantic versions, or just numbers, are supported. Accordingly, full regular
+  expressions are supported, to specify the capture groups.
 
 * `versioned_file`: *Optional* If you enable versioning for your S3 bucket then
   you can keep the file name the same and upload new versions of your file
@@ -78,7 +79,8 @@ a new version of that file.
 * `file`: *Required.* Path to the file to upload, provided by an output of a task.
   If multiple files are matched by the glob, an error is raised. The file which
   matches will be placed into the directory structure on S3 as defined in `regexp`
-  in the resource definition.
+  in the resource definition. The matching syntax is bash glob expansion, so
+  no capture groups, etc.
 
 ## Example Configuration
 
