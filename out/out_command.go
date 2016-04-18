@@ -9,7 +9,6 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/concourse/fly/ui"
 	"github.com/concourse/s3-resource"
 	"github.com/concourse/s3-resource/versions"
 	"github.com/fatih/color"
@@ -154,7 +153,7 @@ func (command *OutCommand) metadata(bucketName, remotePath string, private bool,
 }
 
 func (command *OutCommand) printDeprecationWarning() {
-	printColorFunc := ui.BlinkingErrorColor.SprintFunc()
+	printColorFunc := BlinkingErrorColor.SprintFunc()
 	command.stderr.Write([]byte(printColorFunc("WARNING:")))
 	command.stderr.Write([]byte("\n"))
 	command.stderr.Write([]byte(printColorFunc("Parameters 'from/to' are deprecated, use 'file' instead")))
