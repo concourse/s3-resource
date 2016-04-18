@@ -3,28 +3,38 @@ package out
 import (
 	"errors"
 	"fmt"
+	"io"
 	"os"
 	"path/filepath"
 	"regexp"
 	"strings"
 
+	"github.com/concourse/fly/ui"
 	"github.com/concourse/s3-resource"
 	"github.com/concourse/s3-resource/versions"
+	"github.com/fatih/color"
 )
 
 var ErrObjectVersioningNotEnabled = errors.New("object versioning not enabled")
+var BlinkingErrorColor = color.New(color.BlinkSlow, color.FgWhite, color.BgRed, color.Bold)
 
 type OutCommand struct {
+	stderr   io.Writer
 	s3client s3resource.S3Client
 }
 
-func NewOutCommand(s3client s3resource.S3Client) *OutCommand {
+func NewOutCommand(stderr io.Writer, s3client s3resource.S3Client) *OutCommand {
 	return &OutCommand{
+		stderr:   stderr,
 		s3client: s3client,
 	}
 }
 
 func (command *OutCommand) Run(sourceDir string, request OutRequest) (OutResponse, error) {
+	if request.Params.From != "" || request.Params.To != "" {
+		command.printDeprecationWarning()
+	}
+
 	if ok, message := request.Source.IsValid(); !ok {
 		return OutResponse{}, errors.New(message)
 	}
@@ -141,4 +151,12 @@ func (command *OutCommand) metadata(bucketName, remotePath string, private bool,
 	}
 
 	return metadata
+}
+
+func (command *OutCommand) printDeprecationWarning() {
+	printColorFunc := ui.BlinkingErrorColor.SprintFunc()
+	command.stderr.Write([]byte(printColorFunc("WARNING:")))
+	command.stderr.Write([]byte("\n"))
+	command.stderr.Write([]byte(printColorFunc("Parameters 'from/to' are deprecated, use 'file' instead")))
+	command.stderr.Write([]byte("\n\n"))
 }

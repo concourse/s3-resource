@@ -30,7 +30,7 @@ func main() {
 		s3resource.Fatal("building S3 client", err)
 	}
 
-	command := out.NewOutCommand(client)
+	command := out.NewOutCommand(os.Stderr, client)
 	response, err := command.Run(sourceDir, request)
 	if err != nil {
 		s3resource.Fatal("running command", err)

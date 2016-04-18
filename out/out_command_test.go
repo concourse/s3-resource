@@ -7,6 +7,7 @@ import (
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	"github.com/onsi/gomega/gbytes"
 
 	"github.com/concourse/s3-resource"
 	"github.com/concourse/s3-resource/fakes"
@@ -21,6 +22,7 @@ var _ = Describe("Out Command", func() {
 			sourceDir string
 			request   OutRequest
 
+			stderr   *gbytes.Buffer
 			s3client *fakes.FakeS3Client
 			command  *OutCommand
 		)
@@ -41,10 +43,12 @@ var _ = Describe("Out Command", func() {
 			}
 
 			s3client = &fakes.FakeS3Client{}
-			command = NewOutCommand(s3client)
+			stderr = gbytes.NewBuffer()
+			command = NewOutCommand(stderr, s3client)
 		})
 
 		AfterEach(func() {
+			stderr.Close()
 			err := os.RemoveAll(tmpPath)
 			Ω(err).ShouldNot(HaveOccurred())
 		})
@@ -59,7 +63,18 @@ var _ = Describe("Out Command", func() {
 			file.Close()
 		}
 
-		Describe("finding files to upload", func() {
+		Describe("finding files to upload with From param", func() {
+			It("prints the deprecation warning", func() {
+				request.Params.From = "foo.tgz"
+				createFile("foo.tgz")
+
+				_, err := command.Run(sourceDir, request)
+				Ω(err).ShouldNot(HaveOccurred())
+
+				Expect(stderr.Contents()).To(ContainSubstring("WARNING:"))
+				Expect(stderr.Contents()).To(ContainSubstring("Parameters 'from/to' are deprecated, use 'file' instead"))
+			})
+
 			It("does not error if there is a single match", func() {
 				request.Params.From = "a/(.*).tgz"
 				createFile("a/file.tgz")
@@ -88,6 +103,16 @@ var _ = Describe("Out Command", func() {
 		})
 
 		Describe("finding files to upload with File param", func() {
+			It("does not print the deprecation warning", func() {
+				request.Params.File = "a/*.tgz"
+				createFile("a/file.tgz")
+
+				_, err := command.Run(sourceDir, request)
+				Ω(err).ShouldNot(HaveOccurred())
+
+				Expect(stderr.Contents()).NotTo(ContainSubstring("WARNING:"))
+			})
+
 			It("does not error if there is a single match", func() {
 				request.Params.File = "a/*.tgz"
 				createFile("a/file.tgz")
@@ -115,7 +140,19 @@ var _ = Describe("Out Command", func() {
 			})
 		})
 
-		Describe("uploading the file", func() {
+		Describe("uploading the file with To param", func() {
+			It("prints the deprecation warning", func() {
+				request.Params.From = "a/(.*).tgz"
+				request.Params.To = "a-folder/"
+				createFile("a/file.tgz")
+
+				_, err := command.Run(sourceDir, request)
+				Ω(err).ShouldNot(HaveOccurred())
+
+				Expect(stderr.Contents()).To(ContainSubstring("WARNING:"))
+				Expect(stderr.Contents()).To(ContainSubstring("Parameters 'from/to' are deprecated, use 'file' instead"))
+			})
+
 			It("uploads the file", func() {
 				request.Params.From = "a/(.*).tgz"
 				request.Params.To = "a-folder/"
