@@ -40,7 +40,7 @@ func (command *CheckCommand) checkByRegex(request CheckRequest) CheckResponse {
 	if !matched {
 		return latestVersion(extractions)
 	} else {
-		return newerVersions(lastVersion, extractions)
+		return newVersions(lastVersion, extractions)
 	}
 }
 
@@ -74,7 +74,7 @@ func (command *CheckCommand) checkByVersionedFile(request CheckRequest) CheckRes
 		}
 		response = append(response, version)
 	} else {
-		for i := requestVersionIndex - 1; i >= 0; i-- {
+		for i := requestVersionIndex; i >= 0; i-- {
 			version := s3resource.Version{
 				VersionID: bucketVersions[i],
 			}
@@ -90,11 +90,11 @@ func latestVersion(extractions versions.Extractions) CheckResponse {
 	return []s3resource.Version{{Path: lastExtraction.Path}}
 }
 
-func newerVersions(lastVersion versions.Extraction, extractions versions.Extractions) CheckResponse {
+func newVersions(lastVersion versions.Extraction, extractions versions.Extractions) CheckResponse {
 	response := CheckResponse{}
 
 	for _, extraction := range extractions {
-		if extraction.Version.GT(lastVersion.Version) {
+		if extraction.Version.GTE(lastVersion.Version) {
 			version := s3resource.Version{
 				Path: extraction.Path,
 			}

@@ -360,7 +360,7 @@ var _ = Describe("check", func() {
 				BeforeEach(func() {
 					directoryPrefix = "files-in-bucket-that-do-match-with-version"
 					checkRequest.Source.Regexp = filepath.Join(directoryPrefix, "file-does-match-(.*)")
-					checkRequest.Version.Path = filepath.Join(directoryPrefix, "file-does-match-1")
+					checkRequest.Version.Path = filepath.Join(directoryPrefix, "file-does-match-2")
 					err := json.NewEncoder(stdin).Encode(checkRequest)
 					Ω(err).ShouldNot(HaveOccurred())
 
@@ -548,7 +548,7 @@ var _ = Describe("check", func() {
 
 						fileVersions, err := s3client.BucketFileVersions(versionedBucketName, filepath.Join(directoryPrefix, "versioned-file"))
 						Ω(err).ShouldNot(HaveOccurred())
-						checkRequest.Version.VersionID = fileVersions[2]
+						checkRequest.Version.VersionID = fileVersions[1]
 
 						err = json.NewEncoder(stdin).Encode(checkRequest)
 						Ω(err).ShouldNot(HaveOccurred())
@@ -568,7 +568,6 @@ var _ = Describe("check", func() {
 					})
 
 					It("returns the most recent version", func() {
-
 						reader := bytes.NewBuffer(session.Out.Contents())
 
 						var response check.CheckResponse
