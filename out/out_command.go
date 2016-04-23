@@ -17,6 +17,10 @@ import (
 var ErrObjectVersioningNotEnabled = errors.New("object versioning not enabled")
 var BlinkingErrorColor = color.New(color.BlinkSlow, color.FgWhite, color.BgRed, color.Bold)
 
+func init() {
+	BlinkingErrorColor.EnableColor()
+}
+
 type OutCommand struct {
 	stderr   io.Writer
 	s3client s3resource.S3Client
