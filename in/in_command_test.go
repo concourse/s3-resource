@@ -61,176 +61,14 @@ var _ = Describe("In Command", func() {
 			Ω(destDir).Should(ExistOnFilesystem())
 		})
 
-		Context("with versions that would fail if lexicographically ordered", func() {
+		Context("when there is no path in the requested version", func() {
 			BeforeEach(func() {
 				request.Version.Path = ""
-
-				s3client.BucketFilesReturns([]string{
-					"files/a-file-1.5.6-build.10.tgz",
-					"files/a-file-1.5.6-build.100.tgz",
-					"files/a-file-1.5.6-build.9.tgz",
-				}, nil)
 			})
 
-			It("scans the bucket for the latest file to download", func() {
+			It("returns an error", func() {
 				_, err := command.Run(destDir, request)
-				Ω(err).ShouldNot(HaveOccurred())
-
-				Ω(s3client.DownloadFileCallCount()).Should(Equal(1))
-				bucketName, remotePath, versionID, localPath := s3client.DownloadFileArgsForCall(0)
-
-				Ω(bucketName).Should(Equal("bucket-name"))
-				Ω(remotePath).Should(Equal("files/a-file-1.5.6-build.100.tgz"))
-				Ω(versionID).Should(BeEmpty())
-				Ω(localPath).Should(Equal(filepath.Join(destDir, "a-file-1.5.6-build.100.tgz")))
-			})
-		})
-
-		Context("when there is no existing version in the request", func() {
-			BeforeEach(func() {
-				request.Version.Path = ""
-
-				s3client.BucketFilesReturns([]string{
-					"files/a-file-0.0.1.tgz",
-					"files/a-file-3.53.tgz",
-					"files/a-file-2.33.333.tgz",
-					"files/a-file-2.4.3.tgz",
-				}, nil)
-			})
-
-			It("scans the bucket for the latest file to download", func() {
-				_, err := command.Run(destDir, request)
-				Ω(err).ShouldNot(HaveOccurred())
-
-				Ω(s3client.DownloadFileCallCount()).Should(Equal(1))
-				bucketName, remotePath, versionID, localPath := s3client.DownloadFileArgsForCall(0)
-
-				Ω(bucketName).Should(Equal("bucket-name"))
-				Ω(remotePath).Should(Equal("files/a-file-3.53.tgz"))
-				Ω(versionID).Should(BeEmpty())
-				Ω(localPath).Should(Equal(filepath.Join(destDir, "a-file-3.53.tgz")))
-			})
-
-			Context("when using a CloudFront domain", func() {
-				BeforeEach(func() {
-					request.Source.CloudfrontURL = "https://1234567890.cloudfront.net"
-				})
-
-				It("creates a 'url' file that contains the URL including the CloudFront domain", func() {
-					urlPath := filepath.Join(destDir, "url")
-					Ω(urlPath).ShouldNot(ExistOnFilesystem())
-
-					_, err := command.Run(destDir, request)
-					Ω(err).ShouldNot(HaveOccurred())
-
-					Ω(urlPath).Should(ExistOnFilesystem())
-					contents, err := ioutil.ReadFile(urlPath)
-					Ω(err).ShouldNot(HaveOccurred())
-					Ω(string(contents)).Should(Equal("https://1234567890.cloudfront.net/files/a-file-3.53.tgz"))
-				})
-			})
-
-			It("creates a 'url' file that contains the URL", func() {
-				urlPath := filepath.Join(destDir, "url")
-				Ω(urlPath).ShouldNot(ExistOnFilesystem())
-
-				_, err := command.Run(destDir, request)
-				Ω(err).ShouldNot(HaveOccurred())
-
-				Ω(urlPath).Should(ExistOnFilesystem())
-				contents, err := ioutil.ReadFile(urlPath)
-				Ω(err).ShouldNot(HaveOccurred())
-				Ω(string(contents)).Should(Equal("http://google.com"))
-
-				bucketName, remotePath, private, versionID := s3client.URLArgsForCall(0)
-				Ω(bucketName).Should(Equal("bucket-name"))
-				Ω(remotePath).Should(Equal("files/a-file-3.53.tgz"))
-				Ω(versionID).Should(BeEmpty())
-				Ω(private).Should(Equal(false))
-			})
-
-			Context("when configured with private URLs", func() {
-				BeforeEach(func() {
-					request.Source.Private = true
-				})
-
-				It("creates a 'url' file that contains the private URL if told to do that", func() {
-					urlPath := filepath.Join(destDir, "url")
-					Ω(urlPath).ShouldNot(ExistOnFilesystem())
-
-					_, err := command.Run(destDir, request)
-					Ω(err).ShouldNot(HaveOccurred())
-
-					Ω(urlPath).Should(ExistOnFilesystem())
-					contents, err := ioutil.ReadFile(urlPath)
-					Ω(err).ShouldNot(HaveOccurred())
-					Ω(string(contents)).Should(Equal("http://google.com"))
-
-					Ω(s3client.URLCallCount()).Should(Equal(1))
-					bucketName, remotePath, private, versionID := s3client.URLArgsForCall(0)
-					Ω(bucketName).Should(Equal("bucket-name"))
-					Ω(remotePath).Should(Equal("files/a-file-3.53.tgz"))
-					Ω(versionID).Should(BeEmpty())
-					Ω(private).Should(Equal(true))
-				})
-			})
-
-			It("creates a 'version' file that contains the latest version", func() {
-				versionFile := filepath.Join(destDir, "version")
-				Ω(versionFile).ShouldNot(ExistOnFilesystem())
-
-				_, err := command.Run(destDir, request)
-				Ω(err).ShouldNot(HaveOccurred())
-
-				Ω(versionFile).Should(ExistOnFilesystem())
-				contents, err := ioutil.ReadFile(versionFile)
-				Ω(err).ShouldNot(HaveOccurred())
-				Ω(string(contents)).Should(Equal("3.53"))
-			})
-
-			Context("when the regexp has no groups", func() {
-				BeforeEach(func() {
-					request.Source.Regexp = "files/a-file-.*.tgz"
-				})
-
-				It("returns an error when the regexp has no groups", func() {
-					_, err := command.Run(destDir, request)
-					Ω(err).Should(HaveOccurred())
-				})
-			})
-
-			Describe("the response", func() {
-				It("has a version that is the remote file path", func() {
-					response, err := command.Run(destDir, request)
-					Ω(err).ShouldNot(HaveOccurred())
-
-					Ω(response.Version.Path).Should(Equal("files/a-file-3.53.tgz"))
-				})
-
-				It("has metadata about the file", func() {
-					response, err := command.Run(destDir, request)
-					Ω(err).ShouldNot(HaveOccurred())
-
-					Ω(response.Metadata[0].Name).Should(Equal("filename"))
-					Ω(response.Metadata[0].Value).Should(Equal("a-file-3.53.tgz"))
-
-					Ω(response.Metadata[1].Name).Should(Equal("url"))
-					Ω(response.Metadata[1].Value).Should(Equal("http://google.com"))
-				})
-
-				Context("when the output is private", func() {
-					BeforeEach(func() {
-						request.Source.Private = true
-					})
-
-					It("doesn't include the URL in the metadata", func() {
-						response, err := command.Run(destDir, request)
-						Ω(err).ShouldNot(HaveOccurred())
-
-						Ω(response.Metadata).Should(HaveLen(1))
-						Ω(response.Metadata[0].Name).ShouldNot(Equal("url"))
-					})
-				})
+				Expect(err).To(MatchError(ErrMissingPath))
 			})
 		})
 
@@ -269,6 +107,25 @@ var _ = Describe("In Command", func() {
 				Ω(remotePath).Should(Equal("files/a-file-1.3.tgz"))
 				Ω(private).Should(Equal(false))
 				Ω(versionID).Should(BeEmpty())
+			})
+
+			Context("when using a CloudFront domain", func() {
+				BeforeEach(func() {
+					request.Source.CloudfrontURL = "https://1234567890.cloudfront.net"
+				})
+
+				It("creates a 'url' file that contains the URL including the CloudFront domain", func() {
+					urlPath := filepath.Join(destDir, "url")
+					Ω(urlPath).ShouldNot(ExistOnFilesystem())
+
+					_, err := command.Run(destDir, request)
+					Ω(err).ShouldNot(HaveOccurred())
+
+					Ω(urlPath).Should(ExistOnFilesystem())
+					contents, err := ioutil.ReadFile(urlPath)
+					Ω(err).ShouldNot(HaveOccurred())
+					Ω(string(contents)).Should(Equal("https://1234567890.cloudfront.net/files/a-file-1.3.tgz"))
+				})
 			})
 
 			Context("when configured with private URLs", func() {
@@ -342,6 +199,19 @@ var _ = Describe("In Command", func() {
 						Ω(response.Metadata[0].Name).ShouldNot(Equal("url"))
 					})
 				})
+			})
+		})
+
+		Context("when the Regexp does not match the provided version", func() {
+			BeforeEach(func() {
+				request.Source.Regexp = "not-matching-anything"
+			})
+
+			It("returns an h", func() {
+				_, err := command.Run(destDir, request)
+				Expect(err).To(HaveOccurred())
+				Expect(err.Error()).To(ContainSubstring("regex does not match provided version"))
+				Expect(err.Error()).To(ContainSubstring("files/a-file-1.3.tgz"))
 			})
 		})
 	})

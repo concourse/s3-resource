@@ -2,6 +2,7 @@ package in
 
 import (
 	"errors"
+	"fmt"
 	"io/ioutil"
 	"os"
 	"path"
@@ -11,6 +12,8 @@ import (
 	"github.com/concourse/s3-resource"
 	"github.com/concourse/s3-resource/versions"
 )
+
+var ErrMissingPath = errors.New("missing path in request")
 
 type RequestURLProvider struct {
 	s3Client s3resource.S3Client
@@ -70,17 +73,21 @@ func (command *InCommand) Run(destinationDir string, request InRequest) (InRespo
 }
 
 func (command *InCommand) inByRegex(destinationDir string, request InRequest) (InResponse, error) {
-	remotePath, err := command.pathToDownload(request)
-	if err != nil {
-		return InResponse{}, err
+	if request.Version.Path == "" {
+		return InResponse{}, ErrMissingPath
 	}
 
+	remotePath := request.Version.Path
+
 	extraction, ok := versions.Extract(remotePath, request.Source.Regexp)
-	if ok {
-		err := command.writeVersionFile(extraction.VersionNumber, destinationDir)
-		if err != nil {
-			return InResponse{}, err
-		}
+	if !ok {
+		return InResponse{}, fmt.Errorf("regex does not match provided version: %#v", request.Version)
+
+	}
+
+	err := command.writeVersionFile(extraction.VersionNumber, destinationDir)
+	if err != nil {
+		return InResponse{}, err
 	}
 
 	err = command.downloadFile(
@@ -149,21 +156,6 @@ func (command *InCommand) inByVersionedFile(destinationDir string, request InReq
 		Metadata: command.metadata(remotePath, request.Source.Private, url),
 	}, nil
 
-}
-
-func (command *InCommand) pathToDownload(request InRequest) (string, error) {
-	if request.Version.Path == "" {
-		extractions := versions.GetBucketFileVersions(command.s3client, request.Source)
-
-		if len(extractions) == 0 {
-			return "", errors.New("no extractions could be found - is your regexp correct?")
-		}
-
-		lastExtraction := extractions[len(extractions)-1]
-		return lastExtraction.Path, nil
-	}
-
-	return request.Version.Path, nil
 }
 
 func (command *InCommand) createDirectory(destDir string) error {
