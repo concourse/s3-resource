@@ -5,6 +5,8 @@ import (
 	"io/ioutil"
 	"os"
 
+	"github.com/aws/aws-sdk-go/aws/session"
+	"github.com/aws/aws-sdk-go/service/s3"
 	"github.com/concourse/s3-resource"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -24,6 +26,7 @@ var bucketName = os.Getenv("S3_TESTING_BUCKET")
 var regionName = os.Getenv("S3_TESTING_REGION")
 var endpoint = os.Getenv("S3_ENDPOINT")
 var s3client s3resource.S3Client
+var s3Service *s3.S3
 
 var checkPath string
 var inPath string
@@ -73,6 +76,8 @@ var _ = SynchronizedBeforeSuite(func() []byte {
 		regionName,
 		endpoint,
 	)
+
+	s3Service = s3.New(session.New(awsConfig), awsConfig)
 
 	s3client, err = s3resource.NewS3Client(
 		ioutil.Discard,
