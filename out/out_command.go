@@ -15,10 +15,11 @@ import (
 )
 
 var ErrObjectVersioningNotEnabled = errors.New("object versioning not enabled")
+var ErrorColor = color.New(color.FgWhite, color.BgRed, color.Bold)
 var BlinkingErrorColor = color.New(color.BlinkSlow, color.FgWhite, color.BgRed, color.Bold)
 
 func init() {
-	BlinkingErrorColor.EnableColor()
+	ErrorColor.EnableColor()
 }
 
 type OutCommand struct {
@@ -157,9 +158,10 @@ func (command *OutCommand) metadata(bucketName, remotePath string, private bool,
 }
 
 func (command *OutCommand) printDeprecationWarning() {
-	printColorFunc := BlinkingErrorColor.SprintFunc()
-	command.stderr.Write([]byte(printColorFunc("WARNING:")))
+	errorColor := ErrorColor.SprintFunc()
+	blinkColor := BlinkingErrorColor.SprintFunc()
+	command.stderr.Write([]byte(blinkColor("WARNING:")))
 	command.stderr.Write([]byte("\n"))
-	command.stderr.Write([]byte(printColorFunc("Parameters 'from/to' are deprecated, use 'file' instead")))
+	command.stderr.Write([]byte(errorColor("Parameters 'from/to' are deprecated, use 'file' instead")))
 	command.stderr.Write([]byte("\n\n"))
 }
