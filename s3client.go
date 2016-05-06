@@ -44,11 +44,25 @@ type s3client struct {
 
 func NewS3Client(
 	progressOutput io.Writer,
+	awsConfig *aws.Config,
+) (S3Client, error) {
+	sess := session.New(awsConfig)
+	client := s3.New(sess, awsConfig)
+
+	return &s3client{
+		client:  client,
+		session: sess,
+
+		progressOutput: progressOutput,
+	}, nil
+}
+
+func NewAwsConfig(
 	accessKey string,
 	secretKey string,
 	regionName string,
 	endpoint string,
-) (S3Client, error) {
+) (*aws.Config, error) {
 	var creds *credentials.Credentials
 
 	if accessKey == "" && secretKey == "" {
@@ -73,15 +87,7 @@ func NewS3Client(
 		awsConfig.Endpoint = &endpoint
 	}
 
-	sess := session.New(awsConfig)
-	client := s3.New(sess, awsConfig)
-
-	return &s3client{
-		client:  client,
-		session: sess,
-
-		progressOutput: progressOutput,
-	}, nil
+	return awsConfig, nil
 }
 
 func (client *s3client) BucketFiles(bucketName string, prefixHint string) ([]string, error) {
