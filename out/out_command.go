@@ -54,11 +54,24 @@ func (command *OutCommand) Run(sourceDir string, request OutRequest) (OutRespons
 	remotePath := command.remotePath(request, localPath, sourceDir)
 
 	bucketName := request.Source.Bucket
-	versionID, err := command.s3client.UploadFile(
-		bucketName,
-		remotePath,
-		localPath,
-	)
+
+	var versionID string
+
+	if request.Params.Acl != "" {
+		versionID, err = command.s3client.UploadFileWithAcl(
+			bucketName,
+			remotePath,
+			localPath,
+			request.Params.Acl,
+		)
+	} else {
+		versionID, err = command.s3client.UploadFile(
+			bucketName,
+			remotePath,
+			localPath,
+		)
+	}
+
 	if err != nil {
 		return OutResponse{}, err
 	}

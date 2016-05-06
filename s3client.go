@@ -22,6 +22,7 @@ type S3Client interface {
 	BucketFileVersions(bucketName string, remotePath string) ([]string, error)
 
 	UploadFile(bucketName string, remotePath string, localPath string) (string, error)
+	UploadFileWithAcl(bucketName string, remotePath string, localPath string, acl string) (string, error)
 	DownloadFile(bucketName string, remotePath string, versionID string, localPath string) error
 
 	DeleteFile(bucketName string, remotePath string) error
@@ -147,6 +148,43 @@ func (client *s3client) UploadFile(bucketName string, remotePath string, localPa
 		Bucket: aws.String(bucketName),
 		Key:    aws.String(remotePath),
 		Body:   progress.NewProxyReader(localFile),
+	})
+	if err != nil {
+		return "", err
+	}
+
+	if uploadOutput.VersionID != nil {
+		return *uploadOutput.VersionID, nil
+	}
+
+	return "", nil
+}
+
+func (client *s3client) UploadFileWithAcl(bucketName string, remotePath string, localPath string, acl string) (string, error) {
+	uploader := s3manager.NewUploader(client.session)
+
+	stat, err := os.Stat(localPath)
+	if err != nil {
+		return "", err
+	}
+
+	localFile, err := os.Open(localPath)
+	if err != nil {
+		return "", err
+	}
+
+	defer localFile.Close()
+
+	progress := client.newProgressBar(stat.Size())
+
+	progress.Start()
+	defer progress.Finish()
+
+	uploadOutput, err := uploader.Upload(&s3manager.UploadInput{
+		Bucket: aws.String(bucketName),
+		Key:    aws.String(remotePath),
+		Body:   progress.NewProxyReader(localFile),
+		ACL:    aws.String(acl),
 	})
 	if err != nil {
 		return "", err

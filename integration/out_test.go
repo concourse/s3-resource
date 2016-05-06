@@ -123,7 +123,7 @@ var _ = Describe("out", func() {
 			Ω(err).ShouldNot(HaveOccurred())
 		})
 
-		Context("with a file glob", func() {
+		Context("with a file glob and acls specified", func() {
 			BeforeEach(func() {
 				err := ioutil.WriteFile(filepath.Join(sourceDir, "glob-file-to-upload"), []byte("contents"), 0755)
 				Ω(err).ShouldNot(HaveOccurred())
@@ -139,6 +139,7 @@ var _ = Describe("out", func() {
 					Params: out.Params{
 						File: "glob-*",
 						To:   directoryPrefix + "/",
+						Acl:  "public-read",
 					},
 				}
 

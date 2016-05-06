@@ -138,6 +138,25 @@ var _ = Describe("Out Command", func() {
 				_, err := command.Run(sourceDir, request)
 				Ω(err).Should(HaveOccurred())
 			})
+
+			Context("when specifying acls for the uploaded file", func() {
+				It("applies the specfied acl", func() {
+					request.Params.File = "a/*.tgz"
+					request.Params.Acl = "public-read"
+					createFile("a/file.tgz")
+
+					_, err := command.Run(sourceDir, request)
+					Ω(err).ShouldNot(HaveOccurred())
+
+					Ω(s3client.UploadFileWithAclCallCount()).Should(Equal(1))
+					bucketName, remotePath, localPath, acl := s3client.UploadFileWithAclArgsForCall(0)
+
+					Ω(bucketName).Should(Equal("bucket-name"))
+					Ω(remotePath).Should(Equal("file.tgz"))
+					Ω(localPath).Should(Equal(filepath.Join(sourceDir, "a/file.tgz")))
+					Ω(acl).Should(Equal("public-read"))
+				})
+			})
 		})
 
 		Describe("uploading the file with To param", func() {
