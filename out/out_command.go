@@ -55,22 +55,17 @@ func (command *OutCommand) Run(sourceDir string, request OutRequest) (OutRespons
 
 	bucketName := request.Source.Bucket
 
-	var versionID string
-
+	acl := "private"
 	if request.Params.Acl != "" {
-		versionID, err = command.s3client.UploadFileWithAcl(
-			bucketName,
-			remotePath,
-			localPath,
-			request.Params.Acl,
-		)
-	} else {
-		versionID, err = command.s3client.UploadFile(
-			bucketName,
-			remotePath,
-			localPath,
-		)
+		acl = request.Params.Acl
 	}
+
+	versionID, err := command.s3client.UploadFileWithAcl(
+		bucketName,
+		remotePath,
+		localPath,
+		acl,
+	)
 
 	if err != nil {
 		return OutResponse{}, err
