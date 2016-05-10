@@ -131,39 +131,7 @@ func (client *s3client) BucketFileVersions(bucketName string, remotePath string)
 }
 
 func (client *s3client) UploadFile(bucketName string, remotePath string, localPath string) (string, error) {
-	uploader := s3manager.NewUploader(client.session)
-
-	stat, err := os.Stat(localPath)
-	if err != nil {
-		return "", err
-	}
-
-	localFile, err := os.Open(localPath)
-	if err != nil {
-		return "", err
-	}
-
-	defer localFile.Close()
-
-	progress := client.newProgressBar(stat.Size())
-
-	progress.Start()
-	defer progress.Finish()
-
-	uploadOutput, err := uploader.Upload(&s3manager.UploadInput{
-		Bucket: aws.String(bucketName),
-		Key:    aws.String(remotePath),
-		Body:   progress.NewProxyReader(localFile),
-	})
-	if err != nil {
-		return "", err
-	}
-
-	if uploadOutput.VersionID != nil {
-		return *uploadOutput.VersionID, nil
-	}
-
-	return "", nil
+	return client.UploadFileWithAcl(bucketName, remotePath, localPath, "private")
 }
 
 func (client *s3client) UploadFileWithAcl(bucketName string, remotePath string, localPath string, acl string) (string, error) {
