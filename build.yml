@@ -8,6 +8,7 @@ params:
   S3_TESTING_BUCKET:
   S3_VERSIONED_TESTING_BUCKET:
   S3_TESTING_REGION:
+  S3_ENDPOINT:
 
 inputs:
 - name: s3-resource
