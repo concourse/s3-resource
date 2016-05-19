@@ -83,7 +83,7 @@ a new version of that file.
   in the resource definition. The matching syntax is bash glob expansion, so
   no capture groups, etc.
 
-* `acl`: (optional) [Canned Acl](http://docs.aws.amazon.com/AmazonS3/latest/dev/acl-overview.html)
+* `acl`: *Optional.*  [Canned Acl](http://docs.aws.amazon.com/AmazonS3/latest/dev/acl-overview.html)
   for the uploaded object.
 
 ## Example Configuration

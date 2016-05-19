@@ -21,8 +21,7 @@ type S3Client interface {
 	BucketFiles(bucketName string, prefixHint string) ([]string, error)
 	BucketFileVersions(bucketName string, remotePath string) ([]string, error)
 
-	UploadFile(bucketName string, remotePath string, localPath string) (string, error)
-	UploadFileWithAcl(bucketName string, remotePath string, localPath string, acl string) (string, error)
+	UploadFile(bucketName string, remotePath string, localPath string, acl string) (string, error)
 	DownloadFile(bucketName string, remotePath string, versionID string, localPath string) error
 
 	DeleteFile(bucketName string, remotePath string) error
@@ -45,7 +44,7 @@ type s3client struct {
 func NewS3Client(
 	progressOutput io.Writer,
 	awsConfig *aws.Config,
-) (S3Client, error) {
+) S3Client {
 	sess := session.New(awsConfig)
 	client := s3.New(sess, awsConfig)
 
@@ -54,7 +53,7 @@ func NewS3Client(
 		session: sess,
 
 		progressOutput: progressOutput,
-	}, nil
+	}
 }
 
 func NewAwsConfig(
@@ -62,7 +61,7 @@ func NewAwsConfig(
 	secretKey string,
 	regionName string,
 	endpoint string,
-) (*aws.Config, error) {
+) *aws.Config {
 	var creds *credentials.Credentials
 
 	if accessKey == "" && secretKey == "" {
@@ -87,7 +86,7 @@ func NewAwsConfig(
 		awsConfig.Endpoint = &endpoint
 	}
 
-	return awsConfig, nil
+	return awsConfig
 }
 
 func (client *s3client) BucketFiles(bucketName string, prefixHint string) ([]string, error) {
@@ -130,11 +129,7 @@ func (client *s3client) BucketFileVersions(bucketName string, remotePath string)
 	return versions, nil
 }
 
-func (client *s3client) UploadFile(bucketName string, remotePath string, localPath string) (string, error) {
-	return client.UploadFileWithAcl(bucketName, remotePath, localPath, "private")
-}
-
-func (client *s3client) UploadFileWithAcl(bucketName string, remotePath string, localPath string, acl string) (string, error) {
+func (client *s3client) UploadFile(bucketName string, remotePath string, localPath string, acl string) (string, error) {
 	uploader := s3manager.NewUploader(client.session)
 
 	stat, err := os.Stat(localPath)

@@ -28,26 +28,15 @@ type FakeS3Client struct {
 		result1 []string
 		result2 error
 	}
-	UploadFileStub        func(bucketName string, remotePath string, localPath string) (string, error)
+	UploadFileStub        func(bucketName string, remotePath string, localPath string, acl string) (string, error)
 	uploadFileMutex       sync.RWMutex
 	uploadFileArgsForCall []struct {
 		bucketName string
 		remotePath string
 		localPath  string
-	}
-	uploadFileReturns struct {
-		result1 string
-		result2 error
-	}
-	UploadFileWithAclStub        func(bucketName string, remotePath string, localPath string, acl string) (string, error)
-	uploadFileWithAclMutex       sync.RWMutex
-	uploadFileWithAclArgsForCall []struct {
-		bucketName string
-		remotePath string
-		localPath  string
 		acl        string
 	}
-	uploadFileWithAclReturns struct {
+	uploadFileReturns struct {
 		result1 string
 		result2 error
 	}
@@ -162,16 +151,17 @@ func (fake *FakeS3Client) BucketFileVersionsReturns(result1 []string, result2 er
 	}{result1, result2}
 }
 
-func (fake *FakeS3Client) UploadFile(bucketName string, remotePath string, localPath string) (string, error) {
+func (fake *FakeS3Client) UploadFile(bucketName string, remotePath string, localPath string, acl string) (string, error) {
 	fake.uploadFileMutex.Lock()
 	fake.uploadFileArgsForCall = append(fake.uploadFileArgsForCall, struct {
 		bucketName string
 		remotePath string
 		localPath  string
-	}{bucketName, remotePath, localPath})
+		acl        string
+	}{bucketName, remotePath, localPath, acl})
 	fake.uploadFileMutex.Unlock()
 	if fake.UploadFileStub != nil {
-		return fake.UploadFileStub(bucketName, remotePath, localPath)
+		return fake.UploadFileStub(bucketName, remotePath, localPath, acl)
 	} else {
 		return fake.uploadFileReturns.result1, fake.uploadFileReturns.result2
 	}
@@ -183,51 +173,15 @@ func (fake *FakeS3Client) UploadFileCallCount() int {
 	return len(fake.uploadFileArgsForCall)
 }
 
-func (fake *FakeS3Client) UploadFileArgsForCall(i int) (string, string, string) {
+func (fake *FakeS3Client) UploadFileArgsForCall(i int) (string, string, string, string) {
 	fake.uploadFileMutex.RLock()
 	defer fake.uploadFileMutex.RUnlock()
-	return fake.uploadFileArgsForCall[i].bucketName, fake.uploadFileArgsForCall[i].remotePath, fake.uploadFileArgsForCall[i].localPath
+	return fake.uploadFileArgsForCall[i].bucketName, fake.uploadFileArgsForCall[i].remotePath, fake.uploadFileArgsForCall[i].localPath, fake.uploadFileArgsForCall[i].acl
 }
 
 func (fake *FakeS3Client) UploadFileReturns(result1 string, result2 error) {
 	fake.UploadFileStub = nil
 	fake.uploadFileReturns = struct {
-		result1 string
-		result2 error
-	}{result1, result2}
-}
-
-func (fake *FakeS3Client) UploadFileWithAcl(bucketName string, remotePath string, localPath string, acl string) (string, error) {
-	fake.uploadFileWithAclMutex.Lock()
-	fake.uploadFileWithAclArgsForCall = append(fake.uploadFileWithAclArgsForCall, struct {
-		bucketName string
-		remotePath string
-		localPath  string
-		acl        string
-	}{bucketName, remotePath, localPath, acl})
-	fake.uploadFileWithAclMutex.Unlock()
-	if fake.UploadFileWithAclStub != nil {
-		return fake.UploadFileWithAclStub(bucketName, remotePath, localPath, acl)
-	} else {
-		return fake.uploadFileWithAclReturns.result1, fake.uploadFileWithAclReturns.result2
-	}
-}
-
-func (fake *FakeS3Client) UploadFileWithAclCallCount() int {
-	fake.uploadFileWithAclMutex.RLock()
-	defer fake.uploadFileWithAclMutex.RUnlock()
-	return len(fake.uploadFileWithAclArgsForCall)
-}
-
-func (fake *FakeS3Client) UploadFileWithAclArgsForCall(i int) (string, string, string, string) {
-	fake.uploadFileWithAclMutex.RLock()
-	defer fake.uploadFileWithAclMutex.RUnlock()
-	return fake.uploadFileWithAclArgsForCall[i].bucketName, fake.uploadFileWithAclArgsForCall[i].remotePath, fake.uploadFileWithAclArgsForCall[i].localPath, fake.uploadFileWithAclArgsForCall[i].acl
-}
-
-func (fake *FakeS3Client) UploadFileWithAclReturns(result1 string, result2 error) {
-	fake.UploadFileWithAclStub = nil
-	fake.uploadFileWithAclReturns = struct {
 		result1 string
 		result2 error
 	}{result1, result2}

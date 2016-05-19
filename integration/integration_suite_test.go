@@ -70,7 +70,7 @@ var _ = SynchronizedBeforeSuite(func() []byte {
 	Ω(bucketName).ShouldNot(BeEmpty(), "must specify $S3_TESTING_BUCKET")
 	Ω(regionName).ShouldNot(BeEmpty(), "must specify $S3_TESTING_REGION")
 
-	awsConfig, err := s3resource.NewAwsConfig(
+	awsConfig := s3resource.NewAwsConfig(
 		accessKeyID,
 		secretAccessKey,
 		regionName,
@@ -79,10 +79,7 @@ var _ = SynchronizedBeforeSuite(func() []byte {
 
 	s3Service = s3.New(session.New(awsConfig), awsConfig)
 
-	s3client, err = s3resource.NewS3Client(
-		ioutil.Discard,
-		awsConfig,
-	)
+	s3client = s3resource.NewS3Client(ioutil.Discard, awsConfig)
 })
 
 var _ = SynchronizedAfterSuite(func() {}, func() {

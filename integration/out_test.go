@@ -125,7 +125,7 @@ var _ = Describe("out", func() {
 			Ω(err).ShouldNot(HaveOccurred())
 		})
 
-		Context("with a file glob and acls specified", func() {
+		Context("with a file glob and public read ACL specified", func() {
 			BeforeEach(func() {
 				err := ioutil.WriteFile(filepath.Join(sourceDir, "glob-file-to-upload"), []byte("contents"), 0755)
 				Ω(err).ShouldNot(HaveOccurred())
@@ -183,7 +183,7 @@ var _ = Describe("out", func() {
 				}))
 			})
 
-			It("allows Everyone to have read access to the object", func() {
+			It("allows everyone to have read access to the object", func() {
 				anonURI := "http://acs.amazonaws.com/groups/global/AllUsers"
 				permision := s3.PermissionRead
 				grantee := s3.Grantee{URI: &anonURI}

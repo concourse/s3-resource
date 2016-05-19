@@ -5,14 +5,13 @@ import (
 	"os"
 	"path/filepath"
 
-	. "github.com/onsi/ginkgo"
-	. "github.com/onsi/gomega"
-	"github.com/onsi/gomega/gbytes"
-
 	"github.com/concourse/s3-resource"
 	"github.com/concourse/s3-resource/fakes"
+	"github.com/concourse/s3-resource/out"
+	"github.com/onsi/gomega/gbytes"
 
-	. "github.com/concourse/s3-resource/out"
+	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/gomega"
 )
 
 var _ = Describe("Out Command", func() {
@@ -20,11 +19,11 @@ var _ = Describe("Out Command", func() {
 		var (
 			tmpPath   string
 			sourceDir string
-			request   OutRequest
+			request   out.OutRequest
 
 			stderr   *gbytes.Buffer
 			s3client *fakes.FakeS3Client
-			command  *OutCommand
+			command  *out.OutCommand
 		)
 
 		BeforeEach(func() {
@@ -36,7 +35,7 @@ var _ = Describe("Out Command", func() {
 			err = os.MkdirAll(sourceDir, 0755)
 			Ω(err).ShouldNot(HaveOccurred())
 
-			request = OutRequest{
+			request = out.OutRequest{
 				Source: s3resource.Source{
 					Bucket: "bucket-name",
 				},
@@ -44,7 +43,7 @@ var _ = Describe("Out Command", func() {
 
 			s3client = &fakes.FakeS3Client{}
 			stderr = gbytes.NewBuffer()
-			command = NewOutCommand(stderr, s3client)
+			command = out.NewOutCommand(stderr, s3client)
 		})
 
 		AfterEach(func() {
@@ -139,48 +138,52 @@ var _ = Describe("Out Command", func() {
 				Ω(err).Should(HaveOccurred())
 			})
 
-			It("defaults the acl to 'private'", func() {
+			It("defaults the ACL to 'private'", func() {
 				request.Params.File = "a/*.tgz"
 				createFile("a/file.tgz")
 
 				_, err := command.Run(sourceDir, request)
 				Ω(err).ShouldNot(HaveOccurred())
 
-				Ω(s3client.UploadFileWithAclCallCount()).Should(Equal(1))
-				bucketName, remotePath, localPath, acl := s3client.UploadFileWithAclArgsForCall(0)
+				Ω(s3client.UploadFileCallCount()).Should(Equal(1))
+				bucketName, remotePath, localPath, acl := s3client.UploadFileArgsForCall(0)
 
 				Ω(bucketName).Should(Equal("bucket-name"))
 				Ω(remotePath).Should(Equal("file.tgz"))
 				Ω(localPath).Should(Equal(filepath.Join(sourceDir, "a/file.tgz")))
 				Ω(acl).Should(Equal("private"))
 			})
+		})
 
-			Context("when specifying acls for the uploaded file", func() {
-				It("applies the specfied acl", func() {
-					request.Params.File = "a/*.tgz"
-					request.Params.Acl = "public-read"
-					createFile("a/file.tgz")
+		Context("when specifying an ACL for the uploaded file", func() {
+			BeforeEach(func() {
+				request.Params.File = "a/*.tgz"
+				request.Params.Acl = "public-read"
+				createFile("a/file.tgz")
+			})
 
-					_, err := command.Run(sourceDir, request)
-					Ω(err).ShouldNot(HaveOccurred())
+			It("applies the specfied acl", func() {
+				_, err := command.Run(sourceDir, request)
+				Ω(err).ShouldNot(HaveOccurred())
 
-					Ω(s3client.UploadFileWithAclCallCount()).Should(Equal(1))
-					bucketName, remotePath, localPath, acl := s3client.UploadFileWithAclArgsForCall(0)
+				Ω(s3client.UploadFileCallCount()).Should(Equal(1))
+				bucketName, remotePath, localPath, acl := s3client.UploadFileArgsForCall(0)
 
-					Ω(bucketName).Should(Equal("bucket-name"))
-					Ω(remotePath).Should(Equal("file.tgz"))
-					Ω(localPath).Should(Equal(filepath.Join(sourceDir, "a/file.tgz")))
-					Ω(acl).Should(Equal("public-read"))
-				})
+				Ω(bucketName).Should(Equal("bucket-name"))
+				Ω(remotePath).Should(Equal("file.tgz"))
+				Ω(localPath).Should(Equal(filepath.Join(sourceDir, "a/file.tgz")))
+				Ω(acl).Should(Equal("public-read"))
 			})
 		})
 
-		Describe("uploading the file with To param", func() {
-			It("prints the deprecation warning", func() {
+		Context("when uploading the file with a To param", func() {
+			BeforeEach(func() {
 				request.Params.From = "a/(.*).tgz"
 				request.Params.To = "a-folder/"
 				createFile("a/file.tgz")
+			})
 
+			It("prints the deprecation warning", func() {
 				_, err := command.Run(sourceDir, request)
 				Ω(err).ShouldNot(HaveOccurred())
 
@@ -189,107 +192,116 @@ var _ = Describe("Out Command", func() {
 			})
 
 			It("uploads the file", func() {
-				request.Params.From = "a/(.*).tgz"
-				request.Params.To = "a-folder/"
-				createFile("a/file.tgz")
-
 				_, err := command.Run(sourceDir, request)
 				Ω(err).ShouldNot(HaveOccurred())
 
-				Ω(s3client.UploadFileWithAclCallCount()).Should(Equal(1))
-				bucketName, remotePath, localPath, _ := s3client.UploadFileWithAclArgsForCall(0)
+				Ω(s3client.UploadFileCallCount()).Should(Equal(1))
+				bucketName, remotePath, localPath, acl := s3client.UploadFileArgsForCall(0)
 
 				Ω(bucketName).Should(Equal("bucket-name"))
 				Ω(remotePath).Should(Equal("a-folder/file.tgz"))
 				Ω(localPath).Should(Equal(filepath.Join(sourceDir, "a/file.tgz")))
+				Ω(acl).Should(Equal("private"))
+			})
+		})
+
+		Context("when uploading the file with an empty To param", func() {
+			BeforeEach(func() {
+				request.Params.To = ""
+				request.Params.File = "a/*.tgz"
+				createFile("a/file.tgz")
 			})
 
-			It("can handle empty to to put it in the root", func() {
-				request.Params.From = "a/(.*).tgz"
-				request.Params.To = ""
-				createFile("a/file.tgz")
-
+			It("uploads the file to the root", func() {
 				_, err := command.Run(sourceDir, request)
 				Ω(err).ShouldNot(HaveOccurred())
 
-				Ω(s3client.UploadFileWithAclCallCount()).Should(Equal(1))
-				bucketName, remotePath, localPath, _ := s3client.UploadFileWithAclArgsForCall(0)
+				Ω(s3client.UploadFileCallCount()).Should(Equal(1))
+				bucketName, remotePath, localPath, acl := s3client.UploadFileArgsForCall(0)
 
 				Ω(bucketName).Should(Equal("bucket-name"))
 				Ω(remotePath).Should(Equal("file.tgz"))
 				Ω(localPath).Should(Equal(filepath.Join(sourceDir, "a/file.tgz")))
+				Ω(acl).Should(Equal("private"))
 			})
+		})
 
-			It("can handle templating in the output", func() {
+		Context("when uploading the file with a To param with templating", func() {
+			BeforeEach(func() {
 				request.Params.From = "a/file-(\\d*).tgz"
 				request.Params.To = "folder-${1}/file.tgz"
 				createFile("a/file-123.tgz")
+			})
 
+			It("uploads the file to the correct location", func() {
 				response, err := command.Run(sourceDir, request)
 				Ω(err).ShouldNot(HaveOccurred())
 
-				Ω(s3client.UploadFileWithAclCallCount()).Should(Equal(1))
-				bucketName, remotePath, localPath, _ := s3client.UploadFileWithAclArgsForCall(0)
+				Ω(s3client.UploadFileCallCount()).Should(Equal(1))
+				bucketName, remotePath, localPath, acl := s3client.UploadFileArgsForCall(0)
 
 				Ω(bucketName).Should(Equal("bucket-name"))
 				Ω(remotePath).Should(Equal("folder-123/file.tgz"))
 				Ω(localPath).Should(Equal(filepath.Join(sourceDir, "a/file-123.tgz")))
+				Ω(acl).Should(Equal("private"))
 
 				Ω(response.Version.Path).Should(Equal("folder-123/file.tgz"))
 
 				Ω(response.Metadata[0].Name).Should(Equal("filename"))
 				Ω(response.Metadata[0].Value).Should(Equal("file.tgz"))
 			})
+		})
 
-			Context("when using versioned buckets", func() {
-				BeforeEach(func() {
-					s3client.UploadFileWithAclReturns("123", nil)
-				})
-
-				It("renames the local file to match the name of the versioned file", func() {
-					localFileName := "not-the-same-name-as-versioned-file.tgz"
-					remoteFileName := "versioned-file.tgz"
-
-					request.Params.File = localFileName
-					request.Source.VersionedFile = remoteFileName
-					createFile(localFileName)
-
-					response, err := command.Run(sourceDir, request)
-
-					Ω(err).ShouldNot(HaveOccurred())
-
-					Ω(s3client.UploadFileWithAclCallCount()).Should(Equal(1))
-					bucketName, remotePath, localPath, _ := s3client.UploadFileWithAclArgsForCall(0)
-
-					Ω(bucketName).Should(Equal("bucket-name"))
-					Ω(remotePath).Should(Equal(remoteFileName))
-					Ω(localPath).Should(Equal(filepath.Join(sourceDir, localFileName)))
-
-					Ω(response.Version.VersionID).Should(Equal("123"))
-
-					Ω(response.Metadata[0].Name).Should(Equal("filename"))
-					Ω(response.Metadata[0].Value).Should(Equal(remoteFileName))
-				})
+		Context("when using versioned buckets", func() {
+			BeforeEach(func() {
+				s3client.UploadFileReturns("123", nil)
 			})
 
-			Context("when using regexp", func() {
-				It("uploads to the parent directory", func() {
-					request.Params.File = "my/special-file.tgz"
-					request.Source.Regexp = "a-folder/some-file-(.*).tgz"
-					createFile("my/special-file.tgz")
+			It("renames the local file to match the name of the versioned file", func() {
+				localFileName := "not-the-same-name-as-versioned-file.tgz"
+				remoteFileName := "versioned-file.tgz"
 
-					response, err := command.Run(sourceDir, request)
-					Expect(err).ToNot(HaveOccurred())
+				request.Params.File = localFileName
+				request.Source.VersionedFile = remoteFileName
+				createFile(localFileName)
 
-					Ω(s3client.UploadFileWithAclCallCount()).Should(Equal(1))
-					bucketName, remotePath, localPath, _ := s3client.UploadFileWithAclArgsForCall(0)
-					Expect(bucketName).To(Equal("bucket-name"))
-					Expect(remotePath).To(Equal("a-folder/special-file.tgz"))
-					Expect(localPath).To(Equal(filepath.Join(sourceDir, "my/special-file.tgz")))
+				response, err := command.Run(sourceDir, request)
 
-					Expect(response.Metadata[0].Name).To(Equal("filename"))
-					Expect(response.Metadata[0].Value).To(Equal("special-file.tgz"))
-				})
+				Ω(err).ShouldNot(HaveOccurred())
+
+				Ω(s3client.UploadFileCallCount()).Should(Equal(1))
+				bucketName, remotePath, localPath, acl := s3client.UploadFileArgsForCall(0)
+
+				Ω(bucketName).Should(Equal("bucket-name"))
+				Ω(remotePath).Should(Equal(remoteFileName))
+				Ω(localPath).Should(Equal(filepath.Join(sourceDir, localFileName)))
+				Ω(acl).Should(Equal("private"))
+
+				Ω(response.Version.VersionID).Should(Equal("123"))
+
+				Ω(response.Metadata[0].Name).Should(Equal("filename"))
+				Ω(response.Metadata[0].Value).Should(Equal(remoteFileName))
+			})
+		})
+
+		Context("when using regexp", func() {
+			It("uploads to the parent directory", func() {
+				request.Params.File = "my/special-file.tgz"
+				request.Source.Regexp = "a-folder/some-file-(.*).tgz"
+				createFile("my/special-file.tgz")
+
+				response, err := command.Run(sourceDir, request)
+				Expect(err).ToNot(HaveOccurred())
+
+				Ω(s3client.UploadFileCallCount()).Should(Equal(1))
+				bucketName, remotePath, localPath, acl := s3client.UploadFileArgsForCall(0)
+				Expect(bucketName).To(Equal("bucket-name"))
+				Expect(remotePath).To(Equal("a-folder/special-file.tgz"))
+				Expect(localPath).To(Equal(filepath.Join(sourceDir, "my/special-file.tgz")))
+				Ω(acl).Should(Equal("private"))
+
+				Expect(response.Metadata[0].Name).To(Equal("filename"))
+				Expect(response.Metadata[0].Value).To(Equal("special-file.tgz"))
 			})
 		})
 
