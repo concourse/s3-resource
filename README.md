@@ -83,6 +83,9 @@ a new version of that file.
   in the resource definition. The matching syntax is bash glob expansion, so
   no capture groups, etc.
 
+* `acl`: (optional) [Canned Acl](http://docs.aws.amazon.com/AmazonS3/latest/dev/acl-overview.html)
+  for the uploaded object.
+
 ## Example Configuration
 
 ### Resource
@@ -107,6 +110,7 @@ a new version of that file.
 - put: release
   params:
     file: path/to/release-*.tgz
+    acl: public-read
 ```
 
 ## Required IAM Permissions
@@ -114,6 +118,7 @@ a new version of that file.
 ### Non-versioned Buckets
 
 * `s3:PutObject`
+* `s3:PutObjectAcl`
 * `s3:GetObject`
 * `s3:ListBucket`
 
@@ -124,6 +129,7 @@ Everything above and...
 * `s3:GetBucketVersioning`
 * `s3:GetObjectVersion`
 * `s3:ListBucketVersions`
+* `s3:PutObjectVersionAcl`
 
 ## Developing on this resource
 
