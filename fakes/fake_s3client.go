@@ -39,6 +39,18 @@ type FakeS3Client struct {
 		result1 string
 		result2 error
 	}
+	UploadFileWithAclStub        func(bucketName string, remotePath string, localPath string, acl string) (string, error)
+	uploadFileWithAclMutex       sync.RWMutex
+	uploadFileWithAclArgsForCall []struct {
+		bucketName string
+		remotePath string
+		localPath  string
+		acl        string
+	}
+	uploadFileWithAclReturns struct {
+		result1 string
+		result2 error
+	}
 	DownloadFileStub        func(bucketName string, remotePath string, versionID string, localPath string) error
 	downloadFileMutex       sync.RWMutex
 	downloadFileArgsForCall []struct {
@@ -180,6 +192,42 @@ func (fake *FakeS3Client) UploadFileArgsForCall(i int) (string, string, string) 
 func (fake *FakeS3Client) UploadFileReturns(result1 string, result2 error) {
 	fake.UploadFileStub = nil
 	fake.uploadFileReturns = struct {
+		result1 string
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *FakeS3Client) UploadFileWithAcl(bucketName string, remotePath string, localPath string, acl string) (string, error) {
+	fake.uploadFileWithAclMutex.Lock()
+	fake.uploadFileWithAclArgsForCall = append(fake.uploadFileWithAclArgsForCall, struct {
+		bucketName string
+		remotePath string
+		localPath  string
+		acl        string
+	}{bucketName, remotePath, localPath, acl})
+	fake.uploadFileWithAclMutex.Unlock()
+	if fake.UploadFileWithAclStub != nil {
+		return fake.UploadFileWithAclStub(bucketName, remotePath, localPath, acl)
+	} else {
+		return fake.uploadFileWithAclReturns.result1, fake.uploadFileWithAclReturns.result2
+	}
+}
+
+func (fake *FakeS3Client) UploadFileWithAclCallCount() int {
+	fake.uploadFileWithAclMutex.RLock()
+	defer fake.uploadFileWithAclMutex.RUnlock()
+	return len(fake.uploadFileWithAclArgsForCall)
+}
+
+func (fake *FakeS3Client) UploadFileWithAclArgsForCall(i int) (string, string, string, string) {
+	fake.uploadFileWithAclMutex.RLock()
+	defer fake.uploadFileWithAclMutex.RUnlock()
+	return fake.uploadFileWithAclArgsForCall[i].bucketName, fake.uploadFileWithAclArgsForCall[i].remotePath, fake.uploadFileWithAclArgsForCall[i].localPath, fake.uploadFileWithAclArgsForCall[i].acl
+}
+
+func (fake *FakeS3Client) UploadFileWithAclReturns(result1 string, result2 error) {
+	fake.UploadFileWithAclStub = nil
+	fake.uploadFileWithAclReturns = struct {
 		result1 string
 		result2 error
 	}{result1, result2}

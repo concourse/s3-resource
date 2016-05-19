@@ -8,6 +8,8 @@ import (
 	"os/exec"
 	"path/filepath"
 
+	"github.com/aws/aws-sdk-go/aws"
+	"github.com/aws/aws-sdk-go/service/s3"
 	"github.com/concourse/s3-resource"
 	"github.com/concourse/s3-resource/out"
 	. "github.com/onsi/ginkgo"
@@ -123,7 +125,7 @@ var _ = Describe("out", func() {
 			Ω(err).ShouldNot(HaveOccurred())
 		})
 
-		Context("with a file glob", func() {
+		Context("with a file glob and acls specified", func() {
 			BeforeEach(func() {
 				err := ioutil.WriteFile(filepath.Join(sourceDir, "glob-file-to-upload"), []byte("contents"), 0755)
 				Ω(err).ShouldNot(HaveOccurred())
@@ -139,6 +141,7 @@ var _ = Describe("out", func() {
 					Params: out.Params{
 						File: "glob-*",
 						To:   directoryPrefix + "/",
+						Acl:  "public-read",
 					},
 				}
 
@@ -178,6 +181,25 @@ var _ = Describe("out", func() {
 						},
 					},
 				}))
+			})
+
+			It("allows Everyone to have read access to the object", func() {
+				anonURI := "http://acs.amazonaws.com/groups/global/AllUsers"
+				permision := s3.PermissionRead
+				grantee := s3.Grantee{URI: &anonURI}
+				expectedGrant := s3.Grant{
+					Grantee:    &grantee,
+					Permission: &permision,
+				}
+
+				params := &s3.GetObjectAclInput{
+					Bucket: aws.String(bucketName),
+					Key:    aws.String(filepath.Join(directoryPrefix, "glob-file-to-upload")),
+				}
+
+				resp, err := s3Service.GetObjectAcl(params)
+				Ω(err).ShouldNot(HaveOccurred())
+				Ω(resp.Grants).Should(ContainElement(&expectedGrant))
 			})
 		})
 

@@ -22,6 +22,7 @@ type S3Client interface {
 	BucketFileVersions(bucketName string, remotePath string) ([]string, error)
 
 	UploadFile(bucketName string, remotePath string, localPath string) (string, error)
+	UploadFileWithAcl(bucketName string, remotePath string, localPath string, acl string) (string, error)
 	DownloadFile(bucketName string, remotePath string, versionID string, localPath string) error
 
 	DeleteFile(bucketName string, remotePath string) error
@@ -43,11 +44,25 @@ type s3client struct {
 
 func NewS3Client(
 	progressOutput io.Writer,
+	awsConfig *aws.Config,
+) (S3Client, error) {
+	sess := session.New(awsConfig)
+	client := s3.New(sess, awsConfig)
+
+	return &s3client{
+		client:  client,
+		session: sess,
+
+		progressOutput: progressOutput,
+	}, nil
+}
+
+func NewAwsConfig(
 	accessKey string,
 	secretKey string,
 	regionName string,
 	endpoint string,
-) (S3Client, error) {
+) (*aws.Config, error) {
 	var creds *credentials.Credentials
 
 	if accessKey == "" && secretKey == "" {
@@ -72,15 +87,7 @@ func NewS3Client(
 		awsConfig.Endpoint = &endpoint
 	}
 
-	sess := session.New(awsConfig)
-	client := s3.New(sess, awsConfig)
-
-	return &s3client{
-		client:  client,
-		session: sess,
-
-		progressOutput: progressOutput,
-	}, nil
+	return awsConfig, nil
 }
 
 func (client *s3client) BucketFiles(bucketName string, prefixHint string) ([]string, error) {
@@ -124,6 +131,10 @@ func (client *s3client) BucketFileVersions(bucketName string, remotePath string)
 }
 
 func (client *s3client) UploadFile(bucketName string, remotePath string, localPath string) (string, error) {
+	return client.UploadFileWithAcl(bucketName, remotePath, localPath, "private")
+}
+
+func (client *s3client) UploadFileWithAcl(bucketName string, remotePath string, localPath string, acl string) (string, error) {
 	uploader := s3manager.NewUploader(client.session)
 
 	stat, err := os.Stat(localPath)
@@ -147,6 +158,7 @@ func (client *s3client) UploadFile(bucketName string, remotePath string, localPa
 		Bucket: aws.String(bucketName),
 		Key:    aws.String(remotePath),
 		Body:   progress.NewProxyReader(localFile),
+		ACL:    aws.String(acl),
 	})
 	if err != nil {
 		return "", err

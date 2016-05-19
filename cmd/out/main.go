@@ -19,12 +19,16 @@ func main() {
 
 	sourceDir := os.Args[1]
 
-	client, err := s3resource.NewS3Client(
-		os.Stderr,
+	awsConfig, err := s3resource.NewAwsConfig(
 		request.Source.AccessKeyID,
 		request.Source.SecretAccessKey,
 		request.Source.RegionName,
 		request.Source.Endpoint,
+	)
+
+	client, err := s3resource.NewS3Client(
+		os.Stderr,
+		awsConfig,
 	)
 	if err != nil {
 		s3resource.Fatal("building S3 client", err)

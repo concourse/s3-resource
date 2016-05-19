@@ -13,6 +13,7 @@ type Params struct {
 	From string `json:"from"`
 	File string `json:"file"`
 	To   string `json:"to"`
+	Acl  string `json:"acl"`
 }
 
 type OutResponse struct {
