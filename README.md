@@ -5,13 +5,13 @@ version numbers.
 
 ## Source Configuration
 
-* `access_key_id`: *Required.* The AWS access key to use when accessing the
+* `bucket`: *Required.* The name of the bucket.
+
+* `access_key_id`: *Optional.* The AWS access key to use when accessing the
   bucket.
 
-* `secret_access_key`: *Required.* The AWS secret key to use when accessing
+* `secret_access_key`: *Optional.* The AWS secret key to use when accessing
   the bucket.
-
-* `bucket`: *Required.* The name of the bucket.
 
 * `region_name`: *Optional.* The region the bucket is in. Defaults to
   `us-east-1`.
