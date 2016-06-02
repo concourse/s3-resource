@@ -10,6 +10,7 @@ type Source struct {
 	RegionName      string `json:"region_name"`
 	CloudfrontURL   string `json:"cloudfront_url"`
 	Endpoint        string `json:"endpoint"`
+	DisableSSL      bool   `json:"disableSSL"`
 }
 
 func (source Source) IsValid() (bool, string) {
