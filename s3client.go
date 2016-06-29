@@ -152,7 +152,7 @@ func (client *s3client) UploadFile(bucketName string, remotePath string, localPa
 	uploadOutput, err := uploader.Upload(&s3manager.UploadInput{
 		Bucket: aws.String(bucketName),
 		Key:    aws.String(remotePath),
-		Body:   progress.NewProxyReader(localFile),
+		Body:   progressSeekReaderAt{localFile, progress},
 		ACL:    aws.String(acl),
 	})
 	if err != nil {
