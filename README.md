@@ -13,6 +13,8 @@ version numbers.
 * `secret_access_key`: *Optional.* The AWS secret key to use when accessing
   the bucket.
 
+* `session_token`: *Optional.* The AWS session token to use when accessing the bucket.
+
 * `region_name`: *Optional.* The region the bucket is in. Defaults to
   `us-east-1`.
 

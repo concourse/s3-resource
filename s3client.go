@@ -59,6 +59,7 @@ func NewS3Client(
 func NewAwsConfig(
 	accessKey string,
 	secretKey string,
+	sessionToken string,
 	regionName string,
 	endpoint string,
 	disableSSL bool,
@@ -68,7 +69,7 @@ func NewAwsConfig(
 	if accessKey == "" && secretKey == "" {
 		creds = credentials.AnonymousCredentials
 	} else {
-		creds = credentials.NewStaticCredentials(accessKey, secretKey, "")
+		creds = credentials.NewStaticCredentials(accessKey, secretKey, sessionToken)
 	}
 
 	if len(regionName) == 0 {

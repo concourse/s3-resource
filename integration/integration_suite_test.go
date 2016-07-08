@@ -21,6 +21,7 @@ func TestIntegration(t *testing.T) {
 
 var accessKeyID = os.Getenv("S3_TESTING_ACCESS_KEY_ID")
 var secretAccessKey = os.Getenv("S3_TESTING_SECRET_ACCESS_KEY")
+var sessionToken = os.Getenv("S3_TESTING_SESSION_TOKEN")
 var versionedBucketName = os.Getenv("S3_VERSIONED_TESTING_BUCKET")
 var bucketName = os.Getenv("S3_TESTING_BUCKET")
 var regionName = os.Getenv("S3_TESTING_REGION")
@@ -73,6 +74,7 @@ var _ = SynchronizedBeforeSuite(func() []byte {
 	awsConfig := s3resource.NewAwsConfig(
 		accessKeyID,
 		secretAccessKey,
+		sessionToken,
 		regionName,
 		endpoint,
 		false,
