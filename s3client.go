@@ -61,6 +61,7 @@ func NewAwsConfig(
 	secretKey string,
 	regionName string,
 	endpoint string,
+	disableSSL bool,
 ) *aws.Config {
 	var creds *credentials.Credentials
 
@@ -79,6 +80,7 @@ func NewAwsConfig(
 		Credentials:      creds,
 		S3ForcePathStyle: aws.Bool(true),
 		MaxRetries:       aws.Int(maxRetries),
+		DisableSSL:       aws.Bool(disableSSL),
 	}
 
 	if len(endpoint) != 0 {

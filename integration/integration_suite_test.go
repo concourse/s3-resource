@@ -75,6 +75,7 @@ var _ = SynchronizedBeforeSuite(func() []byte {
 		secretAccessKey,
 		regionName,
 		endpoint,
+		false,
 	)
 
 	s3Service = s3.New(session.New(awsConfig), awsConfig)

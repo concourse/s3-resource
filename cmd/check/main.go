@@ -17,6 +17,7 @@ func main() {
 		request.Source.SecretAccessKey,
 		request.Source.RegionName,
 		request.Source.Endpoint,
+		request.Source.DisableSSL,
 	)
 
 	client := s3resource.NewS3Client(
