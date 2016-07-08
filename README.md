@@ -25,7 +25,7 @@ version numbers.
 
 * `endpoint`: *Optional.* Custom endpoint for using S3 compatible provider.
 
-* `disableSSL`: *Optional.* Disable SSL for the endpoint, useful for S3 compatible providers without SSL.
+* `disable_ssl`: *Optional.* Disable SSL for the endpoint, useful for S3 compatible providers without SSL.
 
 ### File Names
 
