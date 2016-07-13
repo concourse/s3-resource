@@ -7,6 +7,8 @@ import (
 	"path/filepath"
 	"time"
 
+	"github.com/aws/aws-sdk-go/aws"
+	"github.com/aws/aws-sdk-go/service/s3"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 )
@@ -55,19 +57,26 @@ var _ = Describe("S3client", func() {
 	})
 
 	It("can interact with buckets", func() {
-		_, err := s3client.UploadFile(versionedBucketName, filepath.Join(directoryPrefix, "file-to-upload-1"), tempFile.Name(), "private")
+		_, err := s3client.UploadFile(versionedBucketName, filepath.Join(directoryPrefix, "file-to-upload-1"), tempFile.Name(), "private", "", "")
 		Ω(err).ShouldNot(HaveOccurred())
 
-		_, err = s3client.UploadFile(versionedBucketName, filepath.Join(directoryPrefix, "file-to-upload-2"), tempFile.Name(), "private")
+		_, err = s3client.UploadFile(versionedBucketName, filepath.Join(directoryPrefix, "file-to-upload-2"), tempFile.Name(), "private", "", "")
 		Ω(err).ShouldNot(HaveOccurred())
 
-		_, err = s3client.UploadFile(versionedBucketName, filepath.Join(directoryPrefix, "file-to-upload-2"), tempFile.Name(), "private")
+		_, err = s3client.UploadFile(versionedBucketName, filepath.Join(directoryPrefix, "file-to-upload-2"), tempFile.Name(), "private", "", "")
+		Ω(err).ShouldNot(HaveOccurred())
+
+		_, err = s3client.UploadFile(versionedBucketName, filepath.Join(directoryPrefix, "file-to-upload-3"), tempFile.Name(), "private", "AES256", "")
 		Ω(err).ShouldNot(HaveOccurred())
 
 		files, err := s3client.BucketFiles(versionedBucketName, directoryPrefix)
 		Ω(err).ShouldNot(HaveOccurred())
 
-		Ω(files).Should(ConsistOf([]string{filepath.Join(directoryPrefix, "file-to-upload-1"), filepath.Join(directoryPrefix, "file-to-upload-2")}))
+		Ω(files).Should(ConsistOf([]string{
+			filepath.Join(directoryPrefix, "file-to-upload-1"),
+			filepath.Join(directoryPrefix, "file-to-upload-2"),
+			filepath.Join(directoryPrefix, "file-to-upload-3"),
+		}))
 
 		err = s3client.DownloadFile(versionedBucketName, filepath.Join(directoryPrefix, "file-to-upload-1"), "", filepath.Join(tempDir, "downloaded-file"))
 		Ω(err).ShouldNot(HaveOccurred())
@@ -75,5 +84,13 @@ var _ = Describe("S3client", func() {
 		read, err := ioutil.ReadFile(filepath.Join(tempDir, "downloaded-file"))
 		Ω(err).ShouldNot(HaveOccurred())
 		Ω(read).Should(Equal([]byte("hello-" + runtime)))
+
+		resp, err := s3Service.HeadObject(&s3.HeadObjectInput{
+			Bucket: aws.String(versionedBucketName),
+			Key:    aws.String(filepath.Join(directoryPrefix, "file-to-upload-3")),
+		})
+
+		Ω(err).ShouldNot(HaveOccurred())
+		Ω(*resp.ServerSideEncryption).Should(Equal("AES256"))
 	})
 })

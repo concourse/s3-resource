@@ -1,16 +1,18 @@
 package s3resource
 
 type Source struct {
-	AccessKeyID     string `json:"access_key_id"`
-	SecretAccessKey string `json:"secret_access_key"`
-	Bucket          string `json:"bucket"`
-	Regexp          string `json:"regexp"`
-	VersionedFile   string `json:"versioned_file"`
-	Private         bool   `json:"private"`
-	RegionName      string `json:"region_name"`
-	CloudfrontURL   string `json:"cloudfront_url"`
-	Endpoint        string `json:"endpoint"`
-	DisableSSL      bool   `json:"disable_ssl"`
+	AccessKeyID          string `json:"access_key_id"`
+	SecretAccessKey      string `json:"secret_access_key"`
+	Bucket               string `json:"bucket"`
+	Regexp               string `json:"regexp"`
+	VersionedFile        string `json:"versioned_file"`
+	Private              bool   `json:"private"`
+	RegionName           string `json:"region_name"`
+	CloudfrontURL        string `json:"cloudfront_url"`
+	Endpoint             string `json:"endpoint"`
+	DisableSSL           bool   `json:"disable_ssl"`
+	ServerSideEncryption string `json:"server_side_encryption"`
+	SSEKMSKeyId          string `json:"sse_kms_key_id"`
 }
 
 func (source Source) IsValid() (bool, string) {

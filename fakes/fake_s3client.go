@@ -28,13 +28,15 @@ type FakeS3Client struct {
 		result1 []string
 		result2 error
 	}
-	UploadFileStub        func(bucketName string, remotePath string, localPath string, acl string) (string, error)
+	UploadFileStub        func(bucketName string, remotePath string, localPath string, acl string, serverSideEncryption string, kmsKeyId string) (string, error)
 	uploadFileMutex       sync.RWMutex
 	uploadFileArgsForCall []struct {
-		bucketName string
-		remotePath string
-		localPath  string
-		acl        string
+		bucketName           string
+		remotePath           string
+		localPath            string
+		acl                  string
+		serverSideEncryption string
+		kmsKeyId             string
 	}
 	uploadFileReturns struct {
 		result1 string
@@ -151,17 +153,19 @@ func (fake *FakeS3Client) BucketFileVersionsReturns(result1 []string, result2 er
 	}{result1, result2}
 }
 
-func (fake *FakeS3Client) UploadFile(bucketName string, remotePath string, localPath string, acl string) (string, error) {
+func (fake *FakeS3Client) UploadFile(bucketName string, remotePath string, localPath string, acl string, serverSideEncryption string, kmsKeyId string) (string, error) {
 	fake.uploadFileMutex.Lock()
 	fake.uploadFileArgsForCall = append(fake.uploadFileArgsForCall, struct {
-		bucketName string
-		remotePath string
-		localPath  string
-		acl        string
-	}{bucketName, remotePath, localPath, acl})
+		bucketName           string
+		remotePath           string
+		localPath            string
+		acl                  string
+		serverSideEncryption string
+		kmsKeyId             string
+	}{bucketName, remotePath, localPath, acl, serverSideEncryption, kmsKeyId})
 	fake.uploadFileMutex.Unlock()
 	if fake.UploadFileStub != nil {
-		return fake.UploadFileStub(bucketName, remotePath, localPath, acl)
+		return fake.UploadFileStub(bucketName, remotePath, localPath, acl, serverSideEncryption, kmsKeyId)
 	} else {
 		return fake.uploadFileReturns.result1, fake.uploadFileReturns.result2
 	}
