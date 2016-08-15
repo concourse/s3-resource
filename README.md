@@ -27,6 +27,8 @@ version numbers.
 
 * `disable_ssl`: *Optional.* Disable SSL for the endpoint, useful for S3 compatible providers without SSL.
 
+* `use_v2_signing`: *Optional.* Use signature v2 signing, useful for S3 compatible providers that do not support v4.
+
 ### File Names
 
 One of the following two options must be specified:

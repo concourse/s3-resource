@@ -25,6 +25,7 @@ var versionedBucketName = os.Getenv("S3_VERSIONED_TESTING_BUCKET")
 var bucketName = os.Getenv("S3_TESTING_BUCKET")
 var regionName = os.Getenv("S3_TESTING_REGION")
 var endpoint = os.Getenv("S3_ENDPOINT")
+var v2signing = os.Getenv("S3_V2_SIGNING")
 var s3client s3resource.S3Client
 var s3Service *s3.S3
 
@@ -80,7 +81,7 @@ var _ = SynchronizedBeforeSuite(func() []byte {
 
 	s3Service = s3.New(session.New(awsConfig), awsConfig)
 
-	s3client = s3resource.NewS3Client(ioutil.Discard, awsConfig)
+	s3client = s3resource.NewS3Client(ioutil.Discard, awsConfig, v2signing == "true")
 })
 
 var _ = SynchronizedAfterSuite(func() {}, func() {

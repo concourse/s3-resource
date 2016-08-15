@@ -30,6 +30,7 @@ func main() {
 	client := s3resource.NewS3Client(
 		os.Stderr,
 		awsConfig,
+		request.Source.UseV2Signing,
 	)
 
 	command := in.NewInCommand(client)
