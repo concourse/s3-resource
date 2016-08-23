@@ -25,7 +25,14 @@ version numbers.
 
 * `endpoint`: *Optional.* Custom endpoint for using S3 compatible provider.
 
-* `disable_ssl`: *Optional.* Disable SSL for the endpoint, useful for S3 compatible providers without SSL.
+* `disable_ssl`: *Optional.* Disable SSL for the endpoint, useful for S3
+  compatible providers without SSL.
+
+* `server_side_encryption`: *Optional.* An encryption algorithm to use when
+  storing objects in S3.
+
+* `sse_kms_key_id`: *Optional.* The ID of the AWS KMS master encryption key
+  used for the object.
 
 ### File Names
 
