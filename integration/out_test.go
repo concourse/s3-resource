@@ -286,7 +286,6 @@ var _ = Describe("out", func() {
 				Ω(session.Err).Should(gbytes.Say("object versioning not enabled"))
 			})
 		})
-
 	})
 
 	Context("with a versioned bucket", func() {

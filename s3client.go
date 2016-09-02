@@ -288,6 +288,7 @@ func (client *s3client) getBucketContents(bucketName string, prefix string) (map
 		}
 
 		if *listObjectsResponse.IsTruncated {
+			prevMarker := marker
 			if listObjectsResponse.NextMarker == nil {
 				// From the s3 docs: If response does not include the
 				// NextMarker and it is truncated, you can use the value of the
@@ -296,6 +297,9 @@ func (client *s3client) getBucketContents(bucketName string, prefix string) (map
 				marker = lastKey
 			} else {
 				marker = *listObjectsResponse.NextMarker
+			}
+			if marker == prevMarker {
+				return nil, errors.New("Unable to list all bucket objects; perhaps this is a CloudFront S3 bucket that needs its `Query String Forwarding and Caching` set to `Forward all, cache based on all`?")
 			}
 		} else {
 			break

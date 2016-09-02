@@ -8,7 +8,6 @@ import (
 	"path"
 	"path/filepath"
 
-	"github.com/cloudfoundry/gunk/urljoiner"
 	"github.com/concourse/s3-resource"
 	"github.com/concourse/s3-resource/versions"
 )
@@ -20,25 +19,11 @@ type RequestURLProvider struct {
 }
 
 func (up *RequestURLProvider) GetURL(request InRequest, remotePath string) string {
-	if request.Source.CloudfrontURL != "" {
-		return up.cloudfrontURL(request, remotePath)
-	}
-
 	return up.s3URL(request, remotePath)
 }
 
 func (up *RequestURLProvider) s3URL(request InRequest, remotePath string) string {
 	return up.s3Client.URL(request.Source.Bucket, remotePath, request.Source.Private, request.Version.VersionID)
-}
-
-func (up *RequestURLProvider) cloudfrontURL(request InRequest, remotePath string) string {
-	url := urljoiner.Join(request.Source.CloudfrontURL, remotePath)
-
-	if request.Version.VersionID != "" {
-		url = url + "?versionId=" + request.Version.VersionID
-	}
-
-	return url
 }
 
 type InCommand struct {

@@ -109,25 +109,6 @@ var _ = Describe("In Command", func() {
 				Ω(versionID).Should(BeEmpty())
 			})
 
-			Context("when using a CloudFront domain", func() {
-				BeforeEach(func() {
-					request.Source.CloudfrontURL = "https://1234567890.cloudfront.net"
-				})
-
-				It("creates a 'url' file that contains the URL including the CloudFront domain", func() {
-					urlPath := filepath.Join(destDir, "url")
-					Ω(urlPath).ShouldNot(ExistOnFilesystem())
-
-					_, err := command.Run(destDir, request)
-					Ω(err).ShouldNot(HaveOccurred())
-
-					Ω(urlPath).Should(ExistOnFilesystem())
-					contents, err := ioutil.ReadFile(urlPath)
-					Ω(err).ShouldNot(HaveOccurred())
-					Ω(string(contents)).Should(Equal("https://1234567890.cloudfront.net/files/a-file-1.3.tgz"))
-				})
-			})
-
 			Context("when configured with private URLs", func() {
 				BeforeEach(func() {
 					request.Source.Private = true

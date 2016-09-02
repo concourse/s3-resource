@@ -20,8 +20,12 @@ version numbers.
   URLs provided are signed.
 
 * `cloudfront_url`: *Optional.* The URL (scheme and domain) of your CloudFront
-  distribution that is fronting this bucket. This will be used in the `url`
-  file that is given to the following task.
+  distribution that is fronting this bucket (e.g
+  `https://d5yxxxxx.cloudfront.net`).  This will affect `in` but not `check`
+  and `put`. `in` will ignore the `bucket` name setting, exclusively using the
+  `cloudfront_url`.  When configuring CloudFront with versioned buckets, set
+  `Query String Forwarding and Caching` to `Forward all, cache based on all` to
+  ensure S3 calls succeed.
 
 * `endpoint`: *Optional.* Custom endpoint for using S3 compatible provider.
 
@@ -33,6 +37,7 @@ version numbers.
 
 * `sse_kms_key_id`: *Optional.* The ID of the AWS KMS master encryption key
   used for the object.
+
 
 ### File Names
 
