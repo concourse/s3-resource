@@ -57,16 +57,16 @@ var _ = Describe("S3client", func() {
 	})
 
 	It("can interact with buckets", func() {
-		_, err := s3client.UploadFile(versionedBucketName, filepath.Join(directoryPrefix, "file-to-upload-1"), tempFile.Name(), "private", "", "")
+		_, err := s3client.UploadFile(versionedBucketName, filepath.Join(directoryPrefix, "file-to-upload-1"), tempFile.Name(), "private", "", "", "")
 		Ω(err).ShouldNot(HaveOccurred())
 
-		_, err = s3client.UploadFile(versionedBucketName, filepath.Join(directoryPrefix, "file-to-upload-2"), tempFile.Name(), "private", "", "")
+		_, err = s3client.UploadFile(versionedBucketName, filepath.Join(directoryPrefix, "file-to-upload-2"), tempFile.Name(), "private", "", "", "")
 		Ω(err).ShouldNot(HaveOccurred())
 
-		_, err = s3client.UploadFile(versionedBucketName, filepath.Join(directoryPrefix, "file-to-upload-2"), tempFile.Name(), "private", "", "")
+		_, err = s3client.UploadFile(versionedBucketName, filepath.Join(directoryPrefix, "file-to-upload-2"), tempFile.Name(), "private", "", "", "")
 		Ω(err).ShouldNot(HaveOccurred())
 
-		_, err = s3client.UploadFile(versionedBucketName, filepath.Join(directoryPrefix, "file-to-upload-3"), tempFile.Name(), "private", "AES256", "")
+		_, err = s3client.UploadFile(versionedBucketName, filepath.Join(directoryPrefix, "file-to-upload-3"), tempFile.Name(), "private", "", "AES256", "")
 		Ω(err).ShouldNot(HaveOccurred())
 
 		files, err := s3client.BucketFiles(versionedBucketName, directoryPrefix)

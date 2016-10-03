@@ -109,19 +109,19 @@ var _ = Describe("in", func() {
 			err = ioutil.WriteFile(tempFile.Name(), []byte("some-file-1"), 0755)
 			Ω(err).ShouldNot(HaveOccurred())
 
-			_, err = s3client.UploadFile(bucketName, filepath.Join(directoryPrefix, "some-file-1"), tempFile.Name(), "private", "", "")
+			_, err = s3client.UploadFile(bucketName, filepath.Join(directoryPrefix, "some-file-1"), tempFile.Name(), "private", "", "", "")
 			Ω(err).ShouldNot(HaveOccurred())
 
 			err = ioutil.WriteFile(tempFile.Name(), []byte("some-file-2"), 0755)
 			Ω(err).ShouldNot(HaveOccurred())
 
-			_, err = s3client.UploadFile(bucketName, filepath.Join(directoryPrefix, "some-file-2"), tempFile.Name(), "private", "", "")
+			_, err = s3client.UploadFile(bucketName, filepath.Join(directoryPrefix, "some-file-2"), tempFile.Name(), "private", "", "", "")
 			Ω(err).ShouldNot(HaveOccurred())
 
 			err = ioutil.WriteFile(tempFile.Name(), []byte("some-file-3"), 0755)
 			Ω(err).ShouldNot(HaveOccurred())
 
-			_, err = s3client.UploadFile(bucketName, filepath.Join(directoryPrefix, "some-file-3"), tempFile.Name(), "private", "", "")
+			_, err = s3client.UploadFile(bucketName, filepath.Join(directoryPrefix, "some-file-3"), tempFile.Name(), "private", "", "", "")
 			Ω(err).ShouldNot(HaveOccurred())
 
 			err = os.Remove(tempFile.Name())
@@ -204,19 +204,19 @@ var _ = Describe("in", func() {
 			err = ioutil.WriteFile(tempFile.Name(), []byte("some-file-1"), 0755)
 			Ω(err).ShouldNot(HaveOccurred())
 
-			_, err = s3client.UploadFile(versionedBucketName, filepath.Join(directoryPrefix, "some-file"), tempFile.Name(), "private", "", "")
+			_, err = s3client.UploadFile(versionedBucketName, filepath.Join(directoryPrefix, "some-file"), tempFile.Name(), "private", "", "", "")
 			Ω(err).ShouldNot(HaveOccurred())
 
 			err = ioutil.WriteFile(tempFile.Name(), []byte("some-file-2"), 0755)
 			Ω(err).ShouldNot(HaveOccurred())
 
-			_, err = s3client.UploadFile(versionedBucketName, filepath.Join(directoryPrefix, "some-file"), tempFile.Name(), "private", "", "")
+			_, err = s3client.UploadFile(versionedBucketName, filepath.Join(directoryPrefix, "some-file"), tempFile.Name(), "private", "", "", "")
 			Ω(err).ShouldNot(HaveOccurred())
 
 			err = ioutil.WriteFile(tempFile.Name(), []byte("some-file-3"), 0755)
 			Ω(err).ShouldNot(HaveOccurred())
 
-			_, err = s3client.UploadFile(versionedBucketName, filepath.Join(directoryPrefix, "some-file"), tempFile.Name(), "private", "", "")
+			_, err = s3client.UploadFile(versionedBucketName, filepath.Join(directoryPrefix, "some-file"), tempFile.Name(), "private", "", "", "")
 			Ω(err).ShouldNot(HaveOccurred())
 
 			versions, err := s3client.BucketFileVersions(versionedBucketName, filepath.Join(directoryPrefix, "some-file"))

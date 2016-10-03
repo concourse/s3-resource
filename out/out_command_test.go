@@ -146,7 +146,7 @@ var _ = Describe("Out Command", func() {
 				Ω(err).ShouldNot(HaveOccurred())
 
 				Ω(s3client.UploadFileCallCount()).Should(Equal(1))
-				bucketName, remotePath, localPath, acl := s3client.UploadFileArgsForCall(0)
+				bucketName, remotePath, localPath, acl, _ := s3client.UploadFileArgsForCall(0)
 
 				Ω(bucketName).Should(Equal("bucket-name"))
 				Ω(remotePath).Should(Equal("file.tgz"))
@@ -167,7 +167,7 @@ var _ = Describe("Out Command", func() {
 				Ω(err).ShouldNot(HaveOccurred())
 
 				Ω(s3client.UploadFileCallCount()).Should(Equal(1))
-				bucketName, remotePath, localPath, acl := s3client.UploadFileArgsForCall(0)
+				bucketName, remotePath, localPath, acl, _ := s3client.UploadFileArgsForCall(0)
 
 				Ω(bucketName).Should(Equal("bucket-name"))
 				Ω(remotePath).Should(Equal("file.tgz"))
@@ -196,7 +196,7 @@ var _ = Describe("Out Command", func() {
 				Ω(err).ShouldNot(HaveOccurred())
 
 				Ω(s3client.UploadFileCallCount()).Should(Equal(1))
-				bucketName, remotePath, localPath, acl := s3client.UploadFileArgsForCall(0)
+				bucketName, remotePath, localPath, acl, _ := s3client.UploadFileArgsForCall(0)
 
 				Ω(bucketName).Should(Equal("bucket-name"))
 				Ω(remotePath).Should(Equal("a-folder/file.tgz"))
@@ -217,7 +217,7 @@ var _ = Describe("Out Command", func() {
 				Ω(err).ShouldNot(HaveOccurred())
 
 				Ω(s3client.UploadFileCallCount()).Should(Equal(1))
-				bucketName, remotePath, localPath, acl := s3client.UploadFileArgsForCall(0)
+				bucketName, remotePath, localPath, acl, _ := s3client.UploadFileArgsForCall(0)
 
 				Ω(bucketName).Should(Equal("bucket-name"))
 				Ω(remotePath).Should(Equal("file.tgz"))
@@ -238,7 +238,7 @@ var _ = Describe("Out Command", func() {
 				Ω(err).ShouldNot(HaveOccurred())
 
 				Ω(s3client.UploadFileCallCount()).Should(Equal(1))
-				bucketName, remotePath, localPath, acl := s3client.UploadFileArgsForCall(0)
+				bucketName, remotePath, localPath, acl, _ := s3client.UploadFileArgsForCall(0)
 
 				Ω(bucketName).Should(Equal("bucket-name"))
 				Ω(remotePath).Should(Equal("folder-123/file.tgz"))
@@ -270,7 +270,7 @@ var _ = Describe("Out Command", func() {
 				Ω(err).ShouldNot(HaveOccurred())
 
 				Ω(s3client.UploadFileCallCount()).Should(Equal(1))
-				bucketName, remotePath, localPath, acl := s3client.UploadFileArgsForCall(0)
+				bucketName, remotePath, localPath, acl, _ := s3client.UploadFileArgsForCall(0)
 
 				Ω(bucketName).Should(Equal("bucket-name"))
 				Ω(remotePath).Should(Equal(remoteFileName))
@@ -294,7 +294,7 @@ var _ = Describe("Out Command", func() {
 				Expect(err).ToNot(HaveOccurred())
 
 				Ω(s3client.UploadFileCallCount()).Should(Equal(1))
-				bucketName, remotePath, localPath, acl := s3client.UploadFileArgsForCall(0)
+				bucketName, remotePath, localPath, acl, _ := s3client.UploadFileArgsForCall(0)
 				Expect(bucketName).To(Equal("bucket-name"))
 				Expect(remotePath).To(Equal("a-folder/special-file.tgz"))
 				Expect(localPath).To(Equal(filepath.Join(sourceDir, "my/special-file.tgz")))
@@ -347,6 +347,40 @@ var _ = Describe("Out Command", func() {
 
 				Ω(response.Metadata).Should(HaveLen(1))
 				Ω(response.Metadata[0].Name).ShouldNot(Equal("url"))
+			})
+		})
+		Context("when specifying a content-type for the uploaded file", func() {
+			BeforeEach(func() {
+				request.Params.File = "a/*.tgz"
+				request.Params.ContentType = "application/customtype"
+				createFile("a/file.tgz")
+			})
+
+			It("applies the specfied content-type", func() {
+				_, err := command.Run(sourceDir, request)
+				Ω(err).ShouldNot(HaveOccurred())
+
+				Ω(s3client.UploadFileCallCount()).Should(Equal(1))
+				_, _, _, _, contentType := s3client.UploadFileArgsForCall(0)
+
+				Ω(contentType).Should(Equal("application/customtype"))
+			})
+		})
+
+		Context("content-type is not specified for the uploaded file", func() {
+			BeforeEach(func() {
+				request.Params.File = "a/*.tgz"
+				createFile("a/file.tgz")
+			})
+
+			It("no content-type specified leaves an empty content-type", func() {
+				_, err := command.Run(sourceDir, request)
+				Ω(err).ShouldNot(HaveOccurred())
+
+				Ω(s3client.UploadFileCallCount()).Should(Equal(1))
+				_, _, _, _, contentType := s3client.UploadFileArgsForCall(0)
+
+				Ω(contentType).Should(Equal(""))
 			})
 		})
 	})
