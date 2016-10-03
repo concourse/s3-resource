@@ -65,6 +65,7 @@ func (command *OutCommand) Run(sourceDir string, request OutRequest) (OutRespons
 		remotePath,
 		localPath,
 		acl,
+		request.Params.ContentType,
 		request.Source.ServerSideEncryption,
 		request.Source.SSEKMSKeyId,
 	)

@@ -21,7 +21,7 @@ type S3Client interface {
 	BucketFiles(bucketName string, prefixHint string) ([]string, error)
 	BucketFileVersions(bucketName string, remotePath string) ([]string, error)
 
-	UploadFile(bucketName string, remotePath string, localPath string, acl string, serverSideEncryption string, kmsKeyId string) (string, error)
+	UploadFile(bucketName string, remotePath string, localPath string, acl string, contentType string, serverSideEncryption string, kmsKeyId string) (string, error)
 	DownloadFile(bucketName string, remotePath string, versionID string, localPath string) error
 
 	DeleteFile(bucketName string, remotePath string) error
@@ -131,7 +131,7 @@ func (client *s3client) BucketFileVersions(bucketName string, remotePath string)
 	return versions, nil
 }
 
-func (client *s3client) UploadFile(bucketName string, remotePath string, localPath string, acl string, serverSideEncryption string, kmsKeyId string) (string, error) {
+func (client *s3client) UploadFile(bucketName string, remotePath string, localPath string, acl string, contentType string, serverSideEncryption string, kmsKeyId string) (string, error) {
 	uploader := s3manager.NewUploader(client.session)
 
 	stat, err := os.Stat(localPath)
@@ -156,6 +156,10 @@ func (client *s3client) UploadFile(bucketName string, remotePath string, localPa
 		Key:    aws.String(remotePath),
 		Body:   progressSeekReaderAt{localFile, progress},
 		ACL:    aws.String(acl),
+	}
+
+	if contentType != "" {
+		uploadInput.ContentType = aws.String(contentType)
 	}
 	if serverSideEncryption != "" {
 		uploadInput.ServerSideEncryption = aws.String(serverSideEncryption)
