@@ -3,6 +3,7 @@ package integration_test
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"io/ioutil"
 	"os"
 	"os/exec"
@@ -106,37 +107,23 @@ var _ = Describe("in", func() {
 			Ω(err).ShouldNot(HaveOccurred())
 			tempFile.Close()
 
-			err = ioutil.WriteFile(tempFile.Name(), []byte("some-file-1"), 0755)
-			Ω(err).ShouldNot(HaveOccurred())
+			for i := 1; i <= 3; i++ {
+				err = ioutil.WriteFile(tempFile.Name(), []byte(fmt.Sprintf("some-file-%d", i)), 0755)
+				Ω(err).ShouldNot(HaveOccurred())
 
-			_, err = s3client.UploadFile(bucketName, filepath.Join(directoryPrefix, "some-file-1"), tempFile.Name(), "private", "", "")
-			Ω(err).ShouldNot(HaveOccurred())
-
-			err = ioutil.WriteFile(tempFile.Name(), []byte("some-file-2"), 0755)
-			Ω(err).ShouldNot(HaveOccurred())
-
-			_, err = s3client.UploadFile(bucketName, filepath.Join(directoryPrefix, "some-file-2"), tempFile.Name(), "private", "", "")
-			Ω(err).ShouldNot(HaveOccurred())
-
-			err = ioutil.WriteFile(tempFile.Name(), []byte("some-file-3"), 0755)
-			Ω(err).ShouldNot(HaveOccurred())
-
-			_, err = s3client.UploadFile(bucketName, filepath.Join(directoryPrefix, "some-file-3"), tempFile.Name(), "private", "", "")
-			Ω(err).ShouldNot(HaveOccurred())
+				_, err = s3client.UploadFile(bucketName, filepath.Join(directoryPrefix, fmt.Sprintf("some-file-%d", i)), tempFile.Name(), "private", "", "")
+				Ω(err).ShouldNot(HaveOccurred())
+			}
 
 			err = os.Remove(tempFile.Name())
 			Ω(err).ShouldNot(HaveOccurred())
 		})
 
 		AfterEach(func() {
-			err := s3client.DeleteFile(bucketName, filepath.Join(directoryPrefix, "some-file-1"))
-			Ω(err).ShouldNot(HaveOccurred())
-
-			err = s3client.DeleteFile(bucketName, filepath.Join(directoryPrefix, "some-file-2"))
-			Ω(err).ShouldNot(HaveOccurred())
-
-			err = s3client.DeleteFile(bucketName, filepath.Join(directoryPrefix, "some-file-3"))
-			Ω(err).ShouldNot(HaveOccurred())
+			for i := 1; i <= 3; i++ {
+				err := s3client.DeleteFile(bucketName, filepath.Join(directoryPrefix, fmt.Sprintf("some-file-%d", i)))
+				Ω(err).ShouldNot(HaveOccurred())
+			}
 		})
 
 		It("downloads the file", func() {
@@ -201,22 +188,14 @@ var _ = Describe("in", func() {
 			Ω(err).ShouldNot(HaveOccurred())
 			tempFile.Close()
 
-			err = ioutil.WriteFile(tempFile.Name(), []byte("some-file-1"), 0755)
-			Ω(err).ShouldNot(HaveOccurred())
+			for i := 1; i <= 3; i++ {
+				err = ioutil.WriteFile(tempFile.Name(), []byte(fmt.Sprintf("some-file-%d", i)), 0755)
+				Ω(err).ShouldNot(HaveOccurred())
 
-			_, err = s3client.UploadFile(versionedBucketName, filepath.Join(directoryPrefix, "some-file"), tempFile.Name(), "private", "", "")
-			Ω(err).ShouldNot(HaveOccurred())
-
-			err = ioutil.WriteFile(tempFile.Name(), []byte("some-file-2"), 0755)
-			Ω(err).ShouldNot(HaveOccurred())
-
-			_, err = s3client.UploadFile(versionedBucketName, filepath.Join(directoryPrefix, "some-file"), tempFile.Name(), "private", "", "")
-			Ω(err).ShouldNot(HaveOccurred())
-
-			err = ioutil.WriteFile(tempFile.Name(), []byte("some-file-3"), 0755)
-			Ω(err).ShouldNot(HaveOccurred())
-
-			_, err = s3client.UploadFile(versionedBucketName, filepath.Join(directoryPrefix, "some-file"), tempFile.Name(), "private", "", "")
+				_, err = s3client.UploadFile(versionedBucketName, filepath.Join(directoryPrefix, "some-file"), tempFile.Name(), "private", "", "")
+				Ω(err).ShouldNot(HaveOccurred())
+			}
+			err = os.Remove(tempFile.Name())
 			Ω(err).ShouldNot(HaveOccurred())
 
 			versions, err := s3client.BucketFileVersions(versionedBucketName, filepath.Join(directoryPrefix, "some-file"))
@@ -225,9 +204,6 @@ var _ = Describe("in", func() {
 			inRequest.Version.VersionID = expectedVersion
 
 			err = json.NewEncoder(stdin).Encode(inRequest)
-			Ω(err).ShouldNot(HaveOccurred())
-
-			err = os.Remove(tempFile.Name())
 			Ω(err).ShouldNot(HaveOccurred())
 		})
 
@@ -280,4 +256,115 @@ var _ = Describe("in", func() {
 		})
 	})
 
+	Context("when cloudfront_url is set", func() {
+		var inRequest in.InRequest
+		var directoryPrefix string
+
+		BeforeEach(func() {
+			if len(os.Getenv("S3_TESTING_CLOUDFRONT_URL")) == 0 {
+				Skip("'S3_TESTING_CLOUDFRONT_URL' is not set, skipping.")
+			}
+
+			directoryPrefix = "in-request-cloudfront-files"
+			inRequest = in.InRequest{
+				Source: s3resource.Source{
+					AccessKeyID:     accessKeyID,
+					SecretAccessKey: secretAccessKey,
+					CloudfrontURL:   os.Getenv("S3_TESTING_CLOUDFRONT_URL"),
+					RegionName:      regionName,
+					Regexp:          filepath.Join(directoryPrefix, "some-file-(.*)"),
+				},
+				Version: s3resource.Version{
+					Path: filepath.Join(directoryPrefix, "some-file-2"),
+				},
+			}
+
+			err := json.NewEncoder(stdin).Encode(inRequest)
+			Ω(err).ShouldNot(HaveOccurred())
+
+			tempFile, err := ioutil.TempFile("", "file-to-upload")
+			Ω(err).ShouldNot(HaveOccurred())
+			tempFile.Close()
+
+			for i := 1; i <= 3; i++ {
+				err = ioutil.WriteFile(tempFile.Name(), []byte(fmt.Sprintf("some-file-%d", i)), 0755)
+				Ω(err).ShouldNot(HaveOccurred())
+
+				_, err = s3client.UploadFile(bucketName, filepath.Join(directoryPrefix, fmt.Sprintf("some-file-%d", i)), tempFile.Name(), "private", "", "")
+				Ω(err).ShouldNot(HaveOccurred())
+			}
+
+			err = os.Remove(tempFile.Name())
+			Ω(err).ShouldNot(HaveOccurred())
+		})
+
+		AfterEach(func() {
+			for i := 1; i <= 3; i++ {
+				err := s3client.DeleteFile(bucketName, filepath.Join(directoryPrefix, fmt.Sprintf("some-file-%d", i)))
+				Ω(err).ShouldNot(HaveOccurred())
+			}
+		})
+
+		It("downloads the file from CloudFront", func() {
+			reader := bytes.NewBuffer(session.Out.Contents())
+
+			var response in.InResponse
+			err := json.NewDecoder(reader).Decode(&response)
+			Ω(err).ShouldNot(HaveOccurred())
+
+			Ω(response).Should(Equal(in.InResponse{
+				Version: s3resource.Version{
+					Path: "in-request-cloudfront-files/some-file-2",
+				},
+				Metadata: []s3resource.MetadataPair{
+					{
+						Name:  "filename",
+						Value: "some-file-2",
+					},
+					{
+						Name:  "url",
+						Value: inRequest.Source.CloudfrontURL + "/in-request-cloudfront-files/some-file-2",
+					},
+				},
+			}))
+
+			Ω(filepath.Join(destDir, "some-file-2")).Should(BeARegularFile())
+			contents, err := ioutil.ReadFile(filepath.Join(destDir, "some-file-2"))
+			Ω(err).ShouldNot(HaveOccurred())
+			Ω(contents).Should(Equal([]byte("some-file-2")))
+
+			Ω(filepath.Join(destDir, "url")).Should(BeARegularFile())
+			urlContents, err := ioutil.ReadFile(filepath.Join(destDir, "url"))
+			Ω(err).ShouldNot(HaveOccurred())
+			Ω(urlContents).Should(Equal([]byte(inRequest.Source.CloudfrontURL + "/in-request-cloudfront-files/some-file-2")))
+		})
+	})
+
+	Context("when cloudfront_url is set but has too few dots", func() {
+		var inRequest in.InRequest
+
+		BeforeEach(func() {
+			inRequest = in.InRequest{
+				Source: s3resource.Source{
+					AccessKeyID:     accessKeyID,
+					SecretAccessKey: secretAccessKey,
+					CloudfrontURL:   "https://no-dots-here",
+					RegionName:      regionName,
+					Regexp:          "unused",
+				},
+				Version: s3resource.Version{
+					Path: "unused",
+				},
+			}
+
+			expectedExitStatus = 1
+
+			err := json.NewEncoder(stdin).Encode(inRequest)
+			Ω(err).ShouldNot(HaveOccurred())
+		})
+
+		It("returns an error", func() {
+			Ω(session.Err).Should(gbytes.Say(`'https://no-dots-here' doesn't have enough dots \('.'\), a typical format is 'https://d111111abcdef8.cloudfront.net'`))
+		})
+	})
 })
