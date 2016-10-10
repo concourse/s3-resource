@@ -44,9 +44,14 @@ type s3client struct {
 func NewS3Client(
 	progressOutput io.Writer,
 	awsConfig *aws.Config,
+	useV2Signing bool,
 ) S3Client {
 	sess := session.New(awsConfig)
 	client := s3.New(sess, awsConfig)
+
+	if useV2Signing {
+		setv2Handlers(client)
+	}
 
 	return &s3client{
 		client:  client,
