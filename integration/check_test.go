@@ -99,7 +99,7 @@ var _ = Describe("check", func() {
 					Ω(err).ShouldNot(HaveOccurred())
 					tempFile.Close()
 
-					_, err = s3client.UploadFile(bucketName, filepath.Join(directoryPrefix, "file-does-not-match-1"), tempFile.Name(), "private", "", "")
+					_, err = s3client.UploadFile(bucketName, filepath.Join(directoryPrefix, "file-does-not-match-1"), tempFile.Name(), s3resource.NewUploadFileOptions())
 					Ω(err).ShouldNot(HaveOccurred())
 
 					err = os.Remove(tempFile.Name())
@@ -133,10 +133,10 @@ var _ = Describe("check", func() {
 					Ω(err).ShouldNot(HaveOccurred())
 					tempFile.Close()
 
-					_, err = s3client.UploadFile(bucketName, filepath.Join(directoryPrefix, "file-does-match-2"), tempFile.Name(), "private", "", "")
+					_, err = s3client.UploadFile(bucketName, filepath.Join(directoryPrefix, "file-does-match-2"), tempFile.Name(), s3resource.NewUploadFileOptions())
 					Ω(err).ShouldNot(HaveOccurred())
 
-					_, err = s3client.UploadFile(bucketName, filepath.Join(directoryPrefix, "file-does-match-1"), tempFile.Name(), "private", "", "")
+					_, err = s3client.UploadFile(bucketName, filepath.Join(directoryPrefix, "file-does-match-1"), tempFile.Name(), s3resource.NewUploadFileOptions())
 					Ω(err).ShouldNot(HaveOccurred())
 
 					err = os.Remove(tempFile.Name())
@@ -194,7 +194,7 @@ var _ = Describe("check", func() {
 					Ω(err).ShouldNot(HaveOccurred())
 					tempFile.Close()
 
-					_, err = s3client.UploadFile(bucketName, filepath.Join(directoryPrefix, "versioned-file"), tempFile.Name(), "private", "", "")
+					_, err = s3client.UploadFile(bucketName, filepath.Join(directoryPrefix, "versioned-file"), tempFile.Name(), s3resource.NewUploadFileOptions())
 					Ω(err).ShouldNot(HaveOccurred())
 
 					err = os.Remove(tempFile.Name())
@@ -223,7 +223,7 @@ var _ = Describe("check", func() {
 					Ω(err).ShouldNot(HaveOccurred())
 					tempFile.Close()
 
-					_, err = s3client.UploadFile(versionedBucketName, filepath.Join(directoryPrefix, "file-does-not-match"), tempFile.Name(), "private", "", "")
+					_, err = s3client.UploadFile(versionedBucketName, filepath.Join(directoryPrefix, "file-does-not-match"), tempFile.Name(), s3resource.NewUploadFileOptions())
 					Ω(err).ShouldNot(HaveOccurred())
 
 					err = os.Remove(tempFile.Name())
@@ -263,10 +263,10 @@ var _ = Describe("check", func() {
 					Ω(err).ShouldNot(HaveOccurred())
 					tempFile.Close()
 
-					_, err = s3client.UploadFile(versionedBucketName, filepath.Join(directoryPrefix, "versioned-file"), tempFile.Name(), "private", "", "")
+					_, err = s3client.UploadFile(versionedBucketName, filepath.Join(directoryPrefix, "versioned-file"), tempFile.Name(), s3resource.NewUploadFileOptions())
 					Ω(err).ShouldNot(HaveOccurred())
 
-					_, err = s3client.UploadFile(versionedBucketName, filepath.Join(directoryPrefix, "versioned-file"), tempFile.Name(), "private", "", "")
+					_, err = s3client.UploadFile(versionedBucketName, filepath.Join(directoryPrefix, "versioned-file"), tempFile.Name(), s3resource.NewUploadFileOptions())
 					Ω(err).ShouldNot(HaveOccurred())
 
 					err = os.Remove(tempFile.Name())
@@ -333,7 +333,7 @@ var _ = Describe("check", func() {
 					Ω(err).ShouldNot(HaveOccurred())
 					tempFile.Close()
 
-					_, err = s3client.UploadFile(bucketName, filepath.Join(directoryPrefix, "file-does-not-match-1"), tempFile.Name(), "private", "", "")
+					_, err = s3client.UploadFile(bucketName, filepath.Join(directoryPrefix, "file-does-not-match-1"), tempFile.Name(), s3resource.NewUploadFileOptions())
 					Ω(err).ShouldNot(HaveOccurred())
 
 					err = os.Remove(tempFile.Name())
@@ -368,13 +368,13 @@ var _ = Describe("check", func() {
 					Ω(err).ShouldNot(HaveOccurred())
 					tempFile.Close()
 
-					_, err = s3client.UploadFile(bucketName, filepath.Join(directoryPrefix, "file-does-match-2"), tempFile.Name(), "private", "", "")
+					_, err = s3client.UploadFile(bucketName, filepath.Join(directoryPrefix, "file-does-match-2"), tempFile.Name(), s3resource.NewUploadFileOptions())
 					Ω(err).ShouldNot(HaveOccurred())
 
-					_, err = s3client.UploadFile(bucketName, filepath.Join(directoryPrefix, "file-does-match-1"), tempFile.Name(), "private", "", "")
+					_, err = s3client.UploadFile(bucketName, filepath.Join(directoryPrefix, "file-does-match-1"), tempFile.Name(), s3resource.NewUploadFileOptions())
 					Ω(err).ShouldNot(HaveOccurred())
 
-					_, err = s3client.UploadFile(bucketName, filepath.Join(directoryPrefix, "file-does-match-3"), tempFile.Name(), "private", "", "")
+					_, err = s3client.UploadFile(bucketName, filepath.Join(directoryPrefix, "file-does-match-3"), tempFile.Name(), s3resource.NewUploadFileOptions())
 					Ω(err).ShouldNot(HaveOccurred())
 
 					err = os.Remove(tempFile.Name())
@@ -422,16 +422,16 @@ var _ = Describe("check", func() {
 					Ω(err).ShouldNot(HaveOccurred())
 					tempFile.Close()
 
-					_, err = s3client.UploadFile(bucketName, filepath.Join(directoryPrefix, "file-1.2.0-rc.2"), tempFile.Name(), "private", "", "")
+					_, err = s3client.UploadFile(bucketName, filepath.Join(directoryPrefix, "file-1.2.0-rc.2"), tempFile.Name(), s3resource.NewUploadFileOptions())
 					Ω(err).ShouldNot(HaveOccurred())
 
-					_, err = s3client.UploadFile(bucketName, filepath.Join(directoryPrefix, "file-1.2.0-rc.1"), tempFile.Name(), "private", "", "")
+					_, err = s3client.UploadFile(bucketName, filepath.Join(directoryPrefix, "file-1.2.0-rc.1"), tempFile.Name(), s3resource.NewUploadFileOptions())
 					Ω(err).ShouldNot(HaveOccurred())
 
-					_, err = s3client.UploadFile(bucketName, filepath.Join(directoryPrefix, "file-1.1.0-rc.1"), tempFile.Name(), "private", "", "")
+					_, err = s3client.UploadFile(bucketName, filepath.Join(directoryPrefix, "file-1.1.0-rc.1"), tempFile.Name(), s3resource.NewUploadFileOptions())
 					Ω(err).ShouldNot(HaveOccurred())
 
-					_, err = s3client.UploadFile(bucketName, filepath.Join(directoryPrefix, "file-1.1.0-rc.2"), tempFile.Name(), "private", "", "")
+					_, err = s3client.UploadFile(bucketName, filepath.Join(directoryPrefix, "file-1.1.0-rc.2"), tempFile.Name(), s3resource.NewUploadFileOptions())
 					Ω(err).ShouldNot(HaveOccurred())
 
 					err = os.Remove(tempFile.Name())
@@ -489,7 +489,7 @@ var _ = Describe("check", func() {
 					Ω(err).ShouldNot(HaveOccurred())
 					tempFile.Close()
 
-					_, err = s3client.UploadFile(versionedBucketName, filepath.Join(directoryPrefix, "file-does-not-match"), tempFile.Name(), "private", "", "")
+					_, err = s3client.UploadFile(versionedBucketName, filepath.Join(directoryPrefix, "file-does-not-match"), tempFile.Name(), s3resource.NewUploadFileOptions())
 					Ω(err).ShouldNot(HaveOccurred())
 
 					err = os.Remove(tempFile.Name())
@@ -535,13 +535,13 @@ var _ = Describe("check", func() {
 						Ω(err).ShouldNot(HaveOccurred())
 						tempFile.Close()
 
-						_, err = s3client.UploadFile(versionedBucketName, filepath.Join(directoryPrefix, "versioned-file"), tempFile.Name(), "private", "", "")
+						_, err = s3client.UploadFile(versionedBucketName, filepath.Join(directoryPrefix, "versioned-file"), tempFile.Name(), s3resource.NewUploadFileOptions())
 						Ω(err).ShouldNot(HaveOccurred())
 
-						_, err = s3client.UploadFile(versionedBucketName, filepath.Join(directoryPrefix, "versioned-file"), tempFile.Name(), "private", "", "")
+						_, err = s3client.UploadFile(versionedBucketName, filepath.Join(directoryPrefix, "versioned-file"), tempFile.Name(), s3resource.NewUploadFileOptions())
 						Ω(err).ShouldNot(HaveOccurred())
 
-						_, err = s3client.UploadFile(versionedBucketName, filepath.Join(directoryPrefix, "versioned-file"), tempFile.Name(), "private", "", "")
+						_, err = s3client.UploadFile(versionedBucketName, filepath.Join(directoryPrefix, "versioned-file"), tempFile.Name(), s3resource.NewUploadFileOptions())
 						Ω(err).ShouldNot(HaveOccurred())
 
 						checkRequest.Source.VersionedFile = filepath.Join(directoryPrefix, "versioned-file")
@@ -598,13 +598,13 @@ var _ = Describe("check", func() {
 						Ω(err).ShouldNot(HaveOccurred())
 						tempFile.Close()
 
-						_, err = s3client.UploadFile(versionedBucketName, filepath.Join(directoryPrefix, "versioned-file"), tempFile.Name(), "private", "", "")
+						_, err = s3client.UploadFile(versionedBucketName, filepath.Join(directoryPrefix, "versioned-file"), tempFile.Name(), s3resource.NewUploadFileOptions())
 						Ω(err).ShouldNot(HaveOccurred())
 
-						_, err = s3client.UploadFile(versionedBucketName, filepath.Join(directoryPrefix, "versioned-file"), tempFile.Name(), "private", "", "")
+						_, err = s3client.UploadFile(versionedBucketName, filepath.Join(directoryPrefix, "versioned-file"), tempFile.Name(), s3resource.NewUploadFileOptions())
 						Ω(err).ShouldNot(HaveOccurred())
 
-						_, err = s3client.UploadFile(versionedBucketName, filepath.Join(directoryPrefix, "versioned-file"), tempFile.Name(), "private", "", "")
+						_, err = s3client.UploadFile(versionedBucketName, filepath.Join(directoryPrefix, "versioned-file"), tempFile.Name(), s3resource.NewUploadFileOptions())
 						Ω(err).ShouldNot(HaveOccurred())
 
 						checkRequest.Source.VersionedFile = filepath.Join(directoryPrefix, "versioned-file")

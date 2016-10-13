@@ -146,12 +146,12 @@ var _ = Describe("Out Command", func() {
 				Ω(err).ShouldNot(HaveOccurred())
 
 				Ω(s3client.UploadFileCallCount()).Should(Equal(1))
-				bucketName, remotePath, localPath, acl := s3client.UploadFileArgsForCall(0)
+				bucketName, remotePath, localPath, options := s3client.UploadFileArgsForCall(0)
 
 				Ω(bucketName).Should(Equal("bucket-name"))
 				Ω(remotePath).Should(Equal("file.tgz"))
 				Ω(localPath).Should(Equal(filepath.Join(sourceDir, "a/file.tgz")))
-				Ω(acl).Should(Equal("private"))
+				Ω(options).Should(Equal(s3resource.UploadFileOptions{Acl: "private"}))
 			})
 		})
 
@@ -167,12 +167,13 @@ var _ = Describe("Out Command", func() {
 				Ω(err).ShouldNot(HaveOccurred())
 
 				Ω(s3client.UploadFileCallCount()).Should(Equal(1))
-				bucketName, remotePath, localPath, acl := s3client.UploadFileArgsForCall(0)
+				bucketName, remotePath, localPath, options := s3client.UploadFileArgsForCall(0)
 
 				Ω(bucketName).Should(Equal("bucket-name"))
 				Ω(remotePath).Should(Equal("file.tgz"))
 				Ω(localPath).Should(Equal(filepath.Join(sourceDir, "a/file.tgz")))
-				Ω(acl).Should(Equal("public-read"))
+				Ω(options).Should(Equal(s3resource.UploadFileOptions{Acl: "public-read"}))
+
 			})
 		})
 
@@ -196,12 +197,12 @@ var _ = Describe("Out Command", func() {
 				Ω(err).ShouldNot(HaveOccurred())
 
 				Ω(s3client.UploadFileCallCount()).Should(Equal(1))
-				bucketName, remotePath, localPath, acl := s3client.UploadFileArgsForCall(0)
+				bucketName, remotePath, localPath, options := s3client.UploadFileArgsForCall(0)
 
 				Ω(bucketName).Should(Equal("bucket-name"))
 				Ω(remotePath).Should(Equal("a-folder/file.tgz"))
 				Ω(localPath).Should(Equal(filepath.Join(sourceDir, "a/file.tgz")))
-				Ω(acl).Should(Equal("private"))
+				Ω(options).Should(Equal(s3resource.UploadFileOptions{Acl: "private"}))
 			})
 		})
 
@@ -217,12 +218,12 @@ var _ = Describe("Out Command", func() {
 				Ω(err).ShouldNot(HaveOccurred())
 
 				Ω(s3client.UploadFileCallCount()).Should(Equal(1))
-				bucketName, remotePath, localPath, acl := s3client.UploadFileArgsForCall(0)
+				bucketName, remotePath, localPath, options := s3client.UploadFileArgsForCall(0)
 
 				Ω(bucketName).Should(Equal("bucket-name"))
 				Ω(remotePath).Should(Equal("file.tgz"))
 				Ω(localPath).Should(Equal(filepath.Join(sourceDir, "a/file.tgz")))
-				Ω(acl).Should(Equal("private"))
+				Ω(options).Should(Equal(s3resource.UploadFileOptions{Acl: "private"}))
 			})
 		})
 
@@ -238,12 +239,12 @@ var _ = Describe("Out Command", func() {
 				Ω(err).ShouldNot(HaveOccurred())
 
 				Ω(s3client.UploadFileCallCount()).Should(Equal(1))
-				bucketName, remotePath, localPath, acl := s3client.UploadFileArgsForCall(0)
+				bucketName, remotePath, localPath, options := s3client.UploadFileArgsForCall(0)
 
 				Ω(bucketName).Should(Equal("bucket-name"))
 				Ω(remotePath).Should(Equal("folder-123/file.tgz"))
 				Ω(localPath).Should(Equal(filepath.Join(sourceDir, "a/file-123.tgz")))
-				Ω(acl).Should(Equal("private"))
+				Ω(options).Should(Equal(s3resource.UploadFileOptions{Acl: "private"}))
 
 				Ω(response.Version.Path).Should(Equal("folder-123/file.tgz"))
 
@@ -270,12 +271,12 @@ var _ = Describe("Out Command", func() {
 				Ω(err).ShouldNot(HaveOccurred())
 
 				Ω(s3client.UploadFileCallCount()).Should(Equal(1))
-				bucketName, remotePath, localPath, acl := s3client.UploadFileArgsForCall(0)
+				bucketName, remotePath, localPath, options := s3client.UploadFileArgsForCall(0)
 
 				Ω(bucketName).Should(Equal("bucket-name"))
 				Ω(remotePath).Should(Equal(remoteFileName))
 				Ω(localPath).Should(Equal(filepath.Join(sourceDir, localFileName)))
-				Ω(acl).Should(Equal("private"))
+				Ω(options).Should(Equal(s3resource.UploadFileOptions{Acl: "private"}))
 
 				Ω(response.Version.VersionID).Should(Equal("123"))
 
@@ -294,11 +295,12 @@ var _ = Describe("Out Command", func() {
 				Expect(err).ToNot(HaveOccurred())
 
 				Ω(s3client.UploadFileCallCount()).Should(Equal(1))
-				bucketName, remotePath, localPath, acl := s3client.UploadFileArgsForCall(0)
+
+				bucketName, remotePath, localPath, options := s3client.UploadFileArgsForCall(0)
 				Expect(bucketName).To(Equal("bucket-name"))
 				Expect(remotePath).To(Equal("a-folder/special-file.tgz"))
 				Expect(localPath).To(Equal(filepath.Join(sourceDir, "my/special-file.tgz")))
-				Ω(acl).Should(Equal("private"))
+				Ω(options).Should(Equal(s3resource.UploadFileOptions{Acl: "private"}))
 
 				Expect(response.Metadata[0].Name).To(Equal("filename"))
 				Expect(response.Metadata[0].Value).To(Equal("special-file.tgz"))

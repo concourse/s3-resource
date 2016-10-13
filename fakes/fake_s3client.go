@@ -4,7 +4,7 @@ package fakes
 import (
 	"sync"
 
-	"github.com/concourse/s3-resource"
+	s3resource "github.com/concourse/s3-resource"
 )
 
 type FakeS3Client struct {
@@ -28,15 +28,13 @@ type FakeS3Client struct {
 		result1 []string
 		result2 error
 	}
-	UploadFileStub        func(bucketName string, remotePath string, localPath string, acl string, serverSideEncryption string, kmsKeyId string) (string, error)
+	UploadFileStub        func(bucketName string, remotePath string, localPath string, options s3resource.UploadFileOptions) (string, error)
 	uploadFileMutex       sync.RWMutex
 	uploadFileArgsForCall []struct {
-		bucketName           string
-		remotePath           string
-		localPath            string
-		acl                  string
-		serverSideEncryption string
-		kmsKeyId             string
+		bucketName string
+		remotePath string
+		localPath  string
+		options    s3resource.UploadFileOptions
 	}
 	uploadFileReturns struct {
 		result1 string
@@ -83,6 +81,8 @@ type FakeS3Client struct {
 	uRLReturns struct {
 		result1 string
 	}
+	invocations      map[string][][]interface{}
+	invocationsMutex sync.RWMutex
 }
 
 func (fake *FakeS3Client) BucketFiles(bucketName string, prefixHint string) ([]string, error) {
@@ -91,6 +91,7 @@ func (fake *FakeS3Client) BucketFiles(bucketName string, prefixHint string) ([]s
 		bucketName string
 		prefixHint string
 	}{bucketName, prefixHint})
+	fake.recordInvocation("BucketFiles", []interface{}{bucketName, prefixHint})
 	fake.bucketFilesMutex.Unlock()
 	if fake.BucketFilesStub != nil {
 		return fake.BucketFilesStub(bucketName, prefixHint)
@@ -125,6 +126,7 @@ func (fake *FakeS3Client) BucketFileVersions(bucketName string, remotePath strin
 		bucketName string
 		remotePath string
 	}{bucketName, remotePath})
+	fake.recordInvocation("BucketFileVersions", []interface{}{bucketName, remotePath})
 	fake.bucketFileVersionsMutex.Unlock()
 	if fake.BucketFileVersionsStub != nil {
 		return fake.BucketFileVersionsStub(bucketName, remotePath)
@@ -153,19 +155,18 @@ func (fake *FakeS3Client) BucketFileVersionsReturns(result1 []string, result2 er
 	}{result1, result2}
 }
 
-func (fake *FakeS3Client) UploadFile(bucketName string, remotePath string, localPath string, acl string, serverSideEncryption string, kmsKeyId string) (string, error) {
+func (fake *FakeS3Client) UploadFile(bucketName string, remotePath string, localPath string, options s3resource.UploadFileOptions) (string, error) {
 	fake.uploadFileMutex.Lock()
 	fake.uploadFileArgsForCall = append(fake.uploadFileArgsForCall, struct {
-		bucketName           string
-		remotePath           string
-		localPath            string
-		acl                  string
-		serverSideEncryption string
-		kmsKeyId             string
-	}{bucketName, remotePath, localPath, acl, serverSideEncryption, kmsKeyId})
+		bucketName string
+		remotePath string
+		localPath  string
+		options    s3resource.UploadFileOptions
+	}{bucketName, remotePath, localPath, options})
+	fake.recordInvocation("UploadFile", []interface{}{bucketName, remotePath, localPath, options})
 	fake.uploadFileMutex.Unlock()
 	if fake.UploadFileStub != nil {
-		return fake.UploadFileStub(bucketName, remotePath, localPath, acl, serverSideEncryption, kmsKeyId)
+		return fake.UploadFileStub(bucketName, remotePath, localPath, options)
 	} else {
 		return fake.uploadFileReturns.result1, fake.uploadFileReturns.result2
 	}
@@ -177,10 +178,10 @@ func (fake *FakeS3Client) UploadFileCallCount() int {
 	return len(fake.uploadFileArgsForCall)
 }
 
-func (fake *FakeS3Client) UploadFileArgsForCall(i int) (string, string, string, string) {
+func (fake *FakeS3Client) UploadFileArgsForCall(i int) (string, string, string, s3resource.UploadFileOptions) {
 	fake.uploadFileMutex.RLock()
 	defer fake.uploadFileMutex.RUnlock()
-	return fake.uploadFileArgsForCall[i].bucketName, fake.uploadFileArgsForCall[i].remotePath, fake.uploadFileArgsForCall[i].localPath, fake.uploadFileArgsForCall[i].acl
+	return fake.uploadFileArgsForCall[i].bucketName, fake.uploadFileArgsForCall[i].remotePath, fake.uploadFileArgsForCall[i].localPath, fake.uploadFileArgsForCall[i].options
 }
 
 func (fake *FakeS3Client) UploadFileReturns(result1 string, result2 error) {
@@ -199,6 +200,7 @@ func (fake *FakeS3Client) DownloadFile(bucketName string, remotePath string, ver
 		versionID  string
 		localPath  string
 	}{bucketName, remotePath, versionID, localPath})
+	fake.recordInvocation("DownloadFile", []interface{}{bucketName, remotePath, versionID, localPath})
 	fake.downloadFileMutex.Unlock()
 	if fake.DownloadFileStub != nil {
 		return fake.DownloadFileStub(bucketName, remotePath, versionID, localPath)
@@ -232,6 +234,7 @@ func (fake *FakeS3Client) DeleteFile(bucketName string, remotePath string) error
 		bucketName string
 		remotePath string
 	}{bucketName, remotePath})
+	fake.recordInvocation("DeleteFile", []interface{}{bucketName, remotePath})
 	fake.deleteFileMutex.Unlock()
 	if fake.DeleteFileStub != nil {
 		return fake.DeleteFileStub(bucketName, remotePath)
@@ -266,6 +269,7 @@ func (fake *FakeS3Client) DeleteVersionedFile(bucketName string, remotePath stri
 		remotePath string
 		versionID  string
 	}{bucketName, remotePath, versionID})
+	fake.recordInvocation("DeleteVersionedFile", []interface{}{bucketName, remotePath, versionID})
 	fake.deleteVersionedFileMutex.Unlock()
 	if fake.DeleteVersionedFileStub != nil {
 		return fake.DeleteVersionedFileStub(bucketName, remotePath, versionID)
@@ -301,6 +305,7 @@ func (fake *FakeS3Client) URL(bucketName string, remotePath string, private bool
 		private    bool
 		versionID  string
 	}{bucketName, remotePath, private, versionID})
+	fake.recordInvocation("URL", []interface{}{bucketName, remotePath, private, versionID})
 	fake.uRLMutex.Unlock()
 	if fake.URLStub != nil {
 		return fake.URLStub(bucketName, remotePath, private, versionID)
@@ -326,6 +331,38 @@ func (fake *FakeS3Client) URLReturns(result1 string) {
 	fake.uRLReturns = struct {
 		result1 string
 	}{result1}
+}
+
+func (fake *FakeS3Client) Invocations() map[string][][]interface{} {
+	fake.invocationsMutex.RLock()
+	defer fake.invocationsMutex.RUnlock()
+	fake.bucketFilesMutex.RLock()
+	defer fake.bucketFilesMutex.RUnlock()
+	fake.bucketFileVersionsMutex.RLock()
+	defer fake.bucketFileVersionsMutex.RUnlock()
+	fake.uploadFileMutex.RLock()
+	defer fake.uploadFileMutex.RUnlock()
+	fake.downloadFileMutex.RLock()
+	defer fake.downloadFileMutex.RUnlock()
+	fake.deleteFileMutex.RLock()
+	defer fake.deleteFileMutex.RUnlock()
+	fake.deleteVersionedFileMutex.RLock()
+	defer fake.deleteVersionedFileMutex.RUnlock()
+	fake.uRLMutex.RLock()
+	defer fake.uRLMutex.RUnlock()
+	return fake.invocations
+}
+
+func (fake *FakeS3Client) recordInvocation(key string, args []interface{}) {
+	fake.invocationsMutex.Lock()
+	defer fake.invocationsMutex.Unlock()
+	if fake.invocations == nil {
+		fake.invocations = map[string][][]interface{}{}
+	}
+	if fake.invocations[key] == nil {
+		fake.invocations[key] = [][]interface{}{}
+	}
+	fake.invocations[key] = append(fake.invocations[key], args)
 }
 
 var _ s3resource.S3Client = new(FakeS3Client)

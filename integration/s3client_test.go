@@ -9,6 +9,7 @@ import (
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/s3"
+	"github.com/concourse/s3-resource"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 )
@@ -57,16 +58,18 @@ var _ = Describe("S3client", func() {
 	})
 
 	It("can interact with buckets", func() {
-		_, err := s3client.UploadFile(versionedBucketName, filepath.Join(directoryPrefix, "file-to-upload-1"), tempFile.Name(), "private", "", "")
+		_, err := s3client.UploadFile(versionedBucketName, filepath.Join(directoryPrefix, "file-to-upload-1"), tempFile.Name(), s3resource.NewUploadFileOptions())
 		Ω(err).ShouldNot(HaveOccurred())
 
-		_, err = s3client.UploadFile(versionedBucketName, filepath.Join(directoryPrefix, "file-to-upload-2"), tempFile.Name(), "private", "", "")
+		_, err = s3client.UploadFile(versionedBucketName, filepath.Join(directoryPrefix, "file-to-upload-2"), tempFile.Name(), s3resource.NewUploadFileOptions())
 		Ω(err).ShouldNot(HaveOccurred())
 
-		_, err = s3client.UploadFile(versionedBucketName, filepath.Join(directoryPrefix, "file-to-upload-2"), tempFile.Name(), "private", "", "")
+		_, err = s3client.UploadFile(versionedBucketName, filepath.Join(directoryPrefix, "file-to-upload-2"), tempFile.Name(), s3resource.NewUploadFileOptions())
 		Ω(err).ShouldNot(HaveOccurred())
 
-		_, err = s3client.UploadFile(versionedBucketName, filepath.Join(directoryPrefix, "file-to-upload-3"), tempFile.Name(), "private", "AES256", "")
+		options := s3resource.NewUploadFileOptions()
+		options.ServerSideEncryption = "AES256"
+		_, err = s3client.UploadFile(versionedBucketName, filepath.Join(directoryPrefix, "file-to-upload-3"), tempFile.Name(), options)
 		Ω(err).ShouldNot(HaveOccurred())
 
 		files, err := s3client.BucketFiles(versionedBucketName, directoryPrefix)

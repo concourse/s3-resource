@@ -21,7 +21,7 @@ type S3Client interface {
 	BucketFiles(bucketName string, prefixHint string) ([]string, error)
 	BucketFileVersions(bucketName string, remotePath string) ([]string, error)
 
-	UploadFile(bucketName string, remotePath string, localPath string, acl string, serverSideEncryption string, kmsKeyId string) (string, error)
+	UploadFile(bucketName string, remotePath string, localPath string, options UploadFileOptions) (string, error)
 	DownloadFile(bucketName string, remotePath string, versionID string, localPath string) error
 
 	DeleteFile(bucketName string, remotePath string) error
@@ -39,6 +39,18 @@ type s3client struct {
 	session *session.Session
 
 	progressOutput io.Writer
+}
+
+type UploadFileOptions struct {
+	Acl                  string
+	ServerSideEncryption string
+	KmsKeyId             string
+}
+
+func NewUploadFileOptions() UploadFileOptions {
+	return UploadFileOptions{
+		Acl: "private",
+	}
 }
 
 func NewS3Client(
@@ -136,7 +148,7 @@ func (client *s3client) BucketFileVersions(bucketName string, remotePath string)
 	return versions, nil
 }
 
-func (client *s3client) UploadFile(bucketName string, remotePath string, localPath string, acl string, serverSideEncryption string, kmsKeyId string) (string, error) {
+func (client *s3client) UploadFile(bucketName string, remotePath string, localPath string, options UploadFileOptions) (string, error) {
 	uploader := s3manager.NewUploader(client.session)
 
 	stat, err := os.Stat(localPath)
@@ -160,13 +172,13 @@ func (client *s3client) UploadFile(bucketName string, remotePath string, localPa
 		Bucket: aws.String(bucketName),
 		Key:    aws.String(remotePath),
 		Body:   progressSeekReaderAt{localFile, progress},
-		ACL:    aws.String(acl),
+		ACL:    aws.String(options.Acl),
 	}
-	if serverSideEncryption != "" {
-		uploadInput.ServerSideEncryption = aws.String(serverSideEncryption)
+	if options.ServerSideEncryption != "" {
+		uploadInput.ServerSideEncryption = aws.String(options.ServerSideEncryption)
 	}
-	if kmsKeyId != "" {
-		uploadInput.SSEKMSKeyId = aws.String(kmsKeyId)
+	if options.KmsKeyId != "" {
+		uploadInput.SSEKMSKeyId = aws.String(options.KmsKeyId)
 	}
 
 	uploadOutput, err := uploader.Upload(&uploadInput)
