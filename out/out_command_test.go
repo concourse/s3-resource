@@ -351,5 +351,40 @@ var _ = Describe("Out Command", func() {
 				Ω(response.Metadata[0].Name).ShouldNot(Equal("url"))
 			})
 		})
+
+		Context("when specifying a content-type for the uploaded file", func() {
+			BeforeEach(func() {
+				request.Params.File = "a/*.tgz"
+				request.Params.ContentType = "application/customtype"
+				createFile("a/file.tgz")
+			})
+
+			It("applies the specfied content-type", func() {
+				_, err := command.Run(sourceDir, request)
+				Ω(err).ShouldNot(HaveOccurred())
+
+				Ω(s3client.UploadFileCallCount()).Should(Equal(1))
+				_, _, _, options := s3client.UploadFileArgsForCall(0)
+
+				Ω(options.ContentType).Should(Equal("application/customtype"))
+			})
+		})
+
+		Context("content-type is not specified for the uploaded file", func() {
+			BeforeEach(func() {
+				request.Params.File = "a/*.tgz"
+				createFile("a/file.tgz")
+			})
+
+			It("no content-type specified leaves an empty content-type", func() {
+				_, err := command.Run(sourceDir, request)
+				Ω(err).ShouldNot(HaveOccurred())
+
+				Ω(s3client.UploadFileCallCount()).Should(Equal(1))
+				_, _, _, options := s3client.UploadFileArgsForCall(0)
+
+				Ω(options.ContentType).Should(Equal(""))
+			})
+		})
 	})
 })

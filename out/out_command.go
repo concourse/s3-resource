@@ -61,7 +61,11 @@ func (command *OutCommand) Run(sourceDir string, request OutRequest) (OutRespons
 		options.Acl = request.Params.Acl
 	}
 
-	options.ServerSideEncryption = 	request.Source.ServerSideEncryption
+	if request.Params.ContentType != "" {
+		options.ContentType = request.Params.ContentType
+	}
+
+	options.ServerSideEncryption = request.Source.ServerSideEncryption
 	options.KmsKeyId = request.Source.SSEKMSKeyId
 
 	versionID, err := command.s3client.UploadFile(

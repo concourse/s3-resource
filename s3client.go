@@ -45,6 +45,7 @@ type UploadFileOptions struct {
 	Acl                  string
 	ServerSideEncryption string
 	KmsKeyId             string
+	ContentType          string
 }
 
 func NewUploadFileOptions() UploadFileOptions {
@@ -179,6 +180,9 @@ func (client *s3client) UploadFile(bucketName string, remotePath string, localPa
 	}
 	if options.KmsKeyId != "" {
 		uploadInput.SSEKMSKeyId = aws.String(options.KmsKeyId)
+	}
+	if options.ContentType != "" {
+		uploadInput.ContentType = aws.String(options.ContentType)
 	}
 
 	uploadOutput, err := uploader.Upload(&uploadInput)
