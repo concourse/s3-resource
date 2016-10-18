@@ -61,10 +61,7 @@ func (command *OutCommand) Run(sourceDir string, request OutRequest) (OutRespons
 		options.Acl = request.Params.Acl
 	}
 
-	if request.Params.ContentType != "" {
-		options.ContentType = request.Params.ContentType
-	}
-
+	options.ContentType = request.Params.ContentType
 	options.ServerSideEncryption = request.Source.ServerSideEncryption
 	options.KmsKeyId = request.Source.SSEKMSKeyId
 

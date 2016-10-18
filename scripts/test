@@ -16,6 +16,4 @@ fi
 
 cd $s3_resource_dir
 
-counterfeiter -o fakes/fake_s3client.go .  S3Client
-
 ginkgo -r -p -skipPackage integration
