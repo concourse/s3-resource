@@ -54,6 +54,11 @@ One of the following two options must be specified:
   Semantic versions, or just numbers, are supported. Accordingly, full regular
   expressions are supported, to specify the capture groups.
 
+  In addition, a capture group named `commits_since_version` may be specified,
+  which is the number of commits since the above specified version in the
+  convention of `git-describe`. Your regexp should not additionally pass the
+  `git-describe`-appended short hash.
+
 * `versioned_file`: *Optional* If you enable versioning for your S3 bucket then
   you can keep the file name the same and upload new versions of your file
   without resorting to version numbers. This property is the path to the file
