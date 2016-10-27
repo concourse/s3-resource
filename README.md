@@ -152,5 +152,4 @@ Everything above and...
 First get the resource via:
 `go get github.com/concourse/s3-resource`
 
-Get the dependencies:
-`go get -d -t ./...`
+
