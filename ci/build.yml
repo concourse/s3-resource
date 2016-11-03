@@ -1,0 +1,13 @@
+---
+platform: linux
+image: docker:///concourse/static-golang
+
+inputs:
+- name: s3-resource
+  path: gopath/src/github.com/concourse/s3-resource
+
+outputs:
+- name: built-resource
+
+run:
+  path: gopath/src/github.com/concourse/s3-resource/ci/build.sh

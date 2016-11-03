@@ -1,0 +1,26 @@
+---
+jobs:
+- name: push-s3-resource
+  plan:
+  - get: s3-resource
+    trigger: true
+  - task: build
+    file: s3-resource/ci/build.yml
+  - put: docker-image-repo
+    params:
+      build: built-resource
+
+resources:
+- name: s3-resource
+  type: git
+  source:
+    uri: {{s3-resource-git-url}}
+    branch: {{s3-resource-git-branch}}
+
+- name: docker-image-repo
+  type: docker-image
+  source:
+    email: {{docker-email}}
+    username: {{docker-username}}
+    password: {{docker-password}}
+    repository: {{docker-repository}}
