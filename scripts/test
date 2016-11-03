@@ -15,4 +15,5 @@ if not_installed ginkgo; then
 fi
 
 cd $s3_resource_dir
+
 ginkgo -r -p -skipPackage integration

@@ -55,18 +55,21 @@ func (command *OutCommand) Run(sourceDir string, request OutRequest) (OutRespons
 
 	bucketName := request.Source.Bucket
 
-	acl := "private"
+	options := s3resource.NewUploadFileOptions()
+
 	if request.Params.Acl != "" {
-		acl = request.Params.Acl
+		options.Acl = request.Params.Acl
 	}
+
+	options.ContentType = request.Params.ContentType
+	options.ServerSideEncryption = request.Source.ServerSideEncryption
+	options.KmsKeyId = request.Source.SSEKMSKeyId
 
 	versionID, err := command.s3client.UploadFile(
 		bucketName,
 		remotePath,
 		localPath,
-		acl,
-		request.Source.ServerSideEncryption,
-		request.Source.SSEKMSKeyId,
+		options,
 	)
 	if err != nil {
 		return OutResponse{}, err

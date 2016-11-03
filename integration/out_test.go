@@ -17,7 +17,9 @@ import (
 	"github.com/onsi/gomega/gbytes"
 	"github.com/onsi/gomega/gexec"
 
+	"fmt"
 	"github.com/nu7hatch/gouuid"
+	"net/http"
 )
 
 var _ = Describe("out", func() {
@@ -80,6 +82,90 @@ var _ = Describe("out", func() {
 
 		It("returns an error", func() {
 			Ω(session.Err).Should(gbytes.Say("please specify either regexp or versioned_file"))
+		})
+	})
+
+	Context("with a content-type", func() {
+		BeforeEach(func() {
+			ioutil.WriteFile(filepath.Join(sourceDir, "content-typed-file"), []byte("text only"), 0755)
+
+			outRequest := out.OutRequest{
+				Source: s3resource.Source{
+					AccessKeyID:     accessKeyID,
+					SecretAccessKey: secretAccessKey,
+					Bucket:          bucketName,
+					RegionName:      regionName,
+					Endpoint:        endpoint,
+				},
+				Params: out.Params{
+					From:        filepath.Join(sourceDir, "content-typed-file"),
+					To:          "",
+					ContentType: "application/customtype",
+					Acl:         "public-read",
+				},
+			}
+
+			err := json.NewEncoder(stdin).Encode(&outRequest)
+			Ω(err).ShouldNot(HaveOccurred())
+
+			expectedExitStatus = 0
+		})
+
+		AfterEach(func() {
+			err := s3client.DeleteFile(bucketName, "content-typed-file")
+			Ω(err).ShouldNot(HaveOccurred())
+		})
+
+		It("creates a file with the specified content-type", func() {
+			url := fmt.Sprintf("%s/%s/content-typed-file", endpoint, bucketName)
+			response, err := http.Head(url)
+
+			Ω(err).ShouldNot(HaveOccurred())
+
+			Ω(response.Header.Get("Content-Type")).Should(Equal("application/customtype"))
+
+		})
+	})
+
+	Context("without a content-type", func() {
+		BeforeEach(func() {
+			ioutil.WriteFile(filepath.Join(sourceDir, "uncontent-typed-file"), []byte("text only"), 0755)
+
+			outRequest := out.OutRequest{
+				Source: s3resource.Source{
+					AccessKeyID:     accessKeyID,
+					SecretAccessKey: secretAccessKey,
+					Bucket:          bucketName,
+					RegionName:      regionName,
+					Endpoint:        endpoint,
+				},
+				Params: out.Params{
+					From: filepath.Join(sourceDir, "uncontent-typed-file"),
+					To:   "",
+					Acl:  "public-read",
+				},
+			}
+
+			err := json.NewEncoder(stdin).Encode(&outRequest)
+			Ω(err).ShouldNot(HaveOccurred())
+
+			expectedExitStatus = 0
+		})
+
+		AfterEach(func() {
+			err := s3client.DeleteFile(bucketName, "uncontent-typed-file")
+			Ω(err).ShouldNot(HaveOccurred())
+		})
+
+		// http://docs.aws.amazon.com/AWSImportExport/latest/DG/FileExtensiontoMimeTypes.html
+		It("creates a file with the default S3 content-type for a unknown filename extension", func() {
+			url := fmt.Sprintf("%s/%s/uncontent-typed-file", endpoint, bucketName)
+			response, err := http.Head(url)
+
+			Ω(err).ShouldNot(HaveOccurred())
+
+			Ω(response.Header.Get("Content-Type")).Should(Equal("binary/octet-stream"))
+
 		})
 	})
 

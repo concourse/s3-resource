@@ -111,7 +111,7 @@ var _ = Describe("in", func() {
 				err = ioutil.WriteFile(tempFile.Name(), []byte(fmt.Sprintf("some-file-%d", i)), 0755)
 				Ω(err).ShouldNot(HaveOccurred())
 
-				_, err = s3client.UploadFile(bucketName, filepath.Join(directoryPrefix, fmt.Sprintf("some-file-%d", i)), tempFile.Name(), "private", "", "")
+				_, err = s3client.UploadFile(bucketName, filepath.Join(directoryPrefix, fmt.Sprintf("some-file-%d", i)), tempFile.Name(), s3resource.NewUploadFileOptions())
 				Ω(err).ShouldNot(HaveOccurred())
 			}
 
@@ -192,7 +192,7 @@ var _ = Describe("in", func() {
 				err = ioutil.WriteFile(tempFile.Name(), []byte(fmt.Sprintf("some-file-%d", i)), 0755)
 				Ω(err).ShouldNot(HaveOccurred())
 
-				_, err = s3client.UploadFile(versionedBucketName, filepath.Join(directoryPrefix, "some-file"), tempFile.Name(), "private", "", "")
+				_, err = s3client.UploadFile(versionedBucketName, filepath.Join(directoryPrefix, "some-file"), tempFile.Name(), s3resource.NewUploadFileOptions())
 				Ω(err).ShouldNot(HaveOccurred())
 			}
 			err = os.Remove(tempFile.Name())
@@ -290,7 +290,7 @@ var _ = Describe("in", func() {
 				err = ioutil.WriteFile(tempFile.Name(), []byte(fmt.Sprintf("some-file-%d", i)), 0755)
 				Ω(err).ShouldNot(HaveOccurred())
 
-				_, err = s3client.UploadFile(bucketName, filepath.Join(directoryPrefix, fmt.Sprintf("some-file-%d", i)), tempFile.Name(), "private", "", "")
+				_, err = s3client.UploadFile(bucketName, filepath.Join(directoryPrefix, fmt.Sprintf("some-file-%d", i)), tempFile.Name(), s3resource.NewUploadFileOptions())
 				Ω(err).ShouldNot(HaveOccurred())
 			}
 
