@@ -17,9 +17,7 @@ import (
 	"github.com/onsi/gomega/gbytes"
 	"github.com/onsi/gomega/gexec"
 
-	"fmt"
 	"github.com/nu7hatch/gouuid"
-	"net/http"
 )
 
 var _ = Describe("out", func() {
@@ -117,13 +115,13 @@ var _ = Describe("out", func() {
 		})
 
 		It("creates a file with the specified content-type", func() {
-			url := fmt.Sprintf("%s/%s/content-typed-file", endpoint, bucketName)
-			response, err := http.Head(url)
-
+			response, err := s3Service.HeadObject(&s3.HeadObjectInput{
+				Bucket: aws.String(bucketName),
+				Key:    aws.String("content-typed-file"),
+			})
 			Ω(err).ShouldNot(HaveOccurred())
 
-			Ω(response.Header.Get("Content-Type")).Should(Equal("application/customtype"))
-
+			Expect(response.ContentType).To(Equal(aws.String("application/customtype")))
 		})
 	})
 
@@ -159,13 +157,13 @@ var _ = Describe("out", func() {
 
 		// http://docs.aws.amazon.com/AWSImportExport/latest/DG/FileExtensiontoMimeTypes.html
 		It("creates a file with the default S3 content-type for a unknown filename extension", func() {
-			url := fmt.Sprintf("%s/%s/uncontent-typed-file", endpoint, bucketName)
-			response, err := http.Head(url)
-
+			response, err := s3Service.HeadObject(&s3.HeadObjectInput{
+				Bucket: aws.String(bucketName),
+				Key:    aws.String("uncontent-typed-file"),
+			})
 			Ω(err).ShouldNot(HaveOccurred())
 
-			Ω(response.Header.Get("Content-Type")).Should(Equal("binary/octet-stream"))
-
+			Expect(response.ContentType).To(Equal(aws.String("binary/octet-stream")))
 		})
 	})
 
