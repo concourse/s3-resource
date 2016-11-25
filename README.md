@@ -101,6 +101,9 @@ a new version of that file.
 
 * `acl`: *Optional.*  [Canned Acl](http://docs.aws.amazon.com/AmazonS3/latest/dev/acl-overview.html)
   for the uploaded object.
+  
+* `content_type`: *Optional.* MIME [Content-Type](https://www.w3.org/Protocols/rfc2616/rfc2616-sec14.html#sec14.17)
+  describing the contents of the uploaded object
 
 ## Example Configuration
 
