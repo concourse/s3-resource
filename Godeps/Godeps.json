@@ -1,6 +1,6 @@
 {
 	"ImportPath": "github.com/concourse/s3-resource",
-	"GoVersion": "go1.6",
+	"GoVersion": "go1.7",
 	"GodepVersion": "v74",
 	"Packages": [
 		"./..."
@@ -137,10 +137,6 @@
 			"Rev": "da1f27ad1d9509b16f65f52fd9d8138b0f2dc7b2"
 		},
 		{
-			"ImportPath": "github.com/cloudfoundry/gunk/urljoiner",
-			"Rev": "b84f305af4938293a45d4551be00fc4e70a2ce95"
-		},
-		{
 			"ImportPath": "github.com/fatih/color",
 			"Comment": "v0.1-17-g533cd7f",
 			"Rev": "533cd7fd8a85905f67a1753afb4deddc85ea174f"
@@ -182,41 +178,6 @@
 		},
 		{
 			"ImportPath": "github.com/onsi/ginkgo/config",
-			"Comment": "v1.2.0-34-ge43390e",
-			"Rev": "e43390e35a4a88f3f95d5ddf9055efb7a1170469"
-		},
-		{
-			"ImportPath": "github.com/onsi/ginkgo/ginkgo",
-			"Comment": "v1.2.0-34-ge43390e",
-			"Rev": "e43390e35a4a88f3f95d5ddf9055efb7a1170469"
-		},
-		{
-			"ImportPath": "github.com/onsi/ginkgo/ginkgo/convert",
-			"Comment": "v1.2.0-34-ge43390e",
-			"Rev": "e43390e35a4a88f3f95d5ddf9055efb7a1170469"
-		},
-		{
-			"ImportPath": "github.com/onsi/ginkgo/ginkgo/interrupthandler",
-			"Comment": "v1.2.0-34-ge43390e",
-			"Rev": "e43390e35a4a88f3f95d5ddf9055efb7a1170469"
-		},
-		{
-			"ImportPath": "github.com/onsi/ginkgo/ginkgo/nodot",
-			"Comment": "v1.2.0-34-ge43390e",
-			"Rev": "e43390e35a4a88f3f95d5ddf9055efb7a1170469"
-		},
-		{
-			"ImportPath": "github.com/onsi/ginkgo/ginkgo/testrunner",
-			"Comment": "v1.2.0-34-ge43390e",
-			"Rev": "e43390e35a4a88f3f95d5ddf9055efb7a1170469"
-		},
-		{
-			"ImportPath": "github.com/onsi/ginkgo/ginkgo/testsuite",
-			"Comment": "v1.2.0-34-ge43390e",
-			"Rev": "e43390e35a4a88f3f95d5ddf9055efb7a1170469"
-		},
-		{
-			"ImportPath": "github.com/onsi/ginkgo/ginkgo/watch",
 			"Comment": "v1.2.0-34-ge43390e",
 			"Rev": "e43390e35a4a88f3f95d5ddf9055efb7a1170469"
 		},
