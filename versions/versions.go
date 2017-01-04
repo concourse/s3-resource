@@ -3,6 +3,7 @@ package versions
 import (
 	"regexp"
 	"sort"
+	"strconv"
 	"strings"
 
 	"github.com/blang/semver"
@@ -37,6 +38,8 @@ func Extract(path string, pattern string) (Extraction, bool) {
 	matches := compiled.FindStringSubmatch(path)
 
 	var match string
+	var commitsSinceVersionMatch string
+
 	if len(matches) < 2 { // whole string and match
 		return Extraction{}, false
 	} else if len(matches) == 2 {
@@ -49,6 +52,11 @@ func Extract(path string, pattern string) (Extraction, bool) {
 			match = matches[index]
 		} else {
 			match = matches[1]
+		}
+
+		index = sliceIndex(names, "commits_since_version")
+		if index > 0 {
+			commitsSinceVersionMatch = matches[index]
 		}
 	}
 
@@ -66,10 +74,24 @@ func Extract(path string, pattern string) (Extraction, bool) {
 		panic("version number was not valid: " + err.Error())
 	}
 
+	var commitsSinceVersion uint
+
+	if len(commitsSinceVersionMatch) > 0 {
+		sinceVersion, err := strconv.ParseUint(commitsSinceVersionMatch, 10, 32)
+		if err != nil {
+			panic("commits_since_version group was not valid: " + err.Error())
+		}
+
+		commitsSinceVersion = uint(sinceVersion)
+	} else {
+		commitsSinceVersion = 0
+	}
+
 	extraction := Extraction{
-		Path:          path,
-		Version:       version,
-		VersionNumber: match,
+		Path:                path,
+		Version:             version,
+		CommitsSinceVersion: commitsSinceVersion,
+		VersionNumber:       match,
 	}
 
 	return extraction, true
@@ -92,6 +114,10 @@ func (e Extractions) Len() int {
 }
 
 func (e Extractions) Less(i int, j int) bool {
+	if e[i].Version.EQ(e[j].Version) {
+		return e[i].CommitsSinceVersion < e[j].CommitsSinceVersion
+	}
+
 	return e[i].Version.LT(e[j].Version)
 }
 
@@ -105,6 +131,9 @@ type Extraction struct {
 
 	// parsed semantic version
 	Version semver.Version
+
+	// from git-describe output
+	CommitsSinceVersion uint
 
 	// the raw version match
 	VersionNumber string

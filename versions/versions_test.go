@@ -165,5 +165,45 @@ var _ = Describe("Extract", func() {
 			Ω(result.Version.String()).Should(Equal("2.3.4"))
 			Ω(result.VersionNumber).Should(Equal("2.3.4"))
 		})
+
+		It("extracts git-describe post-tag commit count", func() {
+			result, ok := versions.Extract("abc-1.0.5-10-gdeadbeef.tgz", "abc-(.*)-(?P<commits_since_version>\\d+)-g(.*).tgz")
+			Ω(ok).Should(BeTrue())
+
+			Ω(result.Path).Should(Equal("abc-1.0.5-10-gdeadbeef.tgz"))
+			Ω(result.Version.String()).Should(Equal("1.0.5"))
+			Ω(result.CommitsSinceVersion).Should(BeNumerically("==", 10))
+			Ω(result.VersionNumber).Should(Equal("1.0.5"))
+		})
+
+		It("correctly orders git-describe post-tag commit count", func() {
+			regex := "abc-(?P<version>.*?)(-(?P<commits_since_version>\\d+)-g(.*))?.tgz"
+
+			v := []string{
+				"abc-1.0.5.tgz",
+				"abc-1.0.5-10-gdeadbeef.tgz",
+				"abc-1.0.5-111-gfeedface.tgz",
+				"abc-1.0.6-pre1.tgz",
+				"abc-1.0.6.tgz",
+				"abc-1.0.6-6-gfeedfood.tgz",
+			}
+
+			extractions := make(versions.Extractions, len(v))
+
+			for i, s := range v {
+				extraction, ok := versions.Extract(s, regex)
+				Ω(ok).Should(BeTrue())
+
+				extractions[i] = extraction
+			}
+
+			Ω(extractions[0].Version.String()).Should(Equal(extractions[1].Version.String()))
+			Ω(extractions[1].Version.String()).Should(Equal(extractions[2].Version.String()))
+			Ω(extractions[4].Version.String()).Should(Equal(extractions[5].Version.String()))
+
+			for i := 0; i < (len(extractions) - 1); i++ {
+				Ω(extractions.Less(i, i + 1)).Should(BeTrue())
+			}
+		})
 	})
 })
