@@ -94,7 +94,7 @@ func newVersions(lastVersion versions.Extraction, extractions versions.Extractio
 	response := CheckResponse{}
 
 	for _, extraction := range extractions {
-		if extraction.Version.GTE(lastVersion.Version) {
+		if extraction.Version.Compare(lastVersion.Version) >= 0 {
 			version := s3resource.Version{
 				Path: extraction.Path,
 			}

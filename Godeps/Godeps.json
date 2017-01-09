@@ -1,7 +1,7 @@
 {
 	"ImportPath": "github.com/concourse/s3-resource",
-	"GoVersion": "go1.6",
-	"GodepVersion": "v74",
+	"GoVersion": "go1.7",
+	"GodepVersion": "v75",
 	"Packages": [
 		"./..."
 	],
@@ -127,18 +127,13 @@
 			"Rev": "d3b6d25135b4e09ecd39ea3c2a5cad35279b0515"
 		},
 		{
-			"ImportPath": "github.com/blang/semver",
-			"Comment": "v3.1.0",
-			"Rev": "aea32c919a18e5ef4537bbd283ff29594b1b0165"
-		},
-		{
 			"ImportPath": "github.com/cheggaaa/pb",
 			"Comment": "go1.0-27-gda1f27a",
 			"Rev": "da1f27ad1d9509b16f65f52fd9d8138b0f2dc7b2"
 		},
 		{
-			"ImportPath": "github.com/cloudfoundry/gunk/urljoiner",
-			"Rev": "b84f305af4938293a45d4551be00fc4e70a2ce95"
+			"ImportPath": "github.com/cppforlife/go-semi-semantic/version",
+			"Rev": "576b6af77ae4f3ccef356902fb3b9a9ae22e0b11"
 		},
 		{
 			"ImportPath": "github.com/fatih/color",
@@ -182,41 +177,6 @@
 		},
 		{
 			"ImportPath": "github.com/onsi/ginkgo/config",
-			"Comment": "v1.2.0-34-ge43390e",
-			"Rev": "e43390e35a4a88f3f95d5ddf9055efb7a1170469"
-		},
-		{
-			"ImportPath": "github.com/onsi/ginkgo/ginkgo",
-			"Comment": "v1.2.0-34-ge43390e",
-			"Rev": "e43390e35a4a88f3f95d5ddf9055efb7a1170469"
-		},
-		{
-			"ImportPath": "github.com/onsi/ginkgo/ginkgo/convert",
-			"Comment": "v1.2.0-34-ge43390e",
-			"Rev": "e43390e35a4a88f3f95d5ddf9055efb7a1170469"
-		},
-		{
-			"ImportPath": "github.com/onsi/ginkgo/ginkgo/interrupthandler",
-			"Comment": "v1.2.0-34-ge43390e",
-			"Rev": "e43390e35a4a88f3f95d5ddf9055efb7a1170469"
-		},
-		{
-			"ImportPath": "github.com/onsi/ginkgo/ginkgo/nodot",
-			"Comment": "v1.2.0-34-ge43390e",
-			"Rev": "e43390e35a4a88f3f95d5ddf9055efb7a1170469"
-		},
-		{
-			"ImportPath": "github.com/onsi/ginkgo/ginkgo/testrunner",
-			"Comment": "v1.2.0-34-ge43390e",
-			"Rev": "e43390e35a4a88f3f95d5ddf9055efb7a1170469"
-		},
-		{
-			"ImportPath": "github.com/onsi/ginkgo/ginkgo/testsuite",
-			"Comment": "v1.2.0-34-ge43390e",
-			"Rev": "e43390e35a4a88f3f95d5ddf9055efb7a1170469"
-		},
-		{
-			"ImportPath": "github.com/onsi/ginkgo/ginkgo/watch",
 			"Comment": "v1.2.0-34-ge43390e",
 			"Rev": "e43390e35a4a88f3f95d5ddf9055efb7a1170469"
 		},
