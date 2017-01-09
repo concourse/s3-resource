@@ -135,17 +135,25 @@ var _ = Describe("Extract", func() {
 			Ω(ok).Should(BeTrue())
 
 			Ω(result.Path).Should(Equal("abc-105.tgz"))
-			Ω(result.Version.String()).Should(Equal("105.0.0"))
+			Ω(result.Version.String()).Should(Equal("105"))
 			Ω(result.VersionNumber).Should(Equal("105"))
 		})
 
-		It("extracts semantics version numbers", func() {
+		It("extracts semantic version numbers", func() {
 			result, ok := versions.Extract("abc-1.0.5.tgz", "abc-(.*).tgz")
 			Ω(ok).Should(BeTrue())
 
 			Ω(result.Path).Should(Equal("abc-1.0.5.tgz"))
 			Ω(result.Version.String()).Should(Equal("1.0.5"))
 			Ω(result.VersionNumber).Should(Equal("1.0.5"))
+		})
+
+		It("extracts versions with more than 3 segments", func() {
+			result, ok := versions.Extract("abc-1.0.6.1-rc7.tgz", "abc-(.*).tgz")
+			Ω(ok).Should(BeTrue())
+
+			Ω(result.VersionNumber).Should(Equal("1.0.6.1-rc7"))
+			Ω(result.Version.String()).Should(Equal("1.0.6.1-rc7"))
 		})
 
 		It("takes the first match if there are many", func() {
