@@ -1,21 +1,19 @@
-# Terminal progress bar for Go  
+## Terminal progress bar for Go  
 
-Simple progress bar for console programs. 
+Simple progress bar for console programms. 
     
 
-## Installation
-
+### Installation
 ```
-go get gopkg.in/cheggaaa/pb.v1
+go get github.com/cheggaaa/pb
 ```   
 
-## Usage   
-
+### Usage   
 ```Go
 package main
 
 import (
-	"gopkg.in/cheggaaa/pb.v1"
+	"github.com/cheggaaa/pb"
 	"time"
 )
 
@@ -28,18 +26,15 @@ func main() {
 	}
 	bar.FinishPrint("The End!")
 }
-
-```
-
+```   
 Result will be like this:
-
 ```
 > go run test.go
 37158 / 100000 [================>_______________________________] 37.16% 1m11s
 ```
 
-## Customization
 
+More functions?  
 ```Go  
 // create bar
 bar := pb.New(count)
@@ -53,13 +48,13 @@ bar.ShowPercent = true
 // show bar (by default already true)
 bar.ShowBar = true
 
-// no counters
+// no need counters
 bar.ShowCounters = false
 
 // show "time left"
 bar.ShowTimeLeft = true
 
-// show average speed
+// show average speed    
 bar.ShowSpeed = true
 
 // sets the width of the progress bar
@@ -68,35 +63,15 @@ bar.SetWidth(80)
 // sets the width of the progress bar, but if terminal size smaller will be ignored
 bar.SetMaxWidth(80)
 
-// convert output to readable format (like KB, MB)
+// convert output to readable format (like KB, MB)     
 bar.SetUnits(pb.U_BYTES)
 
 // and start
 bar.Start()
 ``` 
 
-## Progress bar for IO Operations
-
-```go
-// create and start bar
-bar := pb.New(myDataLen).SetUnits(pb.U_BYTES)
-bar.Start()
-
-// my io.Reader
-r := myReader
-
-// my io.Writer
-w := myWriter
-
-// create proxy reader
-reader := bar.NewProxyReader(r)
-
-// and copy from pb reader
-io.Copy(w, reader)
-
-```
-
-```go
+Want handle progress of io operations?    
+```Go
 // create and start bar
 bar := pb.New(myDataLen).SetUnits(pb.U_BYTES)
 bar.Start()
@@ -113,64 +88,11 @@ writer := io.MultiWriter(w, bar)
 // and copy
 io.Copy(writer, r)
 
-bar.Finish()
+// show example/copy/copy.go for advanced example
+
 ```
 
-## Custom Progress Bar Look-and-feel
-
-```go
+Not like the looks?
+```Go
 bar.Format("<.- >")
-```
-
-## Multiple Progress Bars (experimental and unstable)
-
-Do not print to terminal while pool is active.
-
-```go
-package main
-
-import (
-    "math/rand"
-    "sync"
-    "time"
-
-    "gopkg.in/cheggaaa/pb.v1"
-)
-
-func main() {
-    // create bars
-    first := pb.New(200).Prefix("First ")
-    second := pb.New(200).Prefix("Second ")
-    third := pb.New(200).Prefix("Third ")
-    // start pool
-    pool, err := pb.StartPool(first, second, third)
-    if err != nil {
-        panic(err)
-    }
-    // update bars
-    wg := new(sync.WaitGroup)
-    for _, bar := range []*pb.ProgressBar{first, second, third} {
-        wg.Add(1)
-        go func(cb *pb.ProgressBar) {
-            for n := 0; n < 200; n++ {
-                cb.Increment()
-                time.Sleep(time.Millisecond * time.Duration(rand.Intn(100)))
-            }
-            cb.Finish()
-            wg.Done()
-        }(bar)
-    }
-    wg.Wait()
-    // close pool
-    pool.Stop()
-}
-```
-
-The result will be as follows:
-
-```
-$ go run example/multiple.go 
-First 141 / 1000 [===============>---------------------------------------] 14.10 % 44s
-Second 139 / 1000 [==============>---------------------------------------] 13.90 % 44s
-Third 152 / 1000 [================>--------------------------------------] 15.20 % 40s
 ```

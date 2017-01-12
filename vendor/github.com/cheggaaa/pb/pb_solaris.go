@@ -1,6 +1,5 @@
 // +build solaris
-// +build !appengine
 
 package pb
 
-const sysIoctl = 54
+const sys_ioctl = 54
