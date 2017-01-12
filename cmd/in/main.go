@@ -29,6 +29,7 @@ func main() {
 		request.Source.RegionName,
 		request.Source.Endpoint,
 		request.Source.DisableSSL,
+		request.Source.NotAnonymous,
 	)
 
 	if len(request.Source.CloudfrontURL) != 0 {
