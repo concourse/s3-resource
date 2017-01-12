@@ -270,7 +270,7 @@ var _ = Describe("out", func() {
 			It("allows everyone to have read access to the object", func() {
 				anonURI := "http://acs.amazonaws.com/groups/global/AllUsers"
 				permision := s3.PermissionRead
-				grantee := s3.Grantee{URI: &anonURI}
+				grantee := s3.Grantee{URI: &anonURI, Type: aws.String("Group")}
 				expectedGrant := s3.Grant{
 					Grantee:    &grantee,
 					Permission: &permision,
