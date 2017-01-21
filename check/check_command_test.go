@@ -78,6 +78,7 @@ var _ = Describe("Check Command", func() {
 
 			Context("when the regex does not match the previous version", func() {
 				It("returns the latest version that matches the regex", func() {
+					request.Version.Path = "files/abc-0.0.1.tgz"
 					request.Source.Regexp = `files/abc-(2\.33.*).tgz`
 					response, err := command.Run(request)
 					Ω(err).ShouldNot(HaveOccurred())
