@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/aws/aws-sdk-go/aws"
@@ -151,6 +152,11 @@ func (client *s3client) BucketFileVersions(bucketName string, remotePath string)
 
 func (client *s3client) UploadFile(bucketName string, remotePath string, localPath string, options UploadFileOptions) (string, error) {
 	uploader := s3manager.NewUploader(client.session)
+
+	if client.isGCSHost() {
+		// GCS returns `InvalidArgument` on multipart uploads
+		uploader.MaxUploadParts = 1
+	}
 
 	stat, err := os.Stat(localPath)
 	if err != nil {
@@ -410,4 +416,8 @@ func (client *s3client) newProgressBar(total int64) *pb.ProgressBar {
 	progress.NotPrint = true
 
 	return progress.SetWidth(80)
+}
+
+func (client *s3client) isGCSHost() bool {
+	return (client.session.Config.Endpoint != nil && strings.Contains(*client.session.Config.Endpoint, "storage.googleapis.com"))
 }
