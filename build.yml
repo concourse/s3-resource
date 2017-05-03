@@ -1,6 +1,10 @@
 ---
 platform: linux
-image: docker:///concourse/static-golang
+
+image_resource: 
+  type: docker-image
+  source:
+    repository: concourse/static-golang
 
 params:
   S3_TESTING_ACCESS_KEY_ID:
