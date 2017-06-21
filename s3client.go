@@ -1,12 +1,15 @@
 package s3resource
 
 import (
+	"crypto/tls"
 	"errors"
 	"fmt"
 	"io"
 	"os"
 	"strings"
 	"time"
+
+	"net/http"
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/credentials"
@@ -81,6 +84,7 @@ func NewAwsConfig(
 	regionName string,
 	endpoint string,
 	disableSSL bool,
+	skipSSLVerification bool,
 ) *aws.Config {
 	var creds *credentials.Credentials
 
@@ -94,12 +98,22 @@ func NewAwsConfig(
 		regionName = "us-east-1"
 	}
 
+	var httpClient *http.Client
+	if skipSSLVerification {
+		httpClient = &http.Client{Transport: &http.Transport{
+			TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
+		}}
+	} else {
+		httpClient = http.DefaultClient
+	}
+
 	awsConfig := &aws.Config{
 		Region:           aws.String(regionName),
 		Credentials:      creds,
 		S3ForcePathStyle: aws.Bool(true),
 		MaxRetries:       aws.Int(maxRetries),
 		DisableSSL:       aws.Bool(disableSSL),
+		HTTPClient:       httpClient,
 	}
 
 	if len(endpoint) != 0 {

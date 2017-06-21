@@ -32,12 +32,13 @@ version numbers.
 * `disable_ssl`: *Optional.* Disable SSL for the endpoint, useful for S3
   compatible providers without SSL.
 
+* `skip_ssl_verification`: *Optional.* Skip SSL verification for S3 endpoint. Useful for S3 compatible providers using self-signed SSL certificates.
+
 * `server_side_encryption`: *Optional.* An encryption algorithm to use when
   storing objects in S3.
 
 * `sse_kms_key_id`: *Optional.* The ID of the AWS KMS master encryption key
   used for the object.
-
 
 * `use_v2_signing`: *Optional.* Use signature v2 signing, useful for S3 compatible providers that do not support v4.
 
