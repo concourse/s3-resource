@@ -34,10 +34,10 @@ var _ = Describe("In Command", func() {
 			request = InRequest{
 				Source: s3resource.Source{
 					Bucket: "bucket-name",
-					Regexp: "files/a-file-(.*).tgz",
+					Regexp: "files/a-file-(.*)",
 				},
 				Version: s3resource.Version{
-					Path: "files/a-file-1.3.tgz",
+					Path: "files/a-file-1.3",
 				},
 			}
 
@@ -74,7 +74,7 @@ var _ = Describe("In Command", func() {
 
 		Context("when there is an existing version in the request", func() {
 			BeforeEach(func() {
-				request.Version.Path = "files/a-file-1.3.tgz"
+				request.Version.Path = "files/a-file-1.3"
 			})
 
 			It("downloads the existing version of the file", func() {
@@ -85,9 +85,9 @@ var _ = Describe("In Command", func() {
 				bucketName, remotePath, versionID, localPath := s3client.DownloadFileArgsForCall(0)
 
 				Ω(bucketName).Should(Equal("bucket-name"))
-				Ω(remotePath).Should(Equal("files/a-file-1.3.tgz"))
+				Ω(remotePath).Should(Equal("files/a-file-1.3"))
 				Ω(versionID).Should(BeEmpty())
-				Ω(localPath).Should(Equal(filepath.Join(destDir, "a-file-1.3.tgz")))
+				Ω(localPath).Should(Equal(filepath.Join(destDir, "a-file-1.3")))
 			})
 
 			It("creates a 'url' file that contains the URL", func() {
@@ -104,7 +104,7 @@ var _ = Describe("In Command", func() {
 
 				bucketName, remotePath, private, versionID := s3client.URLArgsForCall(0)
 				Ω(bucketName).Should(Equal("bucket-name"))
-				Ω(remotePath).Should(Equal("files/a-file-1.3.tgz"))
+				Ω(remotePath).Should(Equal("files/a-file-1.3"))
 				Ω(private).Should(Equal(false))
 				Ω(versionID).Should(BeEmpty())
 			})
@@ -129,7 +129,7 @@ var _ = Describe("In Command", func() {
 					Ω(s3client.URLCallCount()).Should(Equal(1))
 					bucketName, remotePath, private, versionID := s3client.URLArgsForCall(0)
 					Ω(bucketName).Should(Equal("bucket-name"))
-					Ω(remotePath).Should(Equal("files/a-file-1.3.tgz"))
+					Ω(remotePath).Should(Equal("files/a-file-1.3"))
 					Ω(private).Should(Equal(true))
 					Ω(versionID).Should(BeEmpty())
 				})
@@ -153,7 +153,7 @@ var _ = Describe("In Command", func() {
 					response, err := command.Run(destDir, request)
 					Ω(err).ShouldNot(HaveOccurred())
 
-					Ω(response.Version.Path).Should(Equal("files/a-file-1.3.tgz"))
+					Ω(response.Version.Path).Should(Equal("files/a-file-1.3"))
 				})
 
 				It("has metadata about the file", func() {
@@ -161,7 +161,7 @@ var _ = Describe("In Command", func() {
 					Ω(err).ShouldNot(HaveOccurred())
 
 					Ω(response.Metadata[0].Name).Should(Equal("filename"))
-					Ω(response.Metadata[0].Value).Should(Equal("a-file-1.3.tgz"))
+					Ω(response.Metadata[0].Value).Should(Equal("a-file-1.3"))
 
 					Ω(response.Metadata[1].Name).Should(Equal("url"))
 					Ω(response.Metadata[1].Value).Should(Equal("http://google.com"))
@@ -192,7 +192,7 @@ var _ = Describe("In Command", func() {
 				_, err := command.Run(destDir, request)
 				Expect(err).To(HaveOccurred())
 				Expect(err.Error()).To(ContainSubstring("regex does not match provided version"))
-				Expect(err.Error()).To(ContainSubstring("files/a-file-1.3.tgz"))
+				Expect(err.Error()).To(ContainSubstring("files/a-file-1.3"))
 			})
 		})
 	})
