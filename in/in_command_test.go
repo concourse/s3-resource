@@ -1,9 +1,16 @@
 package in_test
 
 import (
+	"archive/tar"
+	"archive/zip"
+	"compress/gzip"
+	"io"
 	"io/ioutil"
+	"log"
 	"os"
+	"path"
 	"path/filepath"
+	"strings"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -195,5 +202,291 @@ var _ = Describe("In Command", func() {
 				Expect(err.Error()).To(ContainSubstring("files/a-file-1.3"))
 			})
 		})
+
+		Context("when params is configured to unpack the file", func() {
+			BeforeEach(func() {
+				request.Params.Unpack = true
+			})
+
+			Context("when the file is a tarball", func() {
+				BeforeEach(func() {
+					s3client.DownloadFileStub = func(bucketName string, remotePath string, versionID string, localPath string) error {
+						src := filepath.Join(tmpPath, "some-file")
+
+						err := ioutil.WriteFile(src, []byte("some-contents"), os.ModePerm)
+						Expect(err).NotTo(HaveOccurred())
+
+						err = createTarball([]string{src}, tmpPath, localPath)
+						Expect(err).NotTo(HaveOccurred())
+
+						_, err = os.Stat(localPath)
+						Expect(err).NotTo(HaveOccurred())
+
+						return nil
+					}
+				})
+
+				It("extracts the tarball", func() {
+					_, err := command.Run(destDir, request)
+					Expect(err).NotTo(HaveOccurred())
+
+					bs, err := ioutil.ReadFile(filepath.Join(destDir, "some-file"))
+					Expect(err).NotTo(HaveOccurred())
+
+					Expect(bs).To(Equal([]byte("some-contents")))
+				})
+			})
+
+			Context("when the file is a zip", func() {
+				BeforeEach(func() {
+					s3client.DownloadFileStub = func(bucketName string, remotePath string, versionID string, localPath string) error {
+						inDir, err := ioutil.TempDir(tmpPath, "zip-dir")
+						Expect(err).NotTo(HaveOccurred())
+
+						err = ioutil.WriteFile(path.Join(inDir, "some-file"), []byte("some-contents"), os.ModePerm)
+						Expect(err).NotTo(HaveOccurred())
+
+						err = zipit(path.Join(inDir, "/"), localPath, "")
+						Expect(err).NotTo(HaveOccurred())
+
+						return nil
+					}
+				})
+
+				It("unzips the zip", func() {
+					_, err := command.Run(destDir, request)
+					Expect(err).NotTo(HaveOccurred())
+
+					bs, err := ioutil.ReadFile(filepath.Join(destDir, "some-file"))
+					Expect(err).NotTo(HaveOccurred())
+
+					Expect(bs).To(Equal([]byte("some-contents")))
+				})
+			})
+
+			Context("when the file is gzipped", func() {
+				BeforeEach(func() {
+					request.Version.Path = "files/a-file-1.3.gz"
+					request.Source.Regexp = "files/a-file-(.*).gz"
+
+					s3client.DownloadFileStub = func(bucketName string, remotePath string, versionID string, localPath string) error {
+						f, err := os.Create(localPath)
+						Expect(err).NotTo(HaveOccurred())
+
+						zw := gzip.NewWriter(f)
+
+						_, err = zw.Write([]byte("some-contents"))
+						Expect(err).NotTo(HaveOccurred())
+
+						Expect(zw.Close()).NotTo(HaveOccurred())
+						Expect(f.Close()).NotTo(HaveOccurred())
+
+						return nil
+					}
+				})
+
+				It("gunzips the gzip", func() {
+					_, err := command.Run(destDir, request)
+					Expect(err).NotTo(HaveOccurred())
+
+					bs, err := ioutil.ReadFile(filepath.Join(destDir, "a-file-1.3"))
+					Expect(err).NotTo(HaveOccurred())
+
+					Expect(string(bs)).To(Equal("some-contents"))
+				})
+			})
+
+			Context("when the file is a gzipped tarball", func() {
+				BeforeEach(func() {
+					request.Version.Path = "files/a-file-1.3.tgz"
+					request.Source.Regexp = "files/a-file-(.*).tgz"
+
+					s3client.DownloadFileStub = func(bucketName string, remotePath string, versionID string, localPath string) error {
+						err := os.MkdirAll(filepath.Join(tmpPath, "some-dir"), os.ModePerm)
+						Expect(err).NotTo(HaveOccurred())
+
+						someFile1 := filepath.Join(tmpPath, "some-dir", "some-file")
+
+						err = ioutil.WriteFile(someFile1, []byte("some-contents"), os.ModePerm)
+						Expect(err).NotTo(HaveOccurred())
+
+						someFile2 := filepath.Join(tmpPath, "some-file")
+
+						err = ioutil.WriteFile(someFile2, []byte("some-other-contents"), os.ModePerm)
+						Expect(err).NotTo(HaveOccurred())
+
+						tarPath := filepath.Join(tmpPath, "some-tar")
+						err = createTarball([]string{someFile1, someFile2}, tmpPath, tarPath)
+						Expect(err).NotTo(HaveOccurred())
+
+						_, err = os.Stat(tarPath)
+						Expect(err).NotTo(HaveOccurred())
+
+						tarf, err := os.Open(tarPath)
+						Expect(err).NotTo(HaveOccurred())
+
+						f, err := os.Create(localPath)
+						Expect(err).NotTo(HaveOccurred())
+
+						zw := gzip.NewWriter(f)
+
+						_, err = io.Copy(zw, tarf)
+						Expect(err).NotTo(HaveOccurred())
+
+						Expect(zw.Close()).NotTo(HaveOccurred())
+						Expect(f.Close()).NotTo(HaveOccurred())
+
+						return nil
+					}
+				})
+
+				It("extracts the gzipped tarball", func() {
+					_, err := command.Run(destDir, request)
+					Expect(err).NotTo(HaveOccurred())
+
+					Expect(filepath.Join(destDir, "some-dir", "some-file")).To(BeARegularFile())
+
+					bs, err := ioutil.ReadFile(filepath.Join(destDir, "some-dir", "some-file"))
+					Expect(err).NotTo(HaveOccurred())
+					Expect(bs).To(Equal([]byte("some-contents")))
+
+					bs, err = ioutil.ReadFile(filepath.Join(destDir, "some-file"))
+					Expect(err).NotTo(HaveOccurred())
+					Expect(bs).To(Equal([]byte("some-other-contents")))
+				})
+			})
+
+			Context("when the file is not an archive", func() {
+				BeforeEach(func() {
+					s3client.DownloadFileStub = func(bucketName string, remotePath string, versionID string, localPath string) error {
+						err := ioutil.WriteFile(localPath, []byte("some-contents"), os.ModePerm)
+						Expect(err).NotTo(HaveOccurred())
+
+						return nil
+					}
+				})
+
+				It("returns an error", func() {
+					_, err := command.Run(destDir, request)
+					Expect(err).To(HaveOccurred())
+				})
+			})
+		})
 	})
 })
+
+func addFileToTar(tw *tar.Writer, tarPath, path string) error {
+	file, err := os.Open(path)
+	if err != nil {
+		return err
+	}
+
+	stat, err := file.Stat()
+	if err != nil {
+		return err
+	}
+
+	err = tw.WriteHeader(&tar.Header{
+		Name:    tarPath,
+		Size:    stat.Size(),
+		Mode:    int64(stat.Mode()),
+		ModTime: stat.ModTime(),
+	})
+	if err != nil {
+		return err
+	}
+
+	_, err = io.Copy(tw, file)
+	if err != nil {
+		return err
+	}
+
+	return file.Close()
+}
+
+func createTarball(paths []string, basePath string, destination string) error {
+	file, err := os.Create(destination)
+	if err != nil {
+		log.Fatalln(err)
+	}
+
+	tw := tar.NewWriter(file)
+
+	for _, path := range paths {
+		tarPath, err := filepath.Rel(basePath, path)
+		if err != nil {
+			return err
+		}
+		err = addFileToTar(tw, tarPath, path)
+		if err != nil {
+			return err
+		}
+	}
+
+	err = tw.Close()
+	if err != nil {
+		return err
+	}
+
+	return file.Close()
+}
+
+// Thanks to Svett Ralchev
+// http://blog.ralch.com/tutorial/golang-working-with-zip/
+func zipit(source, target, prefix string) error {
+	zipfile, err := os.Create(target)
+	if err != nil {
+		return err
+	}
+
+	archive := zip.NewWriter(zipfile)
+
+	err = filepath.Walk(source, func(path string, info os.FileInfo, err error) error {
+		if path == source {
+			return nil
+		}
+
+		if err != nil {
+			return err
+		}
+
+		header, err := zip.FileInfoHeader(info)
+		if err != nil {
+			return err
+		}
+
+		header.Name = strings.TrimPrefix(path, source+string(os.PathSeparator))
+
+		if info.IsDir() {
+			header.Name += string(os.PathSeparator)
+		} else {
+			header.Method = zip.Deflate
+		}
+
+		writer, err := archive.CreateHeader(header)
+		if err != nil {
+			return err
+		}
+
+		if info.IsDir() {
+			return nil
+		}
+
+		file, err := os.Open(path)
+		if err != nil {
+			return err
+		}
+
+		if _, err = io.Copy(writer, file); err != nil {
+			return err
+		}
+
+		return file.Close()
+	})
+
+	if err = archive.Close(); err != nil {
+		return err
+	}
+
+	return zipfile.Close()
+}

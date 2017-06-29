@@ -73,11 +73,6 @@ func (command *InCommand) Run(destinationDir string, request InRequest) (InRespo
 		versionID = request.Version.VersionID
 	}
 
-	err = command.writeVersionFile(versionNumber, destinationDir)
-	if err != nil {
-		return InResponse{}, err
-	}
-
 	err = command.downloadFile(
 		request.Source.Bucket,
 		remotePath,
@@ -90,8 +85,26 @@ func (command *InCommand) Run(destinationDir string, request InRequest) (InRespo
 		return InResponse{}, err
 	}
 
+	if request.Params.Unpack {
+		destinationPath := filepath.Join(destinationDir, path.Base(remotePath))
+		mime := archiveMimetype(destinationPath)
+		if mime == "" {
+			return InResponse{}, fmt.Errorf("not an archive: %s", destinationPath)
+		}
+
+		err = extractArchive(mime, destinationPath)
+		if err != nil {
+			return InResponse{}, err
+		}
+	}
+
 	url := command.urlProvider.GetURL(request, remotePath)
 	if err = command.writeURLFile(destinationDir, url); err != nil {
+		return InResponse{}, err
+	}
+
+	err = command.writeVersionFile(versionNumber, destinationDir)
+	if err != nil {
 		return InResponse{}, err
 	}
 
@@ -151,4 +164,35 @@ func (command *InCommand) metadata(remotePath string, private bool, url string) 
 	}
 
 	return metadata
+}
+
+func extractArchive(mime, filename string) error {
+	destDir := filepath.Dir(filename)
+
+	err := inflate(mime, filename, destDir)
+	if err != nil {
+		return fmt.Errorf("failed to extract archive: %s", err)
+	}
+
+	if mime == "application/gzip" || mime == "application/x-gzip" {
+		fileInfos, err := ioutil.ReadDir(destDir)
+		if err != nil {
+			return fmt.Errorf("failed to read dir: %s", err)
+		}
+
+		if len(fileInfos) != 1 {
+			return fmt.Errorf("%d files found after gunzip; expected 1", len(fileInfos))
+		}
+
+		filename = filepath.Join(destDir, fileInfos[0].Name())
+		mime = archiveMimetype(filename)
+		if mime == "application/x-tar" {
+			err = inflate(mime, filename, destDir)
+			if err != nil {
+				return fmt.Errorf("failed to extract archive: %s", err)
+			}
+		}
+	}
+
+	return nil
 }

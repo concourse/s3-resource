@@ -82,7 +82,7 @@ Places the following files in the destination:
 
 #### Parameters
 
-*None.*
+* `unpack`: *Optional.* If true and the file is an archive (tar, gzipped tar, other gzipped file, or zip), unpack the file. Gzipped tarballs will be both ungzipped and untarred.
 
 
 ### `out`: Upload an object to the bucket.
