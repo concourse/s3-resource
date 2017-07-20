@@ -9,7 +9,7 @@ import (
 	"os/exec"
 	"strings"
 
-	"bitbucket.org/taruti/mimemagic"
+	"net/http"
 )
 
 var archiveMimetypes = []string{
@@ -29,7 +29,7 @@ func mimetype(r *bufio.Reader) (string, error) {
 		return "", errors.New("cannot determine mimetype from empty bytes")
 	}
 
-	return mimemagic.Match("", bs), nil
+	return http.DetectContentType(bs), nil
 }
 
 func archiveMimetype(filename string) string {
