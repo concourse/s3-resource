@@ -45,77 +45,38 @@ func (command *InCommand) Run(destinationDir string, request InRequest) (InRespo
 		return InResponse{}, errors.New(message)
 	}
 
-	err := command.createDirectory(destinationDir)
+	err := os.MkdirAll(destinationDir, 0755)
 	if err != nil {
 		return InResponse{}, err
 	}
+
+	var remotePath string
+	var versionNumber string
+	var versionID string
 
 	if request.Source.Regexp != "" {
-		return command.inByRegex(destinationDir, request)
+		if request.Version.Path == "" {
+			return InResponse{}, ErrMissingPath
+		}
+
+		remotePath = request.Version.Path
+
+		extraction, ok := versions.Extract(remotePath, request.Source.Regexp)
+		if !ok {
+			return InResponse{}, fmt.Errorf("regex does not match provided version: %#v", request.Version)
+		}
+
+		versionNumber = extraction.VersionNumber
 	} else {
-		return command.inByVersionedFile(destinationDir, request)
-	}
-}
-
-func (command *InCommand) inByRegex(destinationDir string, request InRequest) (InResponse, error) {
-	if request.Version.Path == "" {
-		return InResponse{}, ErrMissingPath
-	}
-
-	remotePath := request.Version.Path
-
-	extraction, ok := versions.Extract(remotePath, request.Source.Regexp)
-	if !ok {
-		return InResponse{}, fmt.Errorf("regex does not match provided version: %#v", request.Version)
-
-	}
-
-	err := command.writeVersionFile(extraction.VersionNumber, destinationDir)
-	if err != nil {
-		return InResponse{}, err
+		remotePath = request.Source.VersionedFile
+		versionNumber = request.Version.VersionID
+		versionID = request.Version.VersionID
 	}
 
 	err = command.downloadFile(
 		request.Source.Bucket,
 		remotePath,
-		"",
-		destinationDir,
-		path.Base(remotePath),
-	)
-	if err != nil {
-		return InResponse{}, err
-	}
-
-	url := command.urlProvider.GetURL(request, remotePath)
-	err = command.writeURLFile(
-		destinationDir,
-		url,
-	)
-	if err != nil {
-		return InResponse{}, err
-	}
-
-	return InResponse{
-		Version: s3resource.Version{
-			Path: remotePath,
-		},
-		Metadata: command.metadata(remotePath, request.Source.Private, url),
-	}, nil
-}
-
-func (command *InCommand) inByVersionedFile(destinationDir string, request InRequest) (InResponse, error) {
-
-	err := command.writeVersionFile(request.Version.VersionID, destinationDir)
-	if err != nil {
-		return InResponse{}, err
-	}
-
-	remotePath := request.Source.VersionedFile
-
-	err = command.downloadFile(
-		request.Source.Bucket,
-		remotePath,
-		request.Version.VersionID,
+		versionID,
 		destinationDir,
 		path.Base(remotePath),
 	)
@@ -124,27 +85,46 @@ func (command *InCommand) inByVersionedFile(destinationDir string, request InReq
 		return InResponse{}, err
 	}
 
-	url := command.urlProvider.GetURL(request, remotePath)
-	err = command.writeURLFile(
-		destinationDir,
-		url,
-	)
+	if request.Params.Unpack {
+		destinationPath := filepath.Join(destinationDir, path.Base(remotePath))
+		mime := archiveMimetype(destinationPath)
+		if mime == "" {
+			return InResponse{}, fmt.Errorf("not an archive: %s", destinationPath)
+		}
 
+		err = extractArchive(mime, destinationPath)
+		if err != nil {
+			return InResponse{}, err
+		}
+	}
+
+	url := command.urlProvider.GetURL(request, remotePath)
+	if err = command.writeURLFile(destinationDir, url); err != nil {
+		return InResponse{}, err
+	}
+
+	err = command.writeVersionFile(versionNumber, destinationDir)
 	if err != nil {
 		return InResponse{}, err
 	}
 
+	metadata := command.metadata(remotePath, request.Source.Private, url)
+
+	if versionID == "" {
+		return InResponse{
+			Version: s3resource.Version{
+				Path: remotePath,
+			},
+			Metadata: metadata,
+		}, nil
+	}
+
 	return InResponse{
 		Version: s3resource.Version{
-			VersionID: request.Version.VersionID,
+			VersionID: versionID,
 		},
-		Metadata: command.metadata(remotePath, request.Source.Private, url),
+		Metadata: metadata,
 	}, nil
-
-}
-
-func (command *InCommand) createDirectory(destDir string) error {
-	return os.MkdirAll(destDir, 0755)
 }
 
 func (command *InCommand) writeURLFile(destDir string, url string) error {
@@ -184,4 +164,35 @@ func (command *InCommand) metadata(remotePath string, private bool, url string) 
 	}
 
 	return metadata
+}
+
+func extractArchive(mime, filename string) error {
+	destDir := filepath.Dir(filename)
+
+	err := inflate(mime, filename, destDir)
+	if err != nil {
+		return fmt.Errorf("failed to extract archive: %s", err)
+	}
+
+	if mime == "application/gzip" || mime == "application/x-gzip" {
+		fileInfos, err := ioutil.ReadDir(destDir)
+		if err != nil {
+			return fmt.Errorf("failed to read dir: %s", err)
+		}
+
+		if len(fileInfos) != 1 {
+			return fmt.Errorf("%d files found after gunzip; expected 1", len(fileInfos))
+		}
+
+		filename = filepath.Join(destDir, fileInfos[0].Name())
+		mime = archiveMimetype(filename)
+		if mime == "application/x-tar" {
+			err = inflate(mime, filename, destDir)
+			if err != nil {
+				return fmt.Errorf("failed to extract archive: %s", err)
+			}
+		}
+	}
+
+	return nil
 }
