@@ -1,15 +1,13 @@
 package in
 
 import (
-	"bufio"
-	"errors"
 	"fmt"
-	"io"
+	"io/ioutil"
 	"os"
 	"os/exec"
 	"strings"
 
-	"net/http"
+	"github.com/h2non/filetype"
 )
 
 var archiveMimetypes = []string{
@@ -19,27 +17,22 @@ var archiveMimetypes = []string{
 	"application/zip",
 }
 
-func mimetype(r *bufio.Reader) (string, error) {
-	bs, err := r.Peek(512)
-	if err != nil && err != io.EOF {
+func mimetype(filename string) (string, error) {
+	buf, err := ioutil.ReadFile(filename)
+	if err != nil {
 		return "", err
 	}
 
-	if len(bs) == 0 {
-		return "", errors.New("cannot determine mimetype from empty bytes")
+	kind, err := filetype.Match(buf)
+	if err != nil {
+		return "", err
 	}
 
-	return http.DetectContentType(bs), nil
+	return kind.MIME.Value, nil
 }
 
 func archiveMimetype(filename string) string {
-	f, err := os.Open(filename)
-	if err != nil {
-		return ""
-	}
-	defer f.Close()
-
-	mime, err := mimetype(bufio.NewReader(f))
+	mime, err := mimetype(filename)
 	if err != nil {
 		return ""
 	}

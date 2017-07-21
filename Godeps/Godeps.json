@@ -1,7 +1,7 @@
 {
 	"ImportPath": "github.com/concourse/s3-resource",
 	"GoVersion": "go1.7",
-	"GodepVersion": "v75",
+	"GodepVersion": "v79",
 	"Packages": [
 		"./...",
 		"github.com/onsi/ginkgo/ginkgo"
@@ -160,6 +160,11 @@
 			"ImportPath": "github.com/go-ini/ini",
 			"Comment": "v1.23.0",
 			"Rev": "6f66b0e091edb3c7b380f7c4f0f884274d550b67"
+		},
+		{
+			"ImportPath": "github.com/h2non/filetype",
+			"Comment": "v1.0.1-2-g0df83c3",
+			"Rev": "0df83c38d14ff5f653d419d480eaac286ccbc823"
 		},
 		{
 			"ImportPath": "github.com/jmespath/go-jmespath",
@@ -380,6 +385,16 @@
 		{
 			"ImportPath": "golang.org/x/sys/unix",
 			"Rev": "a646d33e2ee3172a661fc09bca23bb4889a41bc8"
+		},
+		{
+			"ImportPath": "gopkg.in/h2non/filetype.v1/matchers",
+			"Comment": "v1.0.1",
+			"Rev": "3093b8ebec6efb56ac813238b8beab4ed4eaac6a"
+		},
+		{
+			"ImportPath": "gopkg.in/h2non/filetype.v1/types",
+			"Comment": "v1.0.1",
+			"Rev": "3093b8ebec6efb56ac813238b8beab4ed4eaac6a"
 		},
 		{
 			"ImportPath": "gopkg.in/yaml.v2",
