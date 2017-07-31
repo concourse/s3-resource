@@ -1,8 +1,9 @@
 package in
 
 import (
+	"bufio"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"os"
 	"os/exec"
 	"strings"
@@ -17,13 +18,13 @@ var archiveMimetypes = []string{
 	"application/zip",
 }
 
-func mimetype(filename string) (string, error) {
-	buf, err := ioutil.ReadFile(filename)
-	if err != nil {
+func mimetype(r *bufio.Reader) (string, error) {
+	bs, err := r.Peek(512)
+	if err != nil && err != io.EOF {
 		return "", err
 	}
 
-	kind, err := filetype.Match(buf)
+	kind, err := filetype.Match(bs)
 	if err != nil {
 		return "", err
 	}
@@ -32,7 +33,13 @@ func mimetype(filename string) (string, error) {
 }
 
 func archiveMimetype(filename string) string {
-	mime, err := mimetype(filename)
+	f, err := os.Open(filename)
+	if err != nil {
+		return ""
+	}
+	defer f.Close()
+
+	mime, err := mimetype(bufio.NewReader(f))
 	if err != nil {
 		return ""
 	}
