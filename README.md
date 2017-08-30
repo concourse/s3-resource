@@ -110,12 +110,28 @@ a new version of that file.
 
 ### Resource
 
+When the file has the version name in the filename
+
 ``` yaml
 - name: release
   type: s3
   source:
     bucket: releases
     regexp: directory_on_s3/release-(.*).tgz
+    access_key_id: ACCESS-KEY
+    secret_access_key: SECRET
+```
+
+or
+
+When the file is being [versioned by s3](http://docs.aws.amazon.com/AmazonS3/latest/dev/Versioning.html)
+
+``` yaml
+- name: release
+  type: s3
+  source:
+    bucket: releases
+    versioned_file: directory_on_s3/release.tgz
     access_key_id: ACCESS-KEY
     secret_access_key: SECRET
 ```
