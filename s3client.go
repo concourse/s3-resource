@@ -192,7 +192,7 @@ func (client *s3client) UploadFile(bucketName string, remotePath string, localPa
 	uploadInput := s3manager.UploadInput{
 		Bucket: aws.String(bucketName),
 		Key:    aws.String(remotePath),
-		Body:   progressSeekReaderAt{localFile, progress},
+		Body:   progressReader{localFile, progress},
 		ACL:    aws.String(options.Acl),
 	}
 	if options.ServerSideEncryption != "" {
