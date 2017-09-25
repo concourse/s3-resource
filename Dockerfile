@@ -5,7 +5,7 @@ RUN go build -o /assets/in github.com/concourse/s3-resource/cmd/in
 RUN go build -o /assets/out github.com/concourse/s3-resource/cmd/out
 RUN go build -o /assets/check github.com/concourse/s3-resource/cmd/check
 WORKDIR /go/src/github.com/concourse/s3-resource
-RUN set -e; for pkg in $(go list ./... | grep -v "integration"); do \
+RUN set -e; for pkg in $(go list ./...); do \
 		go test -o "/tests/$(basename $pkg).test" -c $pkg; \
 	done
 
@@ -15,6 +15,12 @@ COPY --from=builder assets/ /opt/resource/
 RUN chmod +x /opt/resource/*
 
 FROM resource AS tests
+ARG S3_TESTING_ACCESS_KEY_ID
+ARG S3_TESTING_SECRET_ACCESS_KEY
+ARG S3_VERSIONED_TESTING_BUCKET
+ARG S3_TESTING_BUCKET
+ARG S3_TESTING_REGION
+ARG S3_ENDPOINT
 COPY --from=builder /tests /go-tests
 WORKDIR /go-tests
 RUN set -e; for test in /go-tests/*.test; do \

@@ -64,6 +64,7 @@ var _ = Describe("in", func() {
 					SecretAccessKey: secretAccessKey,
 					Bucket:          versionedBucketName,
 					RegionName:      regionName,
+					Endpoint:        endpoint,
 					Regexp:          "some-regex",
 					VersionedFile:   "some-file",
 				},
@@ -93,6 +94,7 @@ var _ = Describe("in", func() {
 					SecretAccessKey: secretAccessKey,
 					Bucket:          bucketName,
 					RegionName:      regionName,
+					Endpoint:        endpoint,
 					Regexp:          filepath.Join(directoryPrefix, "some-file-(.*)"),
 				},
 				Version: s3resource.Version{
@@ -179,6 +181,7 @@ var _ = Describe("in", func() {
 					SecretAccessKey: secretAccessKey,
 					Bucket:          versionedBucketName,
 					RegionName:      regionName,
+					Endpoint:        endpoint,
 					VersionedFile:   filepath.Join(directoryPrefix, "some-file"),
 				},
 				Version: s3resource.Version{},
@@ -272,6 +275,7 @@ var _ = Describe("in", func() {
 					SecretAccessKey: secretAccessKey,
 					CloudfrontURL:   os.Getenv("S3_TESTING_CLOUDFRONT_URL"),
 					RegionName:      regionName,
+					Endpoint:        endpoint,
 					Regexp:          filepath.Join(directoryPrefix, "some-file-(.*)"),
 				},
 				Version: s3resource.Version{
@@ -350,6 +354,7 @@ var _ = Describe("in", func() {
 					SecretAccessKey: secretAccessKey,
 					CloudfrontURL:   "https://no-dots-here",
 					RegionName:      regionName,
+					Endpoint:        endpoint,
 					Regexp:          "unused",
 				},
 				Version: s3resource.Version{

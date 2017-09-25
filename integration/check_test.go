@@ -54,6 +54,7 @@ var _ = Describe("check", func() {
 					Bucket:          versionedBucketName,
 					RegionName:      regionName,
 					Regexp:          "some-regex",
+					Endpoint:        endpoint,
 					VersionedFile:   "some-file",
 				},
 				Version: s3resource.Version{},
@@ -82,6 +83,7 @@ var _ = Describe("check", func() {
 						SecretAccessKey: secretAccessKey,
 						Bucket:          bucketName,
 						RegionName:      regionName,
+						Endpoint:        endpoint,
 					},
 					Version: s3resource.Version{},
 				}
@@ -175,6 +177,7 @@ var _ = Describe("check", func() {
 						SecretAccessKey: secretAccessKey,
 						Bucket:          versionedBucketName,
 						RegionName:      regionName,
+						Endpoint:        endpoint,
 					},
 					Version: s3resource.Version{},
 				}
@@ -316,6 +319,7 @@ var _ = Describe("check", func() {
 						SecretAccessKey: secretAccessKey,
 						Bucket:          bucketName,
 						RegionName:      regionName,
+						Endpoint:        endpoint,
 					},
 				}
 			})
@@ -477,6 +481,7 @@ var _ = Describe("check", func() {
 						SecretAccessKey: secretAccessKey,
 						Bucket:          versionedBucketName,
 						RegionName:      regionName,
+						Endpoint:        endpoint,
 					},
 				}
 			})

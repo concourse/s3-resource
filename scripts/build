@@ -1,6 +1,0 @@
-#!/bin/bash
-
-mkdir -p assets
-go build -o assets/in ./cmd/in
-go build -o assets/out ./cmd/out
-go build -o assets/check ./cmd/check

@@ -39,13 +39,21 @@ type suiteData struct {
 	OutPath   string
 }
 
+func findOrCreate(binName string) string {
+	resourcePath := "/opt/resource/" + binName
+	if _, err := os.Stat(resourcePath); err == nil {
+		return resourcePath
+	} else {
+		path, err := gexec.Build("github.com/concourse/s3-resource/cmd/" + binName)
+		Ω(err).ShouldNot(HaveOccurred())
+		return path
+	}
+}
+
 var _ = SynchronizedBeforeSuite(func() []byte {
-	cp, err := gexec.Build("github.com/concourse/s3-resource/cmd/check")
-	Ω(err).ShouldNot(HaveOccurred())
-	ip, err := gexec.Build("github.com/concourse/s3-resource/cmd/in")
-	Ω(err).ShouldNot(HaveOccurred())
-	op, err := gexec.Build("github.com/concourse/s3-resource/cmd/out")
-	Ω(err).ShouldNot(HaveOccurred())
+	cp := findOrCreate("check")
+	ip := findOrCreate("in")
+	op := findOrCreate("out")
 
 	data, err := json.Marshal(suiteData{
 		CheckPath: cp,
@@ -65,25 +73,33 @@ var _ = SynchronizedBeforeSuite(func() []byte {
 	inPath = sd.InPath
 	outPath = sd.OutPath
 
-	Ω(accessKeyID).ShouldNot(BeEmpty(), "must specify $S3_TESTING_ACCESS_KEY_ID")
-	Ω(secretAccessKey).ShouldNot(BeEmpty(), "must specify $S3_TESTING_SECRET_ACCESS_KEY")
-	Ω(versionedBucketName).ShouldNot(BeEmpty(), "must specify $S3_VERSIONED_TESTING_BUCKET")
-	Ω(bucketName).ShouldNot(BeEmpty(), "must specify $S3_TESTING_BUCKET")
-	Ω(regionName).ShouldNot(BeEmpty(), "must specify $S3_TESTING_REGION")
-	Ω(endpoint).ShouldNot(BeEmpty(), "must specify $S3_ENDPOINT")
+	if accessKeyID != "" {
+		Ω(accessKeyID).ShouldNot(BeEmpty(), "must specify $S3_TESTING_ACCESS_KEY_ID")
+		Ω(secretAccessKey).ShouldNot(BeEmpty(), "must specify $S3_TESTING_SECRET_ACCESS_KEY")
+		Ω(versionedBucketName).ShouldNot(BeEmpty(), "must specify $S3_VERSIONED_TESTING_BUCKET")
+		Ω(bucketName).ShouldNot(BeEmpty(), "must specify $S3_TESTING_BUCKET")
+		Ω(regionName).ShouldNot(BeEmpty(), "must specify $S3_TESTING_REGION")
+		Ω(endpoint).ShouldNot(BeEmpty(), "must specify $S3_ENDPOINT")
 
-	awsConfig := s3resource.NewAwsConfig(
-		accessKeyID,
-		secretAccessKey,
-		regionName,
-		endpoint,
-		false,
-		false,
-	)
+		awsConfig := s3resource.NewAwsConfig(
+			accessKeyID,
+			secretAccessKey,
+			regionName,
+			endpoint,
+			false,
+			false,
+		)
 
-	s3Service = s3.New(session.New(awsConfig), awsConfig)
+		s3Service = s3.New(session.New(awsConfig), awsConfig)
 
-	s3client = s3resource.NewS3Client(ioutil.Discard, awsConfig, v2signing == "true")
+		s3client = s3resource.NewS3Client(ioutil.Discard, awsConfig, v2signing == "true")
+	}
+})
+
+var _ = BeforeEach(func() {
+	if s3client == nil {
+		Skip("Environment variables need to be set for AWS integration")
+	}
 })
 
 var _ = SynchronizedAfterSuite(func() {}, func() {

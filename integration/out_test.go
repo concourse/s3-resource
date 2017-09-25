@@ -66,9 +66,9 @@ var _ = Describe("out", func() {
 					SecretAccessKey: secretAccessKey,
 					Bucket:          versionedBucketName,
 					RegionName:      regionName,
+					Endpoint:        endpoint,
 					Regexp:          "some-regex",
 					VersionedFile:   "some-file",
-					Endpoint:        endpoint,
 				},
 			}
 
