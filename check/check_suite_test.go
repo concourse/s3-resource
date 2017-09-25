@@ -2,6 +2,7 @@ package check_test
 
 import (
 	"io/ioutil"
+	"os"
 	"path/filepath"
 	"testing"
 
@@ -16,8 +17,13 @@ var checkPath string
 var _ = BeforeSuite(func() {
 	var err error
 
-	checkPath, err = gexec.Build("github.com/concourse/s3-resource/cmd/check")
-	Ω(err).ShouldNot(HaveOccurred())
+	if _, err = os.Stat("/opt/resource/check"); err == nil {
+		checkPath = "/opt/resource/check"
+	} else {
+		checkPath, err = gexec.Build("github.com/concourse/s3-resource/cmd/check")
+		Ω(err).ShouldNot(HaveOccurred())
+	}
+
 })
 
 var _ = AfterSuite(func() {

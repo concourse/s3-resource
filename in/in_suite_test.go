@@ -18,8 +18,13 @@ var inPath string
 var _ = BeforeSuite(func() {
 	var err error
 
-	inPath, err = gexec.Build("github.com/concourse/s3-resource/cmd/in")
-	Ω(err).ShouldNot(HaveOccurred())
+	if _, err = os.Stat("/opt/resource/in"); err == nil {
+		inPath = "/opt/resource/in"
+	} else {
+		inPath, err = gexec.Build("github.com/concourse/s3-resource/cmd/in")
+		Ω(err).ShouldNot(HaveOccurred())
+	}
+
 })
 
 var _ = AfterSuite(func() {
