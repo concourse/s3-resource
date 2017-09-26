@@ -178,4 +178,42 @@ The objects in the bucket (e.g. `"arn:aws:s3:::your-bucket/*"`):
 First get the resource via:
 `go get github.com/concourse/s3-resource`
 
+## Development
 
+### Prerequisites
+
+* golang is *required* - version 1.9.x is tested; earlier versions may also
+  work.
+* docker is *required* - version 17.06.x is tested; earlier versions may also
+  work.
+* godep is used for dependency management of the golang packages.
+
+### Running the tests
+
+The tests have been embedded with the `Dockerfile`; ensuring that the testing
+environment is consistent across any `docker` enabled platform. When the docker
+image builds, the test are run inside the docker container, on failure they
+will stop the build.
+
+Run the tests with the following command:
+
+```sh
+docker build -t s3-resource .
+```
+
+#### Integration tests
+
+The integration requires two AWS S3 buckets, one without versioning and another
+with. The `docker build` step requires setting `--build-args` so the
+integration will run.
+
+Run the tests with the following command:
+
+```sh
+docker build . -t s3-resource --build-arg S3_TESTING_ACCESS_KEY_ID="access-key" --build-arg S3_TESTING_SECRET_ACCESS_KEY="some-secret" --build-arg S3_TESTING_BUCKET="bucket-non-versioned" --build-arg S3_VERSIONED_TESTING_BUCKET="bucket-versioned" --build-arg S3_TESTING_REGION="us-east-1" --build-arg S3_ENDPOINT="https://s3.amazonaws.com"
+```
+
+### Contributing
+
+Please make all pull requests to the `master` branch and ensure tests pass
+locally.
