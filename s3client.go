@@ -165,7 +165,7 @@ func (client *s3client) BucketFileVersions(bucketName string, remotePath string)
 }
 
 func (client *s3client) UploadFile(bucketName string, remotePath string, localPath string, options UploadFileOptions) (string, error) {
-	uploader := s3manager.NewUploader(client.session)
+	uploader := s3manager.NewUploaderWithClient(client.client)
 
 	if client.isGCSHost() {
 		// GCS returns `InvalidArgument` on multipart uploads
@@ -234,7 +234,7 @@ func (client *s3client) DownloadFile(bucketName string, remotePath string, versi
 
 	progress := client.newProgressBar(*object.ContentLength)
 
-	downloader := s3manager.NewDownloader(client.session)
+	downloader := s3manager.NewDownloaderWithClient(client.client)
 
 	localFile, err := os.Create(localPath)
 	if err != nil {
