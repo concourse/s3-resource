@@ -13,6 +13,9 @@ version numbers.
 * `secret_access_key`: *Optional.* The AWS secret key to use when accessing
   the bucket.
 
+* `session_token`: *Optional.* The AWS STS session token to use when
+  accessing the bucket.
+
 * `region_name`: *Optional.* The region the bucket is in. Defaults to
   `us-east-1`.
 
@@ -102,7 +105,7 @@ a new version of that file.
 
 * `acl`: *Optional.*  [Canned Acl](http://docs.aws.amazon.com/AmazonS3/latest/dev/acl-overview.html#canned-acl)
   for the uploaded object.
-  
+
 * `content_type`: *Optional.* MIME [Content-Type](https://www.w3.org/Protocols/rfc2616/rfc2616-sec14.html#sec14.17)
   describing the contents of the uploaded object
 

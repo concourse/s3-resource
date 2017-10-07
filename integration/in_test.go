@@ -62,6 +62,7 @@ var _ = Describe("in", func() {
 				Source: s3resource.Source{
 					AccessKeyID:     accessKeyID,
 					SecretAccessKey: secretAccessKey,
+					SessionToken:    sessionToken,
 					Bucket:          versionedBucketName,
 					RegionName:      regionName,
 					Endpoint:        endpoint,
@@ -92,6 +93,7 @@ var _ = Describe("in", func() {
 				Source: s3resource.Source{
 					AccessKeyID:     accessKeyID,
 					SecretAccessKey: secretAccessKey,
+					SessionToken:    sessionToken,
 					Bucket:          bucketName,
 					RegionName:      regionName,
 					Endpoint:        endpoint,
@@ -179,6 +181,7 @@ var _ = Describe("in", func() {
 				Source: s3resource.Source{
 					AccessKeyID:     accessKeyID,
 					SecretAccessKey: secretAccessKey,
+					SessionToken:    sessionToken,
 					Bucket:          versionedBucketName,
 					RegionName:      regionName,
 					Endpoint:        endpoint,
@@ -273,6 +276,7 @@ var _ = Describe("in", func() {
 				Source: s3resource.Source{
 					AccessKeyID:     accessKeyID,
 					SecretAccessKey: secretAccessKey,
+					SessionToken:    sessionToken,
 					CloudfrontURL:   os.Getenv("S3_TESTING_CLOUDFRONT_URL"),
 					RegionName:      regionName,
 					Endpoint:        endpoint,
@@ -352,6 +356,7 @@ var _ = Describe("in", func() {
 				Source: s3resource.Source{
 					AccessKeyID:     accessKeyID,
 					SecretAccessKey: secretAccessKey,
+					SessionToken:    sessionToken,
 					CloudfrontURL:   "https://no-dots-here",
 					RegionName:      regionName,
 					Endpoint:        endpoint,

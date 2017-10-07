@@ -5,11 +5,12 @@ import (
 	"os"
 
 	"fmt"
+	"net/url"
+	"strings"
+
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/concourse/s3-resource"
 	"github.com/concourse/s3-resource/in"
-	"net/url"
-	"strings"
 )
 
 func main() {
@@ -26,6 +27,7 @@ func main() {
 	awsConfig := s3resource.NewAwsConfig(
 		request.Source.AccessKeyID,
 		request.Source.SecretAccessKey,
+		request.Source.SessionToken,
 		request.Source.RegionName,
 		request.Source.Endpoint,
 		request.Source.DisableSSL,
