@@ -96,4 +96,18 @@ var _ = Describe("S3client", func() {
 		Ω(err).ShouldNot(HaveOccurred())
 		Ω(*resp.ServerSideEncryption).Should(Equal("AES256"))
 	})
+
+	Context("when using a sessionToken", func() {
+		BeforeEach(func() {
+			if len(os.Getenv("TEST_SESSION_TOKEN")) == 0 {
+				Skip("'TEST_SESSION_TOKEN' is not set, skipping.")
+			}
+			s3Service, s3client = getSessionTokenS3Client(awsConfig)
+		})
+
+		It("can interact with buckets", func() {
+			_, err := s3client.BucketFiles(versionedBucketName, directoryPrefix)
+			Ω(err).ShouldNot(HaveOccurred())
+		})
+	})
 })
