@@ -5,8 +5,10 @@ import (
 	"io/ioutil"
 	"os"
 
+	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/s3"
+	"github.com/aws/aws-sdk-go/service/sts"
 	"github.com/concourse/s3-resource"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -27,6 +29,7 @@ var bucketName = os.Getenv("S3_TESTING_BUCKET")
 var regionName = os.Getenv("S3_TESTING_REGION")
 var endpoint = os.Getenv("S3_ENDPOINT")
 var v2signing = os.Getenv("S3_V2_SIGNING")
+var awsConfig *aws.Config
 var s3client s3resource.S3Client
 var s3Service *s3.S3
 
@@ -49,6 +52,39 @@ func findOrCreate(binName string) string {
 		Ω(err).ShouldNot(HaveOccurred())
 		return path
 	}
+}
+
+func getSessionTokenS3Client(awsConfig *aws.Config) (*s3.S3, s3resource.S3Client) {
+	stsAwsConfig := &aws.Config{
+		Region:      awsConfig.Region,
+		Credentials: awsConfig.Credentials,
+		MaxRetries:  awsConfig.MaxRetries,
+		HTTPClient:  awsConfig.HTTPClient,
+	}
+
+	svc := sts.New(session.New(stsAwsConfig), stsAwsConfig)
+
+	duration := int64(900)
+	params := &sts.GetSessionTokenInput{
+		DurationSeconds: &duration,
+	}
+
+	resp, err := svc.GetSessionToken(params)
+	Ω(err).ShouldNot(HaveOccurred())
+
+	newAwsConfig := s3resource.NewAwsConfig(
+		*resp.Credentials.AccessKeyId,
+		*resp.Credentials.SecretAccessKey,
+		*resp.Credentials.SessionToken,
+		regionName,
+		endpoint,
+		false,
+		false,
+	)
+	s3Service := s3.New(session.New(newAwsConfig), newAwsConfig)
+	s3client := s3resource.NewS3Client(ioutil.Discard, newAwsConfig, v2signing == "true")
+
+	return s3Service, s3client
 }
 
 var _ = SynchronizedBeforeSuite(func() []byte {
@@ -82,7 +118,7 @@ var _ = SynchronizedBeforeSuite(func() []byte {
 		Ω(regionName).ShouldNot(BeEmpty(), "must specify $S3_TESTING_REGION")
 		Ω(endpoint).ShouldNot(BeEmpty(), "must specify $S3_ENDPOINT")
 
-		awsConfig := s3resource.NewAwsConfig(
+		awsConfig = s3resource.NewAwsConfig(
 			accessKeyID,
 			secretAccessKey,
 			sessionToken,

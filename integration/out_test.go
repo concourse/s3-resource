@@ -463,6 +463,7 @@ var _ = Describe("out", func() {
 					Source: s3resource.Source{
 						AccessKeyID:     accessKeyID,
 						SecretAccessKey: secretAccessKey,
+						SessionToken:    sessionToken,
 						Bucket:          versionedBucketName,
 						RegionName:      regionName,
 						Endpoint:        endpoint,
