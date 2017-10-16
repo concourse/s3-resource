@@ -100,7 +100,7 @@ a new version of that file.
   in the resource definition. The matching syntax is bash glob expansion, so
   no capture groups, etc.
 
-* `acl`: *Optional.*  [Canned Acl](http://docs.aws.amazon.com/AmazonS3/latest/dev/acl-overview.html)
+* `acl`: *Optional.*  [Canned Acl](http://docs.aws.amazon.com/AmazonS3/latest/dev/acl-overview.html#canned-acl)
   for the uploaded object.
   
 * `content_type`: *Optional.* MIME [Content-Type](https://www.w3.org/Protocols/rfc2616/rfc2616-sec14.html#sec14.17)
