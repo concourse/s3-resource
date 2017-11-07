@@ -51,6 +51,7 @@ var _ = Describe("check", func() {
 				Source: s3resource.Source{
 					AccessKeyID:     accessKeyID,
 					SecretAccessKey: secretAccessKey,
+					SessionToken:    sessionToken,
 					Bucket:          versionedBucketName,
 					RegionName:      regionName,
 					Regexp:          "some-regex",
@@ -81,6 +82,7 @@ var _ = Describe("check", func() {
 					Source: s3resource.Source{
 						AccessKeyID:     accessKeyID,
 						SecretAccessKey: secretAccessKey,
+						SessionToken:    sessionToken,
 						Bucket:          bucketName,
 						RegionName:      regionName,
 						Endpoint:        endpoint,
@@ -175,6 +177,7 @@ var _ = Describe("check", func() {
 					Source: s3resource.Source{
 						AccessKeyID:     accessKeyID,
 						SecretAccessKey: secretAccessKey,
+						SessionToken:    sessionToken,
 						Bucket:          versionedBucketName,
 						RegionName:      regionName,
 						Endpoint:        endpoint,
@@ -317,6 +320,7 @@ var _ = Describe("check", func() {
 					Source: s3resource.Source{
 						AccessKeyID:     accessKeyID,
 						SecretAccessKey: secretAccessKey,
+						SessionToken:    sessionToken,
 						Bucket:          bucketName,
 						RegionName:      regionName,
 						Endpoint:        endpoint,
@@ -479,6 +483,7 @@ var _ = Describe("check", func() {
 					Source: s3resource.Source{
 						AccessKeyID:     accessKeyID,
 						SecretAccessKey: secretAccessKey,
+						SessionToken:    sessionToken,
 						Bucket:          versionedBucketName,
 						RegionName:      regionName,
 						Endpoint:        endpoint,

@@ -64,6 +64,7 @@ var _ = Describe("out", func() {
 				Source: s3resource.Source{
 					AccessKeyID:     accessKeyID,
 					SecretAccessKey: secretAccessKey,
+					SessionToken:    sessionToken,
 					Bucket:          versionedBucketName,
 					RegionName:      regionName,
 					Endpoint:        endpoint,
@@ -91,6 +92,7 @@ var _ = Describe("out", func() {
 				Source: s3resource.Source{
 					AccessKeyID:     accessKeyID,
 					SecretAccessKey: secretAccessKey,
+					SessionToken:    sessionToken,
 					Bucket:          bucketName,
 					RegionName:      regionName,
 					Endpoint:        endpoint,
@@ -133,6 +135,7 @@ var _ = Describe("out", func() {
 				Source: s3resource.Source{
 					AccessKeyID:     accessKeyID,
 					SecretAccessKey: secretAccessKey,
+					SessionToken:    sessionToken,
 					Bucket:          bucketName,
 					RegionName:      regionName,
 					Endpoint:        endpoint,
@@ -173,6 +176,7 @@ var _ = Describe("out", func() {
 				Source: s3resource.Source{
 					AccessKeyID:     accessKeyID,
 					SecretAccessKey: secretAccessKey,
+					SessionToken:    sessionToken,
 					Bucket:          bucketName,
 					RegionName:      regionName,
 					Endpoint:        endpoint,
@@ -218,6 +222,7 @@ var _ = Describe("out", func() {
 					Source: s3resource.Source{
 						AccessKeyID:     accessKeyID,
 						SecretAccessKey: secretAccessKey,
+						SessionToken:    sessionToken,
 						Bucket:          bucketName,
 						RegionName:      regionName,
 						Endpoint:        endpoint,
@@ -296,6 +301,7 @@ var _ = Describe("out", func() {
 					Source: s3resource.Source{
 						AccessKeyID:     accessKeyID,
 						SecretAccessKey: secretAccessKey,
+						SessionToken:    sessionToken,
 						Bucket:          bucketName,
 						RegionName:      regionName,
 						Endpoint:        endpoint,
@@ -349,6 +355,7 @@ var _ = Describe("out", func() {
 					Source: s3resource.Source{
 						AccessKeyID:     accessKeyID,
 						SecretAccessKey: secretAccessKey,
+						SessionToken:    sessionToken,
 						Bucket:          bucketName,
 						RegionName:      regionName,
 						VersionedFile:   filepath.Join(directoryPrefix, "file-to-upload"),
@@ -398,6 +405,7 @@ var _ = Describe("out", func() {
 					Source: s3resource.Source{
 						AccessKeyID:     accessKeyID,
 						SecretAccessKey: secretAccessKey,
+						SessionToken:    sessionToken,
 						Bucket:          versionedBucketName,
 						RegionName:      regionName,
 						VersionedFile:   filepath.Join(directoryPrefix, "file-to-upload"),
@@ -455,6 +463,7 @@ var _ = Describe("out", func() {
 					Source: s3resource.Source{
 						AccessKeyID:     accessKeyID,
 						SecretAccessKey: secretAccessKey,
+						SessionToken:    sessionToken,
 						Bucket:          versionedBucketName,
 						RegionName:      regionName,
 						Endpoint:        endpoint,
