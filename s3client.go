@@ -184,8 +184,18 @@ func (client *s3client) UploadFile(bucketName string, remotePath string, localPa
 	}
 
 	defer localFile.Close()
+	
+	// Automatically adjust partsize for larger files.
+	fSize := stat.Size()
+	if fSize > int64(uploader.MaxUploadParts) * uploader.PartSize {
+		partSize := fSize / int64(uploader.MaxUploadParts)
+		if fSize % int64(uploader.MaxUploadParts) != 0 {
+			partSize++
+		}
+		uploader.PartSize = partSize
+	}
 
-	progress := client.newProgressBar(stat.Size())
+	progress := client.newProgressBar(fSize)
 
 	progress.Start()
 	defer progress.Finish()
