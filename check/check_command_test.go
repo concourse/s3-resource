@@ -17,10 +17,10 @@ var _ = Describe("Check Command", func() {
 	Describe("running the command", func() {
 		var (
 			tmpPath string
-			request CheckRequest
+			request Request
 
 			s3client *fakes.FakeS3Client
-			command  *CheckCommand
+			command  *Command
 		)
 
 		BeforeEach(func() {
@@ -28,14 +28,14 @@ var _ = Describe("Check Command", func() {
 			tmpPath, err = ioutil.TempDir("", "check_command")
 			Ω(err).ShouldNot(HaveOccurred())
 
-			request = CheckRequest{
+			request = Request{
 				Source: s3resource.Source{
 					Bucket: "bucket-name",
 				},
 			}
 
 			s3client = &fakes.FakeS3Client{}
-			command = NewCheckCommand(s3client)
+			command = NewCommand(s3client)
 
 			s3client.BucketFilesReturns([]string{
 				"files/abc-0.0.1.tgz",

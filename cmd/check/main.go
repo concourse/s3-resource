@@ -9,7 +9,7 @@ import (
 )
 
 func main() {
-	var request check.CheckRequest
+	var request check.Request
 	inputRequest(&request)
 
 	awsConfig := s3resource.NewAwsConfig(
@@ -28,7 +28,7 @@ func main() {
 		request.Source.UseV2Signing,
 	)
 
-	command := check.NewCheckCommand(client)
+	command := check.NewCommand(client)
 	response, err := command.Run(request)
 	if err != nil {
 		s3resource.Fatal("running command", err)
@@ -37,13 +37,13 @@ func main() {
 	outputResponse(response)
 }
 
-func inputRequest(request *check.CheckRequest) {
+func inputRequest(request *check.Request) {
 	if err := json.NewDecoder(os.Stdin).Decode(request); err != nil {
 		s3resource.Fatal("reading request from stdin", err)
 	}
 }
 
-func outputResponse(response check.CheckResponse) {
+func outputResponse(response check.Response) {
 	if err := json.NewEncoder(os.Stdout).Encode(response); err != nil {
 		s3resource.Fatal("writing response to stdout", err)
 	}
