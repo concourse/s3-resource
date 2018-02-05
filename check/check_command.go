@@ -7,19 +7,19 @@ import (
 	"github.com/concourse/s3-resource/versions"
 )
 
-type CheckCommand struct {
+type Command struct {
 	s3client s3resource.S3Client
 }
 
-func NewCheckCommand(s3client s3resource.S3Client) *CheckCommand {
-	return &CheckCommand{
+func NewCommand(s3client s3resource.S3Client) *Command {
+	return &Command{
 		s3client: s3client,
 	}
 }
 
-func (command *CheckCommand) Run(request CheckRequest) (CheckResponse, error) {
+func (command *Command) Run(request Request) (Response, error) {
 	if ok, message := request.Source.IsValid(); !ok {
-		return CheckResponse{}, errors.New(message)
+		return Response{}, errors.New(message)
 	}
 
 	if request.Source.Regexp != "" {
@@ -29,7 +29,7 @@ func (command *CheckCommand) Run(request CheckRequest) (CheckResponse, error) {
 	}
 }
 
-func (command *CheckCommand) checkByRegex(request CheckRequest) CheckResponse {
+func (command *Command) checkByRegex(request Request) Response {
 	extractions := versions.GetBucketFileVersions(command.s3client, request.Source)
 
 	if len(extractions) == 0 {
@@ -44,8 +44,8 @@ func (command *CheckCommand) checkByRegex(request CheckRequest) CheckResponse {
 	}
 }
 
-func (command *CheckCommand) checkByVersionedFile(request CheckRequest) CheckResponse {
-	response := CheckResponse{}
+func (command *Command) checkByVersionedFile(request Request) Response {
+	response := Response{}
 
 	bucketVersions, err := command.s3client.BucketFileVersions(request.Source.Bucket, request.Source.VersionedFile)
 
@@ -85,13 +85,13 @@ func (command *CheckCommand) checkByVersionedFile(request CheckRequest) CheckRes
 	return response
 }
 
-func latestVersion(extractions versions.Extractions) CheckResponse {
+func latestVersion(extractions versions.Extractions) Response {
 	lastExtraction := extractions[len(extractions)-1]
 	return []s3resource.Version{{Path: lastExtraction.Path}}
 }
 
-func newVersions(lastVersion versions.Extraction, extractions versions.Extractions) CheckResponse {
-	response := CheckResponse{}
+func newVersions(lastVersion versions.Extraction, extractions versions.Extractions) Response {
+	response := Response{}
 
 	for _, extraction := range extractions {
 		if extraction.Version.Compare(lastVersion.Version) >= 0 {
