@@ -55,10 +55,10 @@ var _ = Describe("in", func() {
 	})
 
 	Context("with a versioned_file and a regex", func() {
-		var inRequest in.InRequest
+		var inRequest in.Request
 
 		BeforeEach(func() {
-			inRequest = in.InRequest{
+			inRequest = in.Request{
 				Source: s3resource.Source{
 					AccessKeyID:     accessKeyID,
 					SecretAccessKey: secretAccessKey,
@@ -84,12 +84,12 @@ var _ = Describe("in", func() {
 	})
 
 	Context("when the given version only has a path", func() {
-		var inRequest in.InRequest
+		var inRequest in.Request
 		var directoryPrefix string
 
 		BeforeEach(func() {
 			directoryPrefix = "in-request-files"
-			inRequest = in.InRequest{
+			inRequest = in.Request{
 				Source: s3resource.Source{
 					AccessKeyID:     accessKeyID,
 					SecretAccessKey: secretAccessKey,
@@ -133,11 +133,11 @@ var _ = Describe("in", func() {
 		It("downloads the file", func() {
 			reader := bytes.NewBuffer(session.Out.Contents())
 
-			var response in.InResponse
+			var response in.Response
 			err := json.NewDecoder(reader).Decode(&response)
 			Ω(err).ShouldNot(HaveOccurred())
 
-			Ω(response).Should(Equal(in.InResponse{
+			Ω(response).Should(Equal(in.Response{
 				Version: s3resource.Version{
 					Path: "in-request-files/some-file-2",
 				},
@@ -171,13 +171,13 @@ var _ = Describe("in", func() {
 	})
 
 	Context("when the given version has a versionID and path", func() {
-		var inRequest in.InRequest
+		var inRequest in.Request
 		var directoryPrefix string
 		var expectedVersion string
 
 		BeforeEach(func() {
 			directoryPrefix = "in-request-files-versioned"
-			inRequest = in.InRequest{
+			inRequest = in.Request{
 				Source: s3resource.Source{
 					AccessKeyID:     accessKeyID,
 					SecretAccessKey: secretAccessKey,
@@ -226,10 +226,10 @@ var _ = Describe("in", func() {
 		It("downloads the file", func() {
 			reader := bytes.NewBuffer(session.Out.Contents())
 
-			var response in.InResponse
+			var response in.Response
 			err := json.NewDecoder(reader).Decode(&response)
 
-			Ω(response).Should(Equal(in.InResponse{
+			Ω(response).Should(Equal(in.Response{
 				Version: s3resource.Version{
 					VersionID: expectedVersion,
 				},
@@ -263,7 +263,7 @@ var _ = Describe("in", func() {
 	})
 
 	Context("when cloudfront_url is set", func() {
-		var inRequest in.InRequest
+		var inRequest in.Request
 		var directoryPrefix string
 
 		BeforeEach(func() {
@@ -272,7 +272,7 @@ var _ = Describe("in", func() {
 			}
 
 			directoryPrefix = "in-request-cloudfront-files"
-			inRequest = in.InRequest{
+			inRequest = in.Request{
 				Source: s3resource.Source{
 					AccessKeyID:     accessKeyID,
 					SecretAccessKey: secretAccessKey,
@@ -316,11 +316,11 @@ var _ = Describe("in", func() {
 		It("downloads the file from CloudFront", func() {
 			reader := bytes.NewBuffer(session.Out.Contents())
 
-			var response in.InResponse
+			var response in.Response
 			err := json.NewDecoder(reader).Decode(&response)
 			Ω(err).ShouldNot(HaveOccurred())
 
-			Ω(response).Should(Equal(in.InResponse{
+			Ω(response).Should(Equal(in.Response{
 				Version: s3resource.Version{
 					Path: "in-request-cloudfront-files/some-file-2",
 				},
@@ -349,10 +349,10 @@ var _ = Describe("in", func() {
 	})
 
 	Context("when cloudfront_url is set but has too few dots", func() {
-		var inRequest in.InRequest
+		var inRequest in.Request
 
 		BeforeEach(func() {
-			inRequest = in.InRequest{
+			inRequest = in.Request{
 				Source: s3resource.Source{
 					AccessKeyID:     accessKeyID,
 					SecretAccessKey: secretAccessKey,
