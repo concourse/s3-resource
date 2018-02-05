@@ -22,33 +22,33 @@ func init() {
 	ErrorColor.EnableColor()
 }
 
-type OutCommand struct {
+type Command struct {
 	stderr   io.Writer
 	s3client s3resource.S3Client
 }
 
-func NewOutCommand(stderr io.Writer, s3client s3resource.S3Client) *OutCommand {
-	return &OutCommand{
+func NewCommand(stderr io.Writer, s3client s3resource.S3Client) *Command {
+	return &Command{
 		stderr:   stderr,
 		s3client: s3client,
 	}
 }
 
-func (command *OutCommand) Run(sourceDir string, request OutRequest) (OutResponse, error) {
+func (command *Command) Run(sourceDir string, request Request) (Response, error) {
 	if request.Params.From != "" || request.Params.To != "" {
 		command.printDeprecationWarning()
 	}
 
 	if ok, message := request.Source.IsValid(); !ok {
-		return OutResponse{}, errors.New(message)
+		return Response{}, errors.New(message)
 	}
 	if request.Params.File != "" && request.Params.From != "" {
-		return OutResponse{}, errors.New("contains both file and from")
+		return Response{}, errors.New("contains both file and from")
 	}
 
 	localPath, err := command.match(request.Params, sourceDir)
 	if err != nil {
-		return OutResponse{}, err
+		return Response{}, err
 	}
 
 	remotePath := command.remotePath(request, localPath, sourceDir)
@@ -72,14 +72,14 @@ func (command *OutCommand) Run(sourceDir string, request OutRequest) (OutRespons
 		options,
 	)
 	if err != nil {
-		return OutResponse{}, err
+		return Response{}, err
 	}
 
 	version := s3resource.Version{}
 
 	if request.Source.VersionedFile != "" {
 		if versionID == "" {
-			return OutResponse{}, ErrObjectVersioningNotEnabled
+			return Response{}, ErrObjectVersioningNotEnabled
 		}
 
 		version.VersionID = versionID
@@ -87,13 +87,13 @@ func (command *OutCommand) Run(sourceDir string, request OutRequest) (OutRespons
 		version.Path = remotePath
 	}
 
-	return OutResponse{
+	return Response{
 		Version:  version,
 		Metadata: command.metadata(bucketName, remotePath, request.Source.Private, versionID),
 	}, nil
 }
 
-func (command *OutCommand) remotePath(request OutRequest, localPath string, sourceDir string) string {
+func (command *Command) remotePath(request Request, localPath string, sourceDir string) string {
 	if request.Source.VersionedFile != "" {
 		return request.Source.VersionedFile
 	}
@@ -116,7 +116,7 @@ func parentDir(regexp string) string {
 	return regexp[:strings.LastIndex(regexp, "/")+1]
 }
 
-func (command *OutCommand) match(params Params, sourceDir string) (string, error) {
+func (command *Command) match(params Params, sourceDir string) (string, error) {
 	var matches []string
 	var err error
 	var pattern string
@@ -149,7 +149,7 @@ func (command *OutCommand) match(params Params, sourceDir string) (string, error
 	return matches[0], nil
 }
 
-func (command *OutCommand) metadata(bucketName, remotePath string, private bool, versionID string) []s3resource.MetadataPair {
+func (command *Command) metadata(bucketName, remotePath string, private bool, versionID string) []s3resource.MetadataPair {
 	remoteFilename := filepath.Base(remotePath)
 
 	metadata := []s3resource.MetadataPair{
@@ -169,7 +169,7 @@ func (command *OutCommand) metadata(bucketName, remotePath string, private bool,
 	return metadata
 }
 
-func (command *OutCommand) printDeprecationWarning() {
+func (command *Command) printDeprecationWarning() {
 	errorColor := ErrorColor.SprintFunc()
 	blinkColor := BlinkingErrorColor.SprintFunc()
 	command.stderr.Write([]byte(blinkColor("WARNING:")))
