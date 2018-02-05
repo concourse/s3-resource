@@ -18,21 +18,21 @@ type RequestURLProvider struct {
 	s3Client s3resource.S3Client
 }
 
-func (up *RequestURLProvider) GetURL(request InRequest, remotePath string) string {
+func (up *RequestURLProvider) GetURL(request Request, remotePath string) string {
 	return up.s3URL(request, remotePath)
 }
 
-func (up *RequestURLProvider) s3URL(request InRequest, remotePath string) string {
+func (up *RequestURLProvider) s3URL(request Request, remotePath string) string {
 	return up.s3Client.URL(request.Source.Bucket, remotePath, request.Source.Private, request.Version.VersionID)
 }
 
-type InCommand struct {
+type Command struct {
 	s3client    s3resource.S3Client
 	urlProvider RequestURLProvider
 }
 
-func NewInCommand(s3client s3resource.S3Client) *InCommand {
-	return &InCommand{
+func NewCommand(s3client s3resource.S3Client) *Command {
+	return &Command{
 		s3client: s3client,
 		urlProvider: RequestURLProvider{
 			s3Client: s3client,
@@ -40,14 +40,14 @@ func NewInCommand(s3client s3resource.S3Client) *InCommand {
 	}
 }
 
-func (command *InCommand) Run(destinationDir string, request InRequest) (InResponse, error) {
+func (command *Command) Run(destinationDir string, request Request) (Response, error) {
 	if ok, message := request.Source.IsValid(); !ok {
-		return InResponse{}, errors.New(message)
+		return Response{}, errors.New(message)
 	}
 
 	err := os.MkdirAll(destinationDir, 0755)
 	if err != nil {
-		return InResponse{}, err
+		return Response{}, err
 	}
 
 	var remotePath string
@@ -56,14 +56,14 @@ func (command *InCommand) Run(destinationDir string, request InRequest) (InRespo
 
 	if request.Source.Regexp != "" {
 		if request.Version.Path == "" {
-			return InResponse{}, ErrMissingPath
+			return Response{}, ErrMissingPath
 		}
 
 		remotePath = request.Version.Path
 
 		extraction, ok := versions.Extract(remotePath, request.Source.Regexp)
 		if !ok {
-			return InResponse{}, fmt.Errorf("regex does not match provided version: %#v", request.Version)
+			return Response{}, fmt.Errorf("regex does not match provided version: %#v", request.Version)
 		}
 
 		versionNumber = extraction.VersionNumber
@@ -82,36 +82,36 @@ func (command *InCommand) Run(destinationDir string, request InRequest) (InRespo
 	)
 
 	if err != nil {
-		return InResponse{}, err
+		return Response{}, err
 	}
 
 	if request.Params.Unpack {
 		destinationPath := filepath.Join(destinationDir, path.Base(remotePath))
 		mime := archiveMimetype(destinationPath)
 		if mime == "" {
-			return InResponse{}, fmt.Errorf("not an archive: %s", destinationPath)
+			return Response{}, fmt.Errorf("not an archive: %s", destinationPath)
 		}
 
 		err = extractArchive(mime, destinationPath)
 		if err != nil {
-			return InResponse{}, err
+			return Response{}, err
 		}
 	}
 
 	url := command.urlProvider.GetURL(request, remotePath)
 	if err = command.writeURLFile(destinationDir, url); err != nil {
-		return InResponse{}, err
+		return Response{}, err
 	}
 
 	err = command.writeVersionFile(versionNumber, destinationDir)
 	if err != nil {
-		return InResponse{}, err
+		return Response{}, err
 	}
 
 	metadata := command.metadata(remotePath, request.Source.Private, url)
 
 	if versionID == "" {
-		return InResponse{
+		return Response{
 			Version: s3resource.Version{
 				Path: remotePath,
 			},
@@ -119,7 +119,7 @@ func (command *InCommand) Run(destinationDir string, request InRequest) (InRespo
 		}, nil
 	}
 
-	return InResponse{
+	return Response{
 		Version: s3resource.Version{
 			VersionID: versionID,
 		},
@@ -127,15 +127,15 @@ func (command *InCommand) Run(destinationDir string, request InRequest) (InRespo
 	}, nil
 }
 
-func (command *InCommand) writeURLFile(destDir string, url string) error {
+func (command *Command) writeURLFile(destDir string, url string) error {
 	return ioutil.WriteFile(filepath.Join(destDir, "url"), []byte(url), 0644)
 }
 
-func (command *InCommand) writeVersionFile(versionNumber string, destDir string) error {
+func (command *Command) writeVersionFile(versionNumber string, destDir string) error {
 	return ioutil.WriteFile(filepath.Join(destDir, "version"), []byte(versionNumber), 0644)
 }
 
-func (command *InCommand) downloadFile(bucketName string, remotePath string, versionID string, destinationDir string, destinationFile string) error {
+func (command *Command) downloadFile(bucketName string, remotePath string, versionID string, destinationDir string, destinationFile string) error {
 	localPath := filepath.Join(destinationDir, destinationFile)
 
 	return command.s3client.DownloadFile(
@@ -146,7 +146,7 @@ func (command *InCommand) downloadFile(bucketName string, remotePath string, ver
 	)
 }
 
-func (command *InCommand) metadata(remotePath string, private bool, url string) []s3resource.MetadataPair {
+func (command *Command) metadata(remotePath string, private bool, url string) []s3resource.MetadataPair {
 	remoteFilename := filepath.Base(remotePath)
 
 	metadata := []s3resource.MetadataPair{
