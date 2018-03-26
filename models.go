@@ -16,6 +16,7 @@ type Source struct {
 	SSEKMSKeyId          string `json:"sse_kms_key_id"`
 	UseV2Signing         bool   `json:"use_v2_signing"`
 	SkipSSLVerification  bool   `json:"skip_ssl_verification"`
+	AssumeRoleArn        string `json:"assume_role_arn"`
 }
 
 func (source Source) IsValid() (bool, string) {
