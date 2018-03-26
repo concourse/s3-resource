@@ -14,6 +14,7 @@ import (
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/credentials"
 	"github.com/aws/aws-sdk-go/aws/credentials/ec2rolecreds"
+	"github.com/aws/aws-sdk-go/aws/credentials/stscreds"
 	"github.com/aws/aws-sdk-go/aws/ec2metadata"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/s3"
@@ -80,6 +81,80 @@ func NewS3Client(
 	}
 }
 
+type AwsConfigBuilder struct {
+	AccessKey           string
+	SecretKey           string
+	SessionToken        string
+	RegionName          string
+	Endpoint            string
+	DisableSSL          bool
+	AssumeRoleArn       string
+	SkipSSLVerification bool
+}
+
+func (b *AwsConfigBuilder) Build() *aws.Config {
+	var providers []credentials.Provider
+	var creds *credentials.Credentials
+
+	if b.AccessKey != "" {
+		creds := &credentials.StaticProvider{
+			Value: credentials.Value{
+				AccessKeyID:     b.AccessKey,
+				SecretAccessKey: b.SecretKey,
+				SessionToken:    b.SessionToken,
+				ProviderName:    "Statically Defined",
+			},
+		}
+		providers = append(providers, creds)
+	} else {
+		providers = append(providers, &credentials.StaticProvider{})
+	}
+
+	sess := session.Must(session.NewSession())
+
+	providers = append(providers, &ec2rolecreds.EC2RoleProvider{
+		Client: ec2metadata.New(sess),
+	})
+
+	creds = credentials.NewChainCredentials(providers)
+
+	if len(b.RegionName) == 0 {
+		b.RegionName = "us-east-1"
+	}
+
+	var httpClient *http.Client
+	if b.SkipSSLVerification {
+		httpClient = &http.Client{Transport: &http.Transport{
+			TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
+		}}
+	} else {
+		httpClient = http.DefaultClient
+	}
+
+	awsConfig := &aws.Config{
+		Region:           aws.String(b.RegionName),
+		Credentials:      creds,
+		S3ForcePathStyle: aws.Bool(true),
+		MaxRetries:       aws.Int(maxRetries),
+		DisableSSL:       aws.Bool(b.DisableSSL),
+		HTTPClient:       httpClient,
+	}
+
+	if len(b.Endpoint) != 0 {
+		endpoint := fmt.Sprintf("%s", b.Endpoint)
+		awsConfig.Endpoint = &endpoint
+	}
+
+	if b.AssumeRoleArn != "" {
+		sess := session.Must(session.NewSession(awsConfig))
+		creds := stscreds.NewCredentials(sess, b.AssumeRoleArn)
+		awsConfig.Credentials = creds
+	}
+
+	return awsConfig
+}
+
+// Deprecated: use AwsConfigBuilder instead
 func NewAwsConfig(
 	accessKey string,
 	secretKey string,
@@ -90,54 +165,17 @@ func NewAwsConfig(
 	skipSSLVerification bool,
 ) *aws.Config {
 
-	sess := session.New()
-
-	creds := credentials.NewChainCredentials(
-		[]credentials.Provider{
-			&credentials.StaticProvider{
-				Value: credentials.Value{
-					AccessKeyID:     accessKey,
-					SecretAccessKey: secretKey,
-					SessionToken:    sessionToken,
-					ProviderName:    "Statically Defined",
-				},
-			},
-			&ec2rolecreds.EC2RoleProvider{
-				Client: ec2metadata.New(sess),
-			},
-			&credentials.StaticProvider{
-				Value: credentials.Value{},
-			},
-		})
-
-	if len(regionName) == 0 {
-		regionName = "us-east-1"
+	b := AwsConfigBuilder{
+		AccessKey:           accessKey,
+		SecretKey:           secretKey,
+		SessionToken:        sessionToken,
+		RegionName:          regionName,
+		Endpoint:            endpoint,
+		DisableSSL:          disableSSL,
+		SkipSSLVerification: skipSSLVerification,
 	}
 
-	var httpClient *http.Client
-	if skipSSLVerification {
-		httpClient = &http.Client{Transport: &http.Transport{
-			TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
-		}}
-	} else {
-		httpClient = http.DefaultClient
-	}
-
-	awsConfig := &aws.Config{
-		Region:           aws.String(regionName),
-		Credentials:      creds,
-		S3ForcePathStyle: aws.Bool(true),
-		MaxRetries:       aws.Int(maxRetries),
-		DisableSSL:       aws.Bool(disableSSL),
-		HTTPClient:       httpClient,
-	}
-
-	if len(endpoint) != 0 {
-		endpoint := fmt.Sprintf("%s", endpoint)
-		awsConfig.Endpoint = &endpoint
-	}
-
-	return awsConfig
+	return b.Build()
 }
 
 func (client *s3client) BucketFiles(bucketName string, prefixHint string) ([]string, error) {
