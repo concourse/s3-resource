@@ -13,6 +13,8 @@ import (
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/credentials"
+	"github.com/aws/aws-sdk-go/aws/credentials/ec2rolecreds"
+	"github.com/aws/aws-sdk-go/aws/ec2metadata"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/s3"
 	"github.com/aws/aws-sdk-go/service/s3/s3manager"
@@ -87,13 +89,26 @@ func NewAwsConfig(
 	disableSSL bool,
 	skipSSLVerification bool,
 ) *aws.Config {
-	var creds *credentials.Credentials
 
-	if accessKey == "" && secretKey == "" {
-		creds = credentials.AnonymousCredentials
-	} else {
-		creds = credentials.NewStaticCredentials(accessKey, secretKey, sessionToken)
-	}
+	sess := session.New()
+
+	creds := credentials.NewChainCredentials(
+		[]credentials.Provider{
+			&credentials.StaticProvider{
+				Value: credentials.Value{
+					AccessKeyID:     accessKey,
+					SecretAccessKey: secretKey,
+					SessionToken:    sessionToken,
+					ProviderName:    "Statically Defined",
+				},
+			},
+			&ec2rolecreds.EC2RoleProvider{
+				Client: ec2metadata.New(sess),
+			},
+			&credentials.StaticProvider{
+				Value: credentials.Value{},
+			},
+		})
 
 	if len(regionName) == 0 {
 		regionName = "us-east-1"
@@ -184,12 +199,12 @@ func (client *s3client) UploadFile(bucketName string, remotePath string, localPa
 	}
 
 	defer localFile.Close()
-	
+
 	// Automatically adjust partsize for larger files.
 	fSize := stat.Size()
-	if fSize > int64(uploader.MaxUploadParts) * uploader.PartSize {
+	if fSize > int64(uploader.MaxUploadParts)*uploader.PartSize {
 		partSize := fSize / int64(uploader.MaxUploadParts)
-		if fSize % int64(uploader.MaxUploadParts) != 0 {
+		if fSize%int64(uploader.MaxUploadParts) != 0 {
 			partSize++
 		}
 		uploader.PartSize = partSize
