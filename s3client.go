@@ -96,7 +96,8 @@ func (b *AwsConfigBuilder) Build() *aws.Config {
 	var providers []credentials.Provider
 	var creds *credentials.Credentials
 
-	if b.AccessKey != "" {
+	// Add static access/secret or session token cred provider
+	if b.AccessKey != "" || b.SessionToken != "" {
 		creds := &credentials.StaticProvider{
 			Value: credentials.Value{
 				AccessKeyID:     b.AccessKey,
@@ -106,15 +107,17 @@ func (b *AwsConfigBuilder) Build() *aws.Config {
 			},
 		}
 		providers = append(providers, creds)
-	} else {
-		providers = append(providers, &credentials.StaticProvider{})
 	}
 
 	sess := session.Must(session.NewSession())
 
+	// Add EC2 IAMRole provider (for folks running in AWS)
 	providers = append(providers, &ec2rolecreds.EC2RoleProvider{
 		Client: ec2metadata.New(sess),
 	})
+
+	// Append anonymous credentials for use with public S3 buckets, if all else fails
+	providers = append(providers, &credentials.StaticProvider{})
 
 	creds = credentials.NewChainCredentials(providers)
 
