@@ -13,7 +13,7 @@ version numbers.
 
 * `session_token`: *Optional.* The AWS STS session token to use when accessing the bucket.
 
-* `assume_role_arn`: *Optional.* If you are running Concourse on AWS, and would like to assume role after authentication, provide the ARN here.
+* `assume_role_arn`: *Optional.* To assume role after authentication, provide the role ARN here.
 
 * `region_name`: *Optional.* The region the bucket is in. Defaults to
   `us-east-1`.
@@ -50,7 +50,7 @@ This resource will attempt to authenticate with these methods in order:
 
 1. `access_key_id` and `secret_access_key`
 2. `session_token`
-3. EC2Role (implicit)
+3. EC2 Role (if concourse is running on AWS)
 
 If `assume_role` is provided, it will then attempt to assume role using the above credentials that are valid.
 
