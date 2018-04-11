@@ -26,10 +26,10 @@ var _ = Describe("In Command", func() {
 		var (
 			tmpPath string
 			destDir string
-			request InRequest
+			request Request
 
 			s3client *fakes.FakeS3Client
-			command  *InCommand
+			command  *Command
 		)
 
 		BeforeEach(func() {
@@ -38,7 +38,7 @@ var _ = Describe("In Command", func() {
 			Ω(err).ShouldNot(HaveOccurred())
 
 			destDir = filepath.Join(tmpPath, "destination")
-			request = InRequest{
+			request = Request{
 				Source: s3resource.Source{
 					Bucket: "bucket-name",
 					Regexp: "files/a-file-(.*)",
@@ -49,7 +49,7 @@ var _ = Describe("In Command", func() {
 			}
 
 			s3client = &fakes.FakeS3Client{}
-			command = NewInCommand(s3client)
+			command = NewCommand(s3client)
 
 			s3client.URLReturns("http://google.com")
 		})

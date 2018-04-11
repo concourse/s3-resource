@@ -14,7 +14,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	var request out.OutRequest
+	var request out.Request
 	inputRequest(&request)
 
 	sourceDir := os.Args[1]
@@ -35,7 +35,7 @@ func main() {
 		request.Source.UseV2Signing,
 	)
 
-	command := out.NewOutCommand(os.Stderr, client)
+	command := out.NewCommand(os.Stderr, client)
 	response, err := command.Run(sourceDir, request)
 	if err != nil {
 		s3resource.Fatal("running command", err)
@@ -44,13 +44,13 @@ func main() {
 	outputResponse(response)
 }
 
-func inputRequest(request *out.OutRequest) {
+func inputRequest(request *out.Request) {
 	if err := json.NewDecoder(os.Stdin).Decode(request); err != nil {
 		s3resource.Fatal("reading request from stdin", err)
 	}
 }
 
-func outputResponse(response out.OutResponse) {
+func outputResponse(response out.Response) {
 	if err := json.NewEncoder(os.Stdout).Encode(response); err != nil {
 		s3resource.Fatal("writing response to stdout", err)
 	}

@@ -44,10 +44,10 @@ var _ = Describe("check", func() {
 	})
 
 	Context("with a versioned_file and a regex", func() {
-		var checkRequest check.CheckRequest
+		var checkRequest check.Request
 
 		BeforeEach(func() {
-			checkRequest = check.CheckRequest{
+			checkRequest = check.Request{
 				Source: s3resource.Source{
 					AccessKeyID:     accessKeyID,
 					SecretAccessKey: secretAccessKey,
@@ -74,11 +74,11 @@ var _ = Describe("check", func() {
 
 	Context("when we do not provide a previous version", func() {
 		var directoryPrefix string
-		var checkRequest check.CheckRequest
+		var checkRequest check.Request
 
 		Context("with a regex", func() {
 			BeforeEach(func() {
-				checkRequest = check.CheckRequest{
+				checkRequest = check.Request{
 					Source: s3resource.Source{
 						AccessKeyID:     accessKeyID,
 						SecretAccessKey: secretAccessKey,
@@ -118,7 +118,7 @@ var _ = Describe("check", func() {
 				It("returns an empty check response", func() {
 					reader := bytes.NewBuffer(session.Out.Contents())
 
-					var response check.CheckResponse
+					var response check.Response
 					err := json.NewDecoder(reader).Decode(&response)
 					Ω(err).ShouldNot(HaveOccurred())
 
@@ -158,11 +158,11 @@ var _ = Describe("check", func() {
 				It("outputs the path of the latest versioned s3 object", func() {
 					reader := bytes.NewBuffer(session.Out.Contents())
 
-					var response check.CheckResponse
+					var response check.Response
 					err := json.NewDecoder(reader).Decode(&response)
 					Ω(err).ShouldNot(HaveOccurred())
 
-					Ω(response).Should(Equal(check.CheckResponse{
+					Ω(response).Should(Equal(check.Response{
 						{
 							Path: filepath.Join(directoryPrefix, "file-does-match-2"),
 						},
@@ -173,7 +173,7 @@ var _ = Describe("check", func() {
 
 		Context("with a versioned_file", func() {
 			BeforeEach(func() {
-				checkRequest = check.CheckRequest{
+				checkRequest = check.Request{
 					Source: s3resource.Source{
 						AccessKeyID:     accessKeyID,
 						SecretAccessKey: secretAccessKey,
@@ -249,7 +249,7 @@ var _ = Describe("check", func() {
 				It("returns an empty check response", func() {
 					reader := bytes.NewBuffer(session.Out.Contents())
 
-					var response check.CheckResponse
+					var response check.Response
 					err := json.NewDecoder(reader).Decode(&response)
 					Ω(err).ShouldNot(HaveOccurred())
 
@@ -293,14 +293,14 @@ var _ = Describe("check", func() {
 
 					reader := bytes.NewBuffer(session.Out.Contents())
 
-					var response check.CheckResponse
+					var response check.Response
 					err := json.NewDecoder(reader).Decode(&response)
 					Ω(err).ShouldNot(HaveOccurred())
 
 					fileVersions, err := s3client.BucketFileVersions(versionedBucketName, filepath.Join(directoryPrefix, "versioned-file"))
 					Ω(err).ShouldNot(HaveOccurred())
 
-					Ω(response).Should(Equal(check.CheckResponse{
+					Ω(response).Should(Equal(check.Response{
 						{
 							VersionID: fileVersions[0],
 						},
@@ -312,11 +312,11 @@ var _ = Describe("check", func() {
 
 	Context("when we provide a previous version", func() {
 		var directoryPrefix string
-		var checkRequest check.CheckRequest
+		var checkRequest check.Request
 
 		Context("with a regex", func() {
 			BeforeEach(func() {
-				checkRequest = check.CheckRequest{
+				checkRequest = check.Request{
 					Source: s3resource.Source{
 						AccessKeyID:     accessKeyID,
 						SecretAccessKey: secretAccessKey,
@@ -356,7 +356,7 @@ var _ = Describe("check", func() {
 				It("returns an empty check response", func() {
 					reader := bytes.NewBuffer(session.Out.Contents())
 
-					var response check.CheckResponse
+					var response check.Response
 					err := json.NewDecoder(reader).Decode(&response)
 					Ω(err).ShouldNot(HaveOccurred())
 
@@ -403,11 +403,11 @@ var _ = Describe("check", func() {
 				It("outputs the path of the latest versioned s3 object", func() {
 					reader := bytes.NewBuffer(session.Out.Contents())
 
-					var response check.CheckResponse
+					var response check.Response
 					err := json.NewDecoder(reader).Decode(&response)
 					Ω(err).ShouldNot(HaveOccurred())
 
-					Ω(response).Should(Equal(check.CheckResponse{
+					Ω(response).Should(Equal(check.Response{
 						{
 							Path: filepath.Join(directoryPrefix, "file-does-match-2"),
 						},
@@ -463,11 +463,11 @@ var _ = Describe("check", func() {
 				It("outputs the path of the latest versioned s3 object", func() {
 					reader := bytes.NewBuffer(session.Out.Contents())
 
-					var response check.CheckResponse
+					var response check.Response
 					err := json.NewDecoder(reader).Decode(&response)
 					Ω(err).ShouldNot(HaveOccurred())
 
-					Ω(response).Should(Equal(check.CheckResponse{
+					Ω(response).Should(Equal(check.Response{
 						{
 							Path: filepath.Join(directoryPrefix, "file-1.2.0-rc.2"),
 						},
@@ -479,7 +479,7 @@ var _ = Describe("check", func() {
 
 		Context("with a versioned_file", func() {
 			BeforeEach(func() {
-				checkRequest = check.CheckRequest{
+				checkRequest = check.Request{
 					Source: s3resource.Source{
 						AccessKeyID:     accessKeyID,
 						SecretAccessKey: secretAccessKey,
@@ -528,7 +528,7 @@ var _ = Describe("check", func() {
 				It("returns an empty check response", func() {
 					reader := bytes.NewBuffer(session.Out.Contents())
 
-					var response check.CheckResponse
+					var response check.Response
 					err := json.NewDecoder(reader).Decode(&response)
 					Ω(err).ShouldNot(HaveOccurred())
 
@@ -580,14 +580,14 @@ var _ = Describe("check", func() {
 					It("returns the most recent version", func() {
 						reader := bytes.NewBuffer(session.Out.Contents())
 
-						var response check.CheckResponse
+						var response check.Response
 						err := json.NewDecoder(reader).Decode(&response)
 						Ω(err).ShouldNot(HaveOccurred())
 
 						fileVersions, err := s3client.BucketFileVersions(versionedBucketName, filepath.Join(directoryPrefix, "versioned-file"))
 						Ω(err).ShouldNot(HaveOccurred())
 
-						Ω(response).Should(Equal(check.CheckResponse{
+						Ω(response).Should(Equal(check.Response{
 							{
 								VersionID: fileVersions[1],
 							},
@@ -646,11 +646,11 @@ var _ = Describe("check", func() {
 					It("returns the next most recent version", func() {
 						reader := bytes.NewBuffer(session.Out.Contents())
 
-						var response check.CheckResponse
+						var response check.Response
 						err := json.NewDecoder(reader).Decode(&response)
 						Ω(err).ShouldNot(HaveOccurred())
 
-						Ω(response).Should(Equal(check.CheckResponse{
+						Ω(response).Should(Equal(check.Response{
 							{
 								VersionID: fileVersions[1],
 							},
