@@ -66,6 +66,24 @@ var _ = Describe("Check Command", func() {
 				))
 			})
 
+			Context("when the initial version is set", func() {
+				It("still returns the latest version", func() {
+					request.Version.Path = ""
+					request.Source.InitialPath = "files/abc-0.0.tgz"
+					request.Source.Regexp = "files/abc-(.*).tgz"
+
+					response, err := command.Run(request)
+					Ω(err).ShouldNot(HaveOccurred())
+
+					Ω(response).Should(HaveLen(1))
+					Ω(response).Should(ConsistOf(
+						s3resource.Version{
+							Path: "files/abc-3.53.tgz",
+						},
+					))
+				})
+			})
+
 			Context("when the regexp does not match anything", func() {
 				It("does not explode", func() {
 					request.Source.Regexp = "no-files/missing-(.*).tgz"
@@ -73,6 +91,24 @@ var _ = Describe("Check Command", func() {
 					Ω(err).ShouldNot(HaveOccurred())
 
 					Ω(response).Should(HaveLen(0))
+				})
+
+				Context("when the initial version is set", func() {
+					It("returns the initial version", func() {
+						request.Version.Path = ""
+						request.Source.InitialPath = "no-files/missing-0.0.tgz"
+						request.Source.Regexp = "no-files/missing-(.*).tgz"
+
+						response, err := command.Run(request)
+						Ω(err).ShouldNot(HaveOccurred())
+
+						Ω(response).Should(HaveLen(1))
+						Ω(response).Should(ConsistOf(
+							s3resource.Version{
+								Path: "no-files/missing-0.0.tgz",
+							},
+						))
+					})
 				})
 			})
 
@@ -114,30 +150,66 @@ var _ = Describe("Check Command", func() {
 			})
 
 			Context("when using versioned file", func() {
-				BeforeEach(func() {
-					s3client.BucketFileVersionsReturns([]string{
-						"file-version-3",
-						"file-version-2",
-						"file-version-1",
-					}, nil)
+				Context("when there are existing versions", func() {
+					BeforeEach(func() {
+						s3client.BucketFileVersionsReturns([]string{
+							"file-version-3",
+							"file-version-2",
+							"file-version-1",
+						}, nil)
+					})
+
+					It("includes all versions from the previous one and the current one", func() {
+						request.Version.VersionID = "file-version-2"
+						request.Source.VersionedFile = "files/versioned-file"
+
+						response, err := command.Run(request)
+						Ω(err).ShouldNot(HaveOccurred())
+
+						Ω(response).Should(HaveLen(2))
+						Ω(response).Should(ConsistOf(
+							s3resource.Version{
+								VersionID: "file-version-2",
+							},
+							s3resource.Version{
+								VersionID: "file-version-3",
+							},
+						))
+					})
 				})
 
-				It("includes all versions from the previous one and the current one", func() {
-					request.Version.VersionID = "file-version-2"
-					request.Source.VersionedFile = "files/(.*).tgz"
+				Context("when no version exists", func() {
+					BeforeEach(func() {
+						s3client.BucketFileVersionsReturns([]string{}, nil)
+					})
 
-					response, err := command.Run(request)
-					Ω(err).ShouldNot(HaveOccurred())
+					It("returns no versions", func() {
+						request.Version.VersionID = ""
+						request.Source.VersionedFile = "files/versioned-file"
 
-					Ω(response).Should(HaveLen(2))
-					Ω(response).Should(ConsistOf(
-						s3resource.Version{
-							VersionID: "file-version-2",
-						},
-						s3resource.Version{
-							VersionID: "file-version-3",
-						},
-					))
+						response, err := command.Run(request)
+						Ω(err).ShouldNot(HaveOccurred())
+
+						Ω(response).Should(HaveLen(0))
+					})
+
+					Context("when the initial version is set", func() {
+						It("returns the initial version", func() {
+							request.Version.VersionID = ""
+							request.Source.VersionedFile = "files/versioned-file"
+							request.Source.InitialVersion = "file-version-0"
+
+							response, err := command.Run(request)
+							Ω(err).ShouldNot(HaveOccurred())
+
+							Ω(response).Should(HaveLen(1))
+							Ω(response).Should(ConsistOf(
+								s3resource.Version{
+									VersionID: "file-version-0",
+								},
+							))
+						})
+					})
 				})
 			})
 		})
