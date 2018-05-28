@@ -1,6 +1,7 @@
 package in
 
 import (
+	"encoding/base64"
 	"errors"
 	"fmt"
 	"io/ioutil"
@@ -53,6 +54,8 @@ func (command *Command) Run(destinationDir string, request Request) (Response, e
 	var remotePath string
 	var versionNumber string
 	var versionID string
+	var url string
+	var isInitialVersion bool
 
 	if request.Source.Regexp != "" {
 		if request.Version.Path == "" {
@@ -67,40 +70,62 @@ func (command *Command) Run(destinationDir string, request Request) (Response, e
 		}
 
 		versionNumber = extraction.VersionNumber
+
+		isInitialVersion = request.Source.InitialPath != "" && request.Version.Path == request.Source.InitialPath
 	} else {
 		remotePath = request.Source.VersionedFile
 		versionNumber = request.Version.VersionID
 		versionID = request.Version.VersionID
+
+		isInitialVersion = request.Source.InitialVersion != "" && request.Version.VersionID == request.Source.InitialVersion
 	}
 
-	err = command.downloadFile(
-		request.Source.Bucket,
-		remotePath,
-		versionID,
-		destinationDir,
-		path.Base(remotePath),
-	)
-
-	if err != nil {
-		return Response{}, err
-	}
-
-	if request.Params.Unpack {
-		destinationPath := filepath.Join(destinationDir, path.Base(remotePath))
-		mime := archiveMimetype(destinationPath)
-		if mime == "" {
-			return Response{}, fmt.Errorf("not an archive: %s", destinationPath)
+	if isInitialVersion {
+		if request.Source.InitialContentText != "" || request.Source.InitialContentBinary == "" {
+			err = command.createInitialFile(destinationDir, path.Base(remotePath), []byte(request.Source.InitialContentText))
+			if err != nil {
+				return Response{}, err
+			}
 		}
-
-		err = extractArchive(mime, destinationPath)
+		if request.Source.InitialContentBinary != "" {
+			b, err := base64.StdEncoding.DecodeString(request.Source.InitialContentBinary)
+			if err != nil {
+				return Response{}, errors.New("failed to decode initial_content_binary, make sure it's base64 encoded")
+			}
+			err = command.createInitialFile(destinationDir, path.Base(remotePath), b)
+			if err != nil {
+				return Response{}, err
+			}
+		}
+	} else {
+		err = command.downloadFile(
+			request.Source.Bucket,
+			remotePath,
+			versionID,
+			destinationDir,
+			path.Base(remotePath),
+		)
 		if err != nil {
 			return Response{}, err
 		}
-	}
 
-	url := command.urlProvider.GetURL(request, remotePath)
-	if err = command.writeURLFile(destinationDir, url); err != nil {
-		return Response{}, err
+		if request.Params.Unpack {
+			destinationPath := filepath.Join(destinationDir, path.Base(remotePath))
+			mime := archiveMimetype(destinationPath)
+			if mime == "" {
+				return Response{}, fmt.Errorf("not an archive: %s", destinationPath)
+			}
+
+			err = extractArchive(mime, destinationPath)
+			if err != nil {
+				return Response{}, err
+			}
+		}
+
+		url = command.urlProvider.GetURL(request, remotePath)
+		if err = command.writeURLFile(destinationDir, url); err != nil {
+			return Response{}, err
+		}
 	}
 
 	err = command.writeVersionFile(versionNumber, destinationDir)
@@ -146,6 +171,10 @@ func (command *Command) downloadFile(bucketName string, remotePath string, versi
 	)
 }
 
+func (command *Command) createInitialFile(destDir string, destFile string, data []byte) error {
+	return ioutil.WriteFile(filepath.Join(destDir, destFile), []byte(data), 0644)
+}
+
 func (command *Command) metadata(remotePath string, private bool, url string) []s3resource.MetadataPair {
 	remoteFilename := filepath.Base(remotePath)
 
@@ -156,7 +185,7 @@ func (command *Command) metadata(remotePath string, private bool, url string) []
 		},
 	}
 
-	if !private {
+	if url != "" && !private {
 		metadata = append(metadata, s3resource.MetadataPair{
 			Name:  "url",
 			Value: url,

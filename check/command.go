@@ -32,6 +32,13 @@ func (command *Command) Run(request Request) (Response, error) {
 func (command *Command) checkByRegex(request Request) Response {
 	extractions := versions.GetBucketFileVersions(command.s3client, request.Source)
 
+	if request.Source.InitialPath != "" {
+		extraction, ok := versions.Extract(request.Source.InitialPath, request.Source.Regexp)
+		if ok {
+			extractions = append([]versions.Extraction{extraction}, extractions...)
+		}
+	}
+
 	if len(extractions) == 0 {
 		return nil
 	}
@@ -51,6 +58,10 @@ func (command *Command) checkByVersionedFile(request Request) Response {
 
 	if err != nil {
 		s3resource.Fatal("finding versions", err)
+	}
+
+	if request.Source.InitialVersion != "" {
+		bucketVersions = append(bucketVersions, request.Source.InitialVersion)
 	}
 
 	if len(bucketVersions) == 0 {
