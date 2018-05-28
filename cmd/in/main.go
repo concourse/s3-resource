@@ -21,7 +21,7 @@ func main() {
 
 	destinationDir := os.Args[1]
 
-	var request in.InRequest
+	var request in.Request
 	inputRequest(&request)
 
 	b := s3resource.AwsConfigBuilder{
@@ -59,7 +59,7 @@ func main() {
 		request.Source.UseV2Signing,
 	)
 
-	command := in.NewInCommand(client)
+	command := in.NewCommand(client)
 
 	response, err := command.Run(destinationDir, request)
 	if err != nil {
@@ -69,13 +69,13 @@ func main() {
 	outputResponse(response)
 }
 
-func inputRequest(request *in.InRequest) {
+func inputRequest(request *in.Request) {
 	if err := json.NewDecoder(os.Stdin).Decode(request); err != nil {
 		s3resource.Fatal("reading request from stdin", err)
 	}
 }
 
-func outputResponse(response in.InResponse) {
+func outputResponse(response in.Response) {
 	if err := json.NewEncoder(os.Stdout).Encode(response); err != nil {
 		s3resource.Fatal("writing response to stdout", err)
 	}

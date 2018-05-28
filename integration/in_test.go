@@ -20,11 +20,11 @@ import (
 
 var _ = Describe("in", func() {
 	var (
-		command *exec.Cmd
-		stdin   *bytes.Buffer
-		session *gexec.Session
-		destDir string
-
+		command            *exec.Cmd
+		inRequest          in.Request
+		stdin              *bytes.Buffer
+		session            *gexec.Session
+		destDir            string
 		expectedExitStatus int
 	)
 
@@ -47,6 +47,10 @@ var _ = Describe("in", func() {
 
 	JustBeforeEach(func() {
 		var err error
+
+		err = json.NewEncoder(stdin).Encode(inRequest)
+		Ω(err).ShouldNot(HaveOccurred())
+
 		session, err = gexec.Start(command, GinkgoWriter, GinkgoWriter)
 		Ω(err).ShouldNot(HaveOccurred())
 
@@ -55,10 +59,8 @@ var _ = Describe("in", func() {
 	})
 
 	Context("with a versioned_file and a regex", func() {
-		var inRequest in.InRequest
-
 		BeforeEach(func() {
-			inRequest = in.InRequest{
+			inRequest = in.Request{
 				Source: s3resource.Source{
 					AccessKeyID:     accessKeyID,
 					SecretAccessKey: secretAccessKey,
@@ -73,9 +75,6 @@ var _ = Describe("in", func() {
 			}
 
 			expectedExitStatus = 1
-
-			err := json.NewEncoder(stdin).Encode(inRequest)
-			Ω(err).ShouldNot(HaveOccurred())
 		})
 
 		It("returns an error", func() {
@@ -84,12 +83,11 @@ var _ = Describe("in", func() {
 	})
 
 	Context("when the given version only has a path", func() {
-		var inRequest in.InRequest
 		var directoryPrefix string
 
 		BeforeEach(func() {
 			directoryPrefix = "in-request-files"
-			inRequest = in.InRequest{
+			inRequest = in.Request{
 				Source: s3resource.Source{
 					AccessKeyID:     accessKeyID,
 					SecretAccessKey: secretAccessKey,
@@ -103,9 +101,6 @@ var _ = Describe("in", func() {
 					Path: filepath.Join(directoryPrefix, "some-file-2"),
 				},
 			}
-
-			err := json.NewEncoder(stdin).Encode(inRequest)
-			Ω(err).ShouldNot(HaveOccurred())
 
 			tempFile, err := ioutil.TempFile("", "file-to-upload")
 			Ω(err).ShouldNot(HaveOccurred())
@@ -133,11 +128,11 @@ var _ = Describe("in", func() {
 		It("downloads the file", func() {
 			reader := bytes.NewBuffer(session.Out.Contents())
 
-			var response in.InResponse
+			var response in.Response
 			err := json.NewDecoder(reader).Decode(&response)
 			Ω(err).ShouldNot(HaveOccurred())
 
-			Ω(response).Should(Equal(in.InResponse{
+			Ω(response).Should(Equal(in.Response{
 				Version: s3resource.Version{
 					Path: "in-request-files/some-file-2",
 				},
@@ -168,16 +163,54 @@ var _ = Describe("in", func() {
 			Ω(err).ShouldNot(HaveOccurred())
 			Ω(urlContents).Should(Equal([]byte(buildEndpoint(bucketName, endpoint) + "/in-request-files/some-file-2")))
 		})
+
+		Context("when the path matches the initial path", func() {
+			BeforeEach(func() {
+				inRequest.Source.InitialPath = filepath.Join(directoryPrefix, "some-file-0.0.0")
+				inRequest.Source.InitialContentText = "initial content"
+				inRequest.Version.Path = inRequest.Source.InitialPath
+			})
+
+			It("uses the initial content", func() {
+				reader := bytes.NewBuffer(session.Out.Contents())
+
+				var response in.Response
+				err := json.NewDecoder(reader).Decode(&response)
+
+				Ω(response).Should(Equal(in.Response{
+					Version: s3resource.Version{
+						Path: inRequest.Source.InitialPath,
+					},
+					Metadata: []s3resource.MetadataPair{
+						{
+							Name:  "filename",
+							Value: "some-file-0.0.0",
+						},
+					},
+				}))
+
+				Ω(filepath.Join(destDir, "some-file-0.0.0")).Should(BeARegularFile())
+				contents, err := ioutil.ReadFile(filepath.Join(destDir, "some-file-0.0.0"))
+				Ω(err).ShouldNot(HaveOccurred())
+				Ω(contents).Should(Equal([]byte(inRequest.Source.InitialContentText)))
+
+				Ω(filepath.Join(destDir, "version")).Should(BeARegularFile())
+				versionContents, err := ioutil.ReadFile(filepath.Join(destDir, "version"))
+				Ω(err).ShouldNot(HaveOccurred())
+				Ω(versionContents).Should(Equal([]byte("0.0.0")))
+
+				Ω(filepath.Join(destDir, "url")).ShouldNot(BeARegularFile())
+			})
+		})
 	})
 
 	Context("when the given version has a versionID and path", func() {
-		var inRequest in.InRequest
 		var directoryPrefix string
 		var expectedVersion string
 
 		BeforeEach(func() {
 			directoryPrefix = "in-request-files-versioned"
-			inRequest = in.InRequest{
+			inRequest = in.Request{
 				Source: s3resource.Source{
 					AccessKeyID:     accessKeyID,
 					SecretAccessKey: secretAccessKey,
@@ -208,9 +241,6 @@ var _ = Describe("in", func() {
 			Ω(err).ShouldNot(HaveOccurred())
 			expectedVersion = versions[1]
 			inRequest.Version.VersionID = expectedVersion
-
-			err = json.NewEncoder(stdin).Encode(inRequest)
-			Ω(err).ShouldNot(HaveOccurred())
 		})
 
 		AfterEach(func() {
@@ -226,10 +256,10 @@ var _ = Describe("in", func() {
 		It("downloads the file", func() {
 			reader := bytes.NewBuffer(session.Out.Contents())
 
-			var response in.InResponse
+			var response in.Response
 			err := json.NewDecoder(reader).Decode(&response)
 
-			Ω(response).Should(Equal(in.InResponse{
+			Ω(response).Should(Equal(in.Response{
 				Version: s3resource.Version{
 					VersionID: expectedVersion,
 				},
@@ -260,10 +290,49 @@ var _ = Describe("in", func() {
 			Ω(err).ShouldNot(HaveOccurred())
 			Ω(urlContents).Should(Equal([]byte(buildEndpoint(versionedBucketName, endpoint) + "/in-request-files-versioned/some-file?versionId=" + expectedVersion)))
 		})
+
+		Context("when the version ID matches the InitialVersion", func() {
+			BeforeEach(func() {
+				inRequest.Source.InitialVersion = "0.0.0"
+				inRequest.Source.InitialContentText = "initial content"
+				inRequest.Version.VersionID = inRequest.Source.InitialVersion
+				expectedVersion = inRequest.Source.InitialVersion
+			})
+
+			It("uses the initial content", func() {
+				reader := bytes.NewBuffer(session.Out.Contents())
+
+				var response in.Response
+				err := json.NewDecoder(reader).Decode(&response)
+
+				Ω(response).Should(Equal(in.Response{
+					Version: s3resource.Version{
+						VersionID: inRequest.Source.InitialVersion,
+					},
+					Metadata: []s3resource.MetadataPair{
+						{
+							Name:  "filename",
+							Value: "some-file",
+						},
+					},
+				}))
+
+				Ω(filepath.Join(destDir, "some-file")).Should(BeARegularFile())
+				contents, err := ioutil.ReadFile(filepath.Join(destDir, "some-file"))
+				Ω(err).ShouldNot(HaveOccurred())
+				Ω(contents).Should(Equal([]byte(inRequest.Source.InitialContentText)))
+
+				Ω(filepath.Join(destDir, "version")).Should(BeARegularFile())
+				versionContents, err := ioutil.ReadFile(filepath.Join(destDir, "version"))
+				Ω(err).ShouldNot(HaveOccurred())
+				Ω(versionContents).Should(Equal([]byte(expectedVersion)))
+
+				Ω(filepath.Join(destDir, "url")).ShouldNot(BeARegularFile())
+			})
+		})
 	})
 
 	Context("when cloudfront_url is set", func() {
-		var inRequest in.InRequest
 		var directoryPrefix string
 
 		BeforeEach(func() {
@@ -272,7 +341,7 @@ var _ = Describe("in", func() {
 			}
 
 			directoryPrefix = "in-request-cloudfront-files"
-			inRequest = in.InRequest{
+			inRequest = in.Request{
 				Source: s3resource.Source{
 					AccessKeyID:     accessKeyID,
 					SecretAccessKey: secretAccessKey,
@@ -301,9 +370,6 @@ var _ = Describe("in", func() {
 				_, err = s3client.UploadFile(bucketName, filepath.Join(directoryPrefix, fmt.Sprintf("some-file-%d", i)), tempFile.Name(), s3resource.NewUploadFileOptions())
 				Ω(err).ShouldNot(HaveOccurred())
 			}
-
-			err = os.Remove(tempFile.Name())
-			Ω(err).ShouldNot(HaveOccurred())
 		})
 
 		AfterEach(func() {
@@ -316,11 +382,11 @@ var _ = Describe("in", func() {
 		It("downloads the file from CloudFront", func() {
 			reader := bytes.NewBuffer(session.Out.Contents())
 
-			var response in.InResponse
+			var response in.Response
 			err := json.NewDecoder(reader).Decode(&response)
 			Ω(err).ShouldNot(HaveOccurred())
 
-			Ω(response).Should(Equal(in.InResponse{
+			Ω(response).Should(Equal(in.Response{
 				Version: s3resource.Version{
 					Path: "in-request-cloudfront-files/some-file-2",
 				},
@@ -349,10 +415,8 @@ var _ = Describe("in", func() {
 	})
 
 	Context("when cloudfront_url is set but has too few dots", func() {
-		var inRequest in.InRequest
-
 		BeforeEach(func() {
-			inRequest = in.InRequest{
+			inRequest = in.Request{
 				Source: s3resource.Source{
 					AccessKeyID:     accessKeyID,
 					SecretAccessKey: secretAccessKey,
@@ -368,9 +432,6 @@ var _ = Describe("in", func() {
 			}
 
 			expectedExitStatus = 1
-
-			err := json.NewEncoder(stdin).Encode(inRequest)
-			Ω(err).ShouldNot(HaveOccurred())
 		})
 
 		It("returns an error", func() {

@@ -19,11 +19,11 @@ var _ = Describe("Out Command", func() {
 		var (
 			tmpPath   string
 			sourceDir string
-			request   out.OutRequest
+			request   out.Request
 
 			stderr   *gbytes.Buffer
 			s3client *fakes.FakeS3Client
-			command  *out.OutCommand
+			command  *out.Command
 		)
 
 		BeforeEach(func() {
@@ -35,7 +35,7 @@ var _ = Describe("Out Command", func() {
 			err = os.MkdirAll(sourceDir, 0755)
 			Ω(err).ShouldNot(HaveOccurred())
 
-			request = out.OutRequest{
+			request = out.Request{
 				Source: s3resource.Source{
 					Bucket: "bucket-name",
 				},
@@ -43,7 +43,7 @@ var _ = Describe("Out Command", func() {
 
 			s3client = &fakes.FakeS3Client{}
 			stderr = gbytes.NewBuffer()
-			command = out.NewOutCommand(stderr, s3client)
+			command = out.NewCommand(stderr, s3client)
 		})
 
 		AfterEach(func() {

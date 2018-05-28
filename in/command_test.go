@@ -26,10 +26,10 @@ var _ = Describe("In Command", func() {
 		var (
 			tmpPath string
 			destDir string
-			request InRequest
+			request Request
 
 			s3client *fakes.FakeS3Client
-			command  *InCommand
+			command  *Command
 		)
 
 		BeforeEach(func() {
@@ -38,7 +38,7 @@ var _ = Describe("In Command", func() {
 			Ω(err).ShouldNot(HaveOccurred())
 
 			destDir = filepath.Join(tmpPath, "destination")
-			request = InRequest{
+			request = Request{
 				Source: s3resource.Source{
 					Bucket: "bucket-name",
 					Regexp: "files/a-file-(.*)",
@@ -49,7 +49,7 @@ var _ = Describe("In Command", func() {
 			}
 
 			s3client = &fakes.FakeS3Client{}
-			command = NewInCommand(s3client)
+			command = NewCommand(s3client)
 
 			s3client.URLReturns("http://google.com")
 		})
@@ -195,7 +195,7 @@ var _ = Describe("In Command", func() {
 				request.Source.Regexp = "not-matching-anything"
 			})
 
-			It("returns an h", func() {
+			It("returns an error", func() {
 				_, err := command.Run(destDir, request)
 				Expect(err).To(HaveOccurred())
 				Expect(err.Error()).To(ContainSubstring("regex does not match provided version"))
@@ -370,6 +370,167 @@ var _ = Describe("In Command", func() {
 					_, err := command.Run(destDir, request)
 					Expect(err).To(HaveOccurred())
 				})
+			})
+		})
+
+		Context("when the requested path is the initial path", func() {
+			var initialFilename string
+
+			BeforeEach(func() {
+				initialFilename = "a-file-0.0"
+				request.Source.InitialPath = "files/a-file-0.0"
+				request.Version.Path = request.Source.InitialPath
+				request.Source.InitialContentText = "the hard questions are hard 🙈"
+			})
+
+			It("it creates a file containing the initial text content", func() {
+				_, err := command.Run(destDir, request)
+				Ω(err).ShouldNot(HaveOccurred())
+
+				contentFile := filepath.Join(destDir, initialFilename)
+				Ω(contentFile).Should(BeARegularFile())
+				contents, err := ioutil.ReadFile(contentFile)
+				Ω(err).ShouldNot(HaveOccurred())
+				Ω(string(contents)).Should(Equal(request.Source.InitialContentText))
+			})
+
+			Context("when the initial content is binary", func() {
+				BeforeEach(func() {
+					request.Source.InitialContentText = ""
+					request.Source.InitialContentBinary = "dGhlIGhhcmQgcXVlc3Rpb25zIGFyZSBoYXJkIPCfmYg="
+				})
+				It("it creates a file containing the initial binary content", func() {
+					_, err := command.Run(destDir, request)
+					Ω(err).ShouldNot(HaveOccurred())
+
+					contentFile := filepath.Join(destDir, initialFilename)
+					Ω(contentFile).Should(BeARegularFile())
+					contents, err := ioutil.ReadFile(contentFile)
+					Ω(err).ShouldNot(HaveOccurred())
+					Ω(string(contents)).Should(Equal("the hard questions are hard 🙈"))
+				})
+
+				Context("when base64 decoding fails", func() {
+					BeforeEach(func() {
+						request.Source.InitialContentBinary = "not base64 data 🙈"
+					})
+					It("should return with an error", func() {
+						_, err := command.Run(destDir, request)
+						Ω(err).Should(HaveOccurred())
+					})
+				})
+			})
+
+			It("should not write the URL file", func() {
+				urlPath := filepath.Join(destDir, "url")
+				Ω(urlPath).ShouldNot(ExistOnFilesystem())
+
+				_, err := command.Run(destDir, request)
+				Ω(err).ShouldNot(HaveOccurred())
+
+				Ω(urlPath).ShouldNot(ExistOnFilesystem())
+			})
+
+			It("should not include a URL in the metadata", func() {
+				response, err := command.Run(destDir, request)
+				Ω(err).ShouldNot(HaveOccurred())
+
+				for _, metadatum := range response.Metadata {
+					Ω(metadatum.Name).ShouldNot(Equal("url"))
+				}
+			})
+
+			It("should not attempt to unpack the initial content", func() {
+				request.Params.Unpack = true
+				_, err := command.Run(destDir, request)
+				Ω(err).ShouldNot(HaveOccurred())
+
+				contentFile := filepath.Join(destDir, initialFilename)
+				Ω(contentFile).Should(BeARegularFile())
+				contents, err := ioutil.ReadFile(contentFile)
+				Ω(err).ShouldNot(HaveOccurred())
+				Ω(string(contents)).Should(Equal(request.Source.InitialContentText))
+			})
+		})
+
+		Context("when the requested version is the initial version", func() {
+			var filename = "testfile"
+
+			BeforeEach(func() {
+				request.Source.Regexp = ""
+				request.Source.VersionedFile = "file/testfile"
+				request.Source.InitialVersion = "0.0.0"
+				request.Version.VersionID = request.Source.InitialVersion
+				request.Source.InitialContentText = "the hard questions are hard 🙈"
+			})
+
+			It("it creates a file containing the initial text content", func() {
+				_, err := command.Run(destDir, request)
+				Ω(err).ShouldNot(HaveOccurred())
+
+				contentFile := filepath.Join(destDir, filename)
+				Ω(contentFile).Should(BeARegularFile())
+				contents, err := ioutil.ReadFile(contentFile)
+				Ω(err).ShouldNot(HaveOccurred())
+				Ω(string(contents)).Should(Equal(request.Source.InitialContentText))
+			})
+
+			Context("when the initial content is binary", func() {
+				BeforeEach(func() {
+					request.Source.InitialContentText = ""
+					request.Source.InitialContentBinary = "dGhlIGhhcmQgcXVlc3Rpb25zIGFyZSBoYXJkIPCfmYg="
+				})
+				It("it creates a file containing the initial binary content", func() {
+					_, err := command.Run(destDir, request)
+					Ω(err).ShouldNot(HaveOccurred())
+
+					contentFile := filepath.Join(destDir, filename)
+					Ω(contentFile).Should(BeARegularFile())
+					contents, err := ioutil.ReadFile(contentFile)
+					Ω(err).ShouldNot(HaveOccurred())
+					Ω(string(contents)).Should(Equal("the hard questions are hard 🙈"))
+				})
+
+				Context("when base64 decoding fails", func() {
+					BeforeEach(func() {
+						request.Source.InitialContentBinary = "not base64 data 🙈"
+					})
+					It("should return with an error", func() {
+						_, err := command.Run(destDir, request)
+						Ω(err).Should(HaveOccurred())
+					})
+				})
+			})
+
+			It("should not write the URL file", func() {
+				urlPath := filepath.Join(destDir, "url")
+				Ω(urlPath).ShouldNot(ExistOnFilesystem())
+
+				_, err := command.Run(destDir, request)
+				Ω(err).ShouldNot(HaveOccurred())
+
+				Ω(urlPath).ShouldNot(ExistOnFilesystem())
+			})
+
+			It("should not include a URL in the metadata", func() {
+				response, err := command.Run(destDir, request)
+				Ω(err).ShouldNot(HaveOccurred())
+
+				for _, metadatum := range response.Metadata {
+					Ω(metadatum.Name).ShouldNot(Equal("url"))
+				}
+			})
+
+			It("should not attempt to unpack the initial content", func() {
+				request.Params.Unpack = true
+				_, err := command.Run(destDir, request)
+				Ω(err).ShouldNot(HaveOccurred())
+
+				contentFile := filepath.Join(destDir, filename)
+				Ω(contentFile).Should(BeARegularFile())
+				contents, err := ioutil.ReadFile(contentFile)
+				Ω(err).ShouldNot(HaveOccurred())
+				Ω(string(contents)).Should(Equal(request.Source.InitialContentText))
 			})
 		})
 	})
