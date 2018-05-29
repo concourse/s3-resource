@@ -16,6 +16,7 @@ type Source struct {
 	SSEKMSKeyId          string `json:"sse_kms_key_id"`
 	UseV2Signing         bool   `json:"use_v2_signing"`
 	SkipSSLVerification  bool   `json:"skip_ssl_verification"`
+	AssumeRoleArn        string `json:"assume_role_arn"`
 	InitialVersion       string `json:"initial_version"`
 	InitialPath          string `json:"initial_path"`
 	InitialContentText   string `json:"initial_content_text"`

@@ -13,6 +13,9 @@ import (
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/credentials"
+	"github.com/aws/aws-sdk-go/aws/credentials/ec2rolecreds"
+	"github.com/aws/aws-sdk-go/aws/credentials/stscreds"
+	"github.com/aws/aws-sdk-go/aws/ec2metadata"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/s3"
 	"github.com/aws/aws-sdk-go/service/s3/s3manager"
@@ -78,6 +81,83 @@ func NewS3Client(
 	}
 }
 
+type AwsConfigBuilder struct {
+	AccessKey           string
+	SecretKey           string
+	SessionToken        string
+	RegionName          string
+	Endpoint            string
+	DisableSSL          bool
+	AssumeRoleArn       string
+	SkipSSLVerification bool
+}
+
+func (b *AwsConfigBuilder) Build() *aws.Config {
+	var providers []credentials.Provider
+	var creds *credentials.Credentials
+
+	// Add static access/secret or session token cred provider
+	if b.AccessKey != "" || b.SessionToken != "" {
+		creds := &credentials.StaticProvider{
+			Value: credentials.Value{
+				AccessKeyID:     b.AccessKey,
+				SecretAccessKey: b.SecretKey,
+				SessionToken:    b.SessionToken,
+				ProviderName:    "Statically Defined",
+			},
+		}
+		providers = append(providers, creds)
+	}
+
+	sess := session.Must(session.NewSession())
+
+	// Add EC2 IAMRole provider (for folks running in AWS)
+	providers = append(providers, &ec2rolecreds.EC2RoleProvider{
+		Client: ec2metadata.New(sess),
+	})
+
+	// Append anonymous credentials for use with public S3 buckets, if all else fails
+	providers = append(providers, &credentials.StaticProvider{})
+
+	creds = credentials.NewChainCredentials(providers)
+
+	if len(b.RegionName) == 0 {
+		b.RegionName = "us-east-1"
+	}
+
+	var httpClient *http.Client
+	if b.SkipSSLVerification {
+		httpClient = &http.Client{Transport: &http.Transport{
+			TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
+		}}
+	} else {
+		httpClient = http.DefaultClient
+	}
+
+	awsConfig := &aws.Config{
+		Region:           aws.String(b.RegionName),
+		Credentials:      creds,
+		S3ForcePathStyle: aws.Bool(true),
+		MaxRetries:       aws.Int(maxRetries),
+		DisableSSL:       aws.Bool(b.DisableSSL),
+		HTTPClient:       httpClient,
+	}
+
+	if len(b.Endpoint) != 0 {
+		endpoint := fmt.Sprintf("%s", b.Endpoint)
+		awsConfig.Endpoint = &endpoint
+	}
+
+	if b.AssumeRoleArn != "" {
+		sess := session.Must(session.NewSession(awsConfig))
+		creds := stscreds.NewCredentials(sess, b.AssumeRoleArn)
+		awsConfig.Credentials = creds
+	}
+
+	return awsConfig
+}
+
+// Deprecated: use AwsConfigBuilder instead
 func NewAwsConfig(
 	accessKey string,
 	secretKey string,
@@ -87,42 +167,18 @@ func NewAwsConfig(
 	disableSSL bool,
 	skipSSLVerification bool,
 ) *aws.Config {
-	var creds *credentials.Credentials
 
-	if accessKey == "" && secretKey == "" {
-		creds = credentials.AnonymousCredentials
-	} else {
-		creds = credentials.NewStaticCredentials(accessKey, secretKey, sessionToken)
+	b := AwsConfigBuilder{
+		AccessKey:           accessKey,
+		SecretKey:           secretKey,
+		SessionToken:        sessionToken,
+		RegionName:          regionName,
+		Endpoint:            endpoint,
+		DisableSSL:          disableSSL,
+		SkipSSLVerification: skipSSLVerification,
 	}
 
-	if len(regionName) == 0 {
-		regionName = "us-east-1"
-	}
-
-	var httpClient *http.Client
-	if skipSSLVerification {
-		httpClient = &http.Client{Transport: &http.Transport{
-			TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
-		}}
-	} else {
-		httpClient = http.DefaultClient
-	}
-
-	awsConfig := &aws.Config{
-		Region:           aws.String(regionName),
-		Credentials:      creds,
-		S3ForcePathStyle: aws.Bool(true),
-		MaxRetries:       aws.Int(maxRetries),
-		DisableSSL:       aws.Bool(disableSSL),
-		HTTPClient:       httpClient,
-	}
-
-	if len(endpoint) != 0 {
-		endpoint := fmt.Sprintf("%s", endpoint)
-		awsConfig.Endpoint = &endpoint
-	}
-
-	return awsConfig
+	return b.Build()
 }
 
 func (client *s3client) BucketFiles(bucketName string, prefixHint string) ([]string, error) {
@@ -184,12 +240,12 @@ func (client *s3client) UploadFile(bucketName string, remotePath string, localPa
 	}
 
 	defer localFile.Close()
-	
+
 	// Automatically adjust partsize for larger files.
 	fSize := stat.Size()
-	if fSize > int64(uploader.MaxUploadParts) * uploader.PartSize {
+	if fSize > int64(uploader.MaxUploadParts)*uploader.PartSize {
 		partSize := fSize / int64(uploader.MaxUploadParts)
-		if fSize % int64(uploader.MaxUploadParts) != 0 {
+		if fSize%int64(uploader.MaxUploadParts) != 0 {
 			partSize++
 		}
 		uploader.PartSize = partSize
