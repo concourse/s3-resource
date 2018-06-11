@@ -37,6 +37,8 @@ version numbers.
 
 * `skip_ssl_verification`: *Optional.* Skip SSL verification for S3 endpoint. Useful for S3 compatible providers using self-signed SSL certificates.
 
+* `skip_download`: *Optional.* Skip downloading object from S3. Useful only trigger the pipeline without using the object.
+
 * `server_side_encryption`: *Optional.* An encryption algorithm to use when
   storing objects in S3.
 
