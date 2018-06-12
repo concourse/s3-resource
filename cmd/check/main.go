@@ -12,18 +12,15 @@ func main() {
 	var request check.Request
 	inputRequest(&request)
 
-	b := s3resource.AwsConfigBuilder{
-		AccessKey: request.Source.AccessKeyID,
-		SecretKey: request.Source.SecretAccessKey,
-		SessionToken: request.Source.SessionToken,
-		RegionName: request.Source.RegionName,
-		Endpoint: request.Source.Endpoint,
-		DisableSSL: request.Source.DisableSSL,
-		SkipSSLVerification: request.Source.SkipSSLVerification,
-		AssumeRoleArn: request.Source.AssumeRoleArn,
-	}
-
-	awsConfig := b.Build()
+	awsConfig := s3resource.NewAwsConfig(
+		request.Source.AccessKeyID,
+		request.Source.SecretAccessKey,
+		request.Source.SessionToken,
+		request.Source.RegionName,
+		request.Source.Endpoint,
+		request.Source.DisableSSL,
+		request.Source.SkipSSLVerification,
+	)
 
 	client := s3resource.NewS3Client(
 		os.Stderr,
