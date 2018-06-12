@@ -24,18 +24,15 @@ func main() {
 	var request in.Request
 	inputRequest(&request)
 
-	b := s3resource.AwsConfigBuilder{
-		AccessKey: request.Source.AccessKeyID,
-		SecretKey: request.Source.SecretAccessKey,
-		SessionToken: request.Source.SessionToken,
-		RegionName: request.Source.RegionName,
-		Endpoint: request.Source.Endpoint,
-		DisableSSL: request.Source.DisableSSL,
-		SkipSSLVerification: request.Source.SkipSSLVerification,
-		AssumeRoleArn: request.Source.AssumeRoleArn,
-	}
-
-	awsConfig := b.Build()
+	awsConfig := s3resource.NewAwsConfig(
+		request.Source.AccessKeyID,
+		request.Source.SecretAccessKey,
+		request.Source.SessionToken,
+		request.Source.RegionName,
+		request.Source.Endpoint,
+		request.Source.DisableSSL,
+		request.Source.SkipSSLVerification,
+	)
 
 	if len(request.Source.CloudfrontURL) != 0 {
 		cloudfrontUrl, err := url.ParseRequestURI(request.Source.CloudfrontURL)
