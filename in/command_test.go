@@ -79,6 +79,18 @@ var _ = Describe("In Command", func() {
 			})
 		})
 
+		Context("when configured to skip download", func() {
+			BeforeEach(func() {
+				request.Source.SkipDownload = true
+			})
+
+			It("doesn't download the file", func() {
+				_, err := command.Run(destDir, request)
+				Ω(err).ShouldNot(HaveOccurred())
+				Ω(s3client.DownloadFileCallCount()).Should(Equal(0))
+			})
+		})
+
 		Context("when there is an existing version in the request", func() {
 			BeforeEach(func() {
 				request.Version.Path = "files/a-file-1.3"

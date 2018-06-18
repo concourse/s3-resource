@@ -98,30 +98,32 @@ func (command *Command) Run(destinationDir string, request Request) (Response, e
 			}
 		}
 	} else {
-		err = command.downloadFile(
-			request.Source.Bucket,
-			remotePath,
-			versionID,
-			destinationDir,
-			path.Base(remotePath),
-		)
-		if err != nil {
-			return Response{}, err
-		}
 
-		if request.Params.Unpack {
-			destinationPath := filepath.Join(destinationDir, path.Base(remotePath))
-			mime := archiveMimetype(destinationPath)
-			if mime == "" {
-				return Response{}, fmt.Errorf("not an archive: %s", destinationPath)
-			}
-
-			err = extractArchive(mime, destinationPath)
+		if !request.Source.SkipDownload {
+			err = command.downloadFile(
+				request.Source.Bucket,
+				remotePath,
+				versionID,
+				destinationDir,
+				path.Base(remotePath),
+			)
 			if err != nil {
 				return Response{}, err
 			}
-		}
 
+			if request.Params.Unpack {
+				destinationPath := filepath.Join(destinationDir, path.Base(remotePath))
+				mime := archiveMimetype(destinationPath)
+				if mime == "" {
+					return Response{}, fmt.Errorf("not an archive: %s", destinationPath)
+				}
+
+				err = extractArchive(mime, destinationPath)
+				if err != nil {
+					return Response{}, err
+				}
+			}
+		}
 		url = command.urlProvider.GetURL(request, remotePath)
 		if err = command.writeURLFile(destinationDir, url); err != nil {
 			return Response{}, err
