@@ -8,6 +8,7 @@ import (
 	"os"
 	"path"
 	"path/filepath"
+	"strconv"
 
 	"github.com/concourse/s3-resource"
 	"github.com/concourse/s3-resource/versions"
@@ -56,6 +57,7 @@ func (command *Command) Run(destinationDir string, request Request) (Response, e
 	var versionID string
 	var url string
 	var isInitialVersion bool
+	var skipDownload bool
 
 	if request.Source.Regexp != "" {
 		if request.Version.Path == "" {
@@ -99,7 +101,16 @@ func (command *Command) Run(destinationDir string, request Request) (Response, e
 		}
 	} else {
 
-		if !request.Source.SkipDownload {
+		if request.Params.SkipDownload != "" {
+			skipDownload, err = strconv.ParseBool(request.Params.SkipDownload)
+			if err != nil {
+				return Response{}, fmt.Errorf("skip_download defined but invalid value: %s", request.Params.SkipDownload)
+			}
+		} else {
+			skipDownload = request.Source.SkipDownload
+		}
+
+		if !skipDownload {
 			err = command.downloadFile(
 				request.Source.Bucket,
 				remotePath,
