@@ -386,10 +386,12 @@ func (client *s3client) getVersionedBucketContents(bucketName string, prefix str
 
 		params := &s3.ListObjectVersionsInput{
 			Bucket:    aws.String(bucketName),
-			KeyMarker: aws.String(keyMarker),
 			Prefix:    aws.String(prefix),
 		}
 
+		if keyMarker != "" {
+			params.KeyMarker = aws.String(keyMarker)
+		}
 		if versionMarker != "" {
 			params.VersionIdMarker = aws.String(versionMarker)
 		}
