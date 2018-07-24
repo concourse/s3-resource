@@ -21,6 +21,7 @@ type Source struct {
 	InitialPath          string `json:"initial_path"`
 	InitialContentText   string `json:"initial_content_text"`
 	InitialContentBinary string `json:"initial_content_binary"`
+	DisableMultipart     bool   `json:"disable_multipart"`
 }
 
 func (source Source) IsValid() (bool, string) {

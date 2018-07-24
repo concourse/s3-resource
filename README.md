@@ -47,6 +47,8 @@ version numbers.
 
 * `use_v2_signing`: *Optional.* Use signature v2 signing, useful for S3 compatible providers that do not support v4.
 
+* `disable_multipart`: *Optional.* Disable Multipart Upload. useful for S3 compatible providers that do not support multipart upload.
+
 ### File Names
 
 One of the following two options must be specified:
