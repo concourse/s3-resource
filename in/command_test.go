@@ -79,7 +79,7 @@ var _ = Describe("In Command", func() {
 			})
 		})
 
-		Context("when configured to skip download", func() {
+		Context("when configured globaly to skip download", func() {
 			BeforeEach(func() {
 				request.Source.SkipDownload = true
 			})
@@ -88,6 +88,43 @@ var _ = Describe("In Command", func() {
 				_, err := command.Run(destDir, request)
 				Ω(err).ShouldNot(HaveOccurred())
 				Ω(s3client.DownloadFileCallCount()).Should(Equal(0))
+			})
+		})
+
+		Context("when configured localy to skip download", func() {
+			BeforeEach(func() {
+				request.Params.SkipDownload = "true"
+			})
+
+			It("doesn't download the file", func() {
+				_, err := command.Run(destDir, request)
+				Ω(err).ShouldNot(HaveOccurred())
+				Ω(s3client.DownloadFileCallCount()).Should(Equal(0))
+			})
+		})
+
+		Context("when override localy to not skip download", func() {
+			BeforeEach(func() {
+				request.Source.SkipDownload = true
+				request.Params.SkipDownload = "false"
+			})
+
+			It("doesn't download the file", func() {
+				_, err := command.Run(destDir, request)
+				Ω(err).ShouldNot(HaveOccurred())
+				Ω(s3client.DownloadFileCallCount()).Should(Equal(1))
+			})
+		})
+
+		Context("when override using a wrong value for local skipdownload", func() {
+			BeforeEach(func() {
+				request.Params.SkipDownload = "foo"
+			})
+
+			It("doesn't download the file", func() {
+				_, err := command.Run(destDir, request)
+				Expect(err).To(HaveOccurred())
+				Expect(err.Error()).To(ContainSubstring("skip_download defined but invalid value"))
 			})
 		})
 

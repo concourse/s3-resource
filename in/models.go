@@ -9,7 +9,8 @@ type Request struct {
 }
 
 type Params struct {
-	Unpack bool `json:"unpack"`
+	Unpack       bool   `json:"unpack"`
+	SkipDownload string `json:"skip_download"`
 }
 
 type Response struct {
