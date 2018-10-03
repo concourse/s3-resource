@@ -113,26 +113,31 @@ var _ = SynchronizedBeforeSuite(func() []byte {
 	inPath = sd.InPath
 	outPath = sd.OutPath
 
-	if useInstanceProfile == "" {
-		Ω(accessKeyID).ShouldNot(BeEmpty(),
-			"must specify $S3_TESTING_ACCESS_KEY_ID or $S3_USE_INSTANCE_PROFILE=true")
-		Ω(secretAccessKey).ShouldNot(BeEmpty(),
-			"must specify $S3_TESTING_SECRET_ACCESS_KEY or $S3_USE_INSTANCE_PROFILE=true")
+	if useInstanceProfile != "" || accessKeyID != "" || secretAccessKey != "" {
+		if useInstanceProfile == "" {
+			Ω(accessKeyID).ShouldNot(BeEmpty(),
+				"must specify $S3_TESTING_ACCESS_KEY_ID or $S3_USE_INSTANCE_PROFILE=true")
+			Ω(secretAccessKey).ShouldNot(BeEmpty(),
+				"must specify $S3_TESTING_SECRET_ACCESS_KEY or $S3_USE_INSTANCE_PROFILE=true")
+		}
+		Ω(versionedBucketName).ShouldNot(BeEmpty(), "must specify $S3_VERSIONED_TESTING_BUCKET")
+		Ω(bucketName).ShouldNot(BeEmpty(), "must specify $S3_TESTING_BUCKET")
+		Ω(regionName).ShouldNot(BeEmpty(), "must specify $S3_TESTING_REGION")
+		Ω(endpoint).ShouldNot(BeEmpty(), "must specify $S3_ENDPOINT")
+
+		awsConfig = s3resource.NewAwsConfig(
+		       accessKeyID,
+		       secretAccessKey,
+		       sessionToken,
+		       regionName,
+		       endpoint,
+		       false,
+		       false,
+		)
+
+		s3Service = s3.New(session.New(awsConfig), awsConfig)
+		s3client = s3resource.NewS3Client(ioutil.Discard, awsConfig, v2signing == "true")
 	}
-	Ω(versionedBucketName).ShouldNot(BeEmpty(), "must specify $S3_VERSIONED_TESTING_BUCKET")
-	Ω(bucketName).ShouldNot(BeEmpty(), "must specify $S3_TESTING_BUCKET")
-	Ω(regionName).ShouldNot(BeEmpty(), "must specify $S3_TESTING_REGION")
-
-	awsConfig := s3resource.NewAwsConfig(
-		accessKeyID,
-		secretAccessKey,
-		regionName,
-		endpoint,
-		false,
-	)
-
-	s3Service = s3.New(session.New(awsConfig), awsConfig)
-	s3client = s3resource.NewS3Client(ioutil.Discard, awsConfig, v2signing == "true")
 })
 
 var _ = BeforeEach(func() {
