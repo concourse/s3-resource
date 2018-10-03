@@ -23,6 +23,7 @@ ARG S3_TESTING_BUCKET
 ARG S3_TESTING_REGION
 ARG S3_ENDPOINT
 ARG TEST_SESSION_TOKEN
+ARG S3_USE_INSTANCE_PROFILE
 COPY --from=builder /tests /go-tests
 WORKDIR /go-tests
 RUN set -e; for test in /go-tests/*.test; do \
