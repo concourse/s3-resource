@@ -90,6 +90,20 @@ func (e Extractions) Swap(i int, j int) {
 	e[i], e[j] = e[j], e[i]
 }
 
+type StringExtractions []Extraction
+
+func (e StringExtractions) Len() int {
+	return len(e)
+}
+
+func (e StringExtractions) Less(i int, j int) bool {
+	return e[i].VersionNumber < e[j].VersionNumber
+}
+
+func (e StringExtractions) Swap(i int, j int) {
+	e[i], e[j] = e[j], e[i]
+}
+
 type Extraction struct {
 	// path to s3 object in bucket
 	Path string
@@ -149,7 +163,11 @@ func GetBucketFileVersions(client s3resource.S3Client, source s3resource.Source)
 		}
 	}
 
-	sort.Sort(extractions)
+	if source.StringSort {
+		sort.Sort(StringExtractions(extractions))
+	} else {
+		sort.Sort(extractions)
+	}
 
 	return extractions
 }

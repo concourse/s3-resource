@@ -213,5 +213,66 @@ var _ = Describe("Check Command", func() {
 				})
 			})
 		})
+
+	})
+})
+
+var _ = Describe("Check Command", func() {
+	Describe("running the command", func() {
+		var (
+			tmpPath string
+			request Request
+
+			s3client *fakes.FakeS3Client
+			command  *Command
+		)
+
+		BeforeEach(func() {
+			var err error
+			tmpPath, err = ioutil.TempDir("", "check_command")
+			Ω(err).ShouldNot(HaveOccurred())
+
+			request = Request{
+				Source: s3resource.Source{
+					Bucket: "bucket-name",
+				},
+			}
+
+			s3client = &fakes.FakeS3Client{}
+			command = NewCommand(s3client)
+
+			s3client.BucketFilesReturns([]string{
+				"files/abc-2018.10.02.tgz",
+				"files/abc-2018.09.10.tgz",
+			}, nil)
+		})
+
+		AfterEach(func() {
+			err := os.RemoveAll(tmpPath)
+			Ω(err).ShouldNot(HaveOccurred())
+		})
+
+		Context("when we want to sort in reverse order", func() {
+			It("includes all versions from the previous one and the current one in reverse order", func() {
+				request.Version.Path = "files/abc-2018.10.02.tgz"
+				request.Source.Regexp = "files/abc-(.*).tgz"
+				request.Source.StringSort = true
+
+				response, err := command.Run(request)
+				Ω(err).ShouldNot(HaveOccurred())
+
+				Ω(response).Should(HaveLen(2))
+				Ω(response[0]).Should(Equal(
+					s3resource.Version{
+						Path: "files/abc-2018.09.10.tgz",
+					},
+				))
+				Ω(response[1]).Should(Equal(
+					s3resource.Version{
+						Path: "files/abc-2018.10.02.tgz",
+					},
+				))
+			})
+		})
 	})
 })

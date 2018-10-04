@@ -46,6 +46,7 @@ version numbers.
   used for the object.
 
 * `use_v2_signing`: *Optional.* Use signature v2 signing, useful for S3 compatible providers that do not support v4.
+* `string_sort`: *Optional.* Sort the string values of the regular expression matches. Requires `regexp` to be set.
 
 ### File Names
 

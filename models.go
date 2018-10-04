@@ -6,6 +6,7 @@ type Source struct {
 	SessionToken         string `json:"session_token"`
 	Bucket               string `json:"bucket"`
 	Regexp               string `json:"regexp"`
+	StringSort           bool   `json:"string_sort"`
 	VersionedFile        string `json:"versioned_file"`
 	Private              bool   `json:"private"`
 	RegionName           string `json:"region_name"`
