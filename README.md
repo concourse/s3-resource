@@ -58,7 +58,9 @@ One of the following two options must be specified:
 
   The version extracted from this pattern is used to version the resource.
   Semantic versions, or just numbers, are supported. Accordingly, full regular
-  expressions are supported, to specify the capture groups.
+  expressions are supported, to specify the capture groups. A versioned S3 bucket
+  does not work well with multiple file uploads using the same version number. Use
+  `versioned_file` instead.
 
 * `versioned_file`: *Optional* If you enable versioning for your S3 bucket then
   you can keep the file name the same and upload new versions of your file
@@ -126,7 +128,7 @@ a new version of that file.
   for the uploaded object.
 
 * `content_type`: *Optional.* MIME [Content-Type](https://www.w3.org/Protocols/rfc2616/rfc2616-sec14.html#sec14.17)
-  describing the contents of the uploaded object
+  describing the contents of the uploaded object.
 
 ## Example Configuration
 
@@ -226,14 +228,20 @@ docker build -t s3-resource .
 #### Integration tests
 
 The integration requires two AWS S3 buckets, one without versioning and another
-with. The `docker build` step requires setting `--build-args` so the
-integration will run.
+with versioning enabled. The `docker build` step requires setting `--build-args`
+so the integration will run.
 
 Run the tests with the following command:
 
 ```sh
 docker build . -t s3-resource --build-arg S3_TESTING_ACCESS_KEY_ID="access-key" --build-arg S3_TESTING_SECRET_ACCESS_KEY="some-secret" --build-arg S3_TESTING_BUCKET="bucket-non-versioned" --build-arg S3_VERSIONED_TESTING_BUCKET="bucket-versioned" --build-arg S3_TESTING_REGION="us-east-1" --build-arg S3_ENDPOINT="https://s3.amazonaws.com"
 ```
+
+### Notes
+
+The resource will cache uploaded (`put`) and downloaded (`get`) files. If
+`regexp` is used, this might not always pull the latest version from a
+versioned S3 bucket.
 
 ### Contributing
 
