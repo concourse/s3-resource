@@ -1,6 +1,7 @@
 package out
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
@@ -49,6 +50,25 @@ func (command *Command) Run(sourceDir string, request Request) (Response, error)
 	localPath, err := command.match(request.Params, sourceDir)
 	if err != nil {
 		return Response{}, err
+	}
+
+	if request.Source.Debug {
+		outfile, err := os.Create(fmt.Sprintf("%s/out-request", os.Getenv("TMPDIR")))
+		defer outfile.Close()
+		if err != nil {
+			return Response{}, err
+		}
+
+		enc := json.NewEncoder(outfile)
+		enc.SetIndent("", "\t")
+
+		err = enc.Encode(Request{
+			Source: s3resource.RedactSource(request.Source),
+			Params: request.Params,
+		})
+		if err != nil {
+			return Response{}, err
+		}
 	}
 
 	remotePath := command.remotePath(request, localPath, sourceDir)

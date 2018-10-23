@@ -4,6 +4,8 @@ import (
 	"archive/tar"
 	"archive/zip"
 	"compress/gzip"
+	"encoding/json"
+	"fmt"
 	"io"
 	"io/ioutil"
 	"log"
@@ -580,6 +582,30 @@ var _ = Describe("In Command", func() {
 				contents, err := ioutil.ReadFile(contentFile)
 				Ω(err).ShouldNot(HaveOccurred())
 				Ω(string(contents)).Should(Equal(request.Source.InitialContentText))
+			})
+		})
+
+		Context("when debug is enabled", func() {
+			It("should output a valid resource with fields redacted", func() {
+				request.Source.Debug = true
+				request.Source.AccessKeyID = "test-access-key"
+				request.Source.SecretAccessKey = "test-secret-key"
+				request.Source.SSEKMSKeyId = "test-kms-key-id"
+
+				_, err := command.Run(destDir, request)
+				Expect(err).NotTo(HaveOccurred())
+
+				file, err := os.Open(fmt.Sprintf("%s/in-request", os.Getenv("TMPDIR")))
+				Expect(err).NotTo(HaveOccurred())
+				defer file.Close()
+
+				var r Request
+				err = json.NewDecoder(file).Decode(&r)
+				Expect(err).NotTo(HaveOccurred())
+
+				Expect(r.Source.AccessKeyID).To(Equal("redacted"))
+				Expect(r.Source.SecretAccessKey).To(Equal("redacted"))
+				Expect(r.Source.SSEKMSKeyId).To(Equal("redacted"))
 			})
 		})
 	})

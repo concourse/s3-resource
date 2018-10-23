@@ -47,6 +47,8 @@ version numbers.
 
 * `use_v2_signing`: *Optional.* Use signature v2 signing, useful for S3 compatible providers that do not support v4.
 
+* `debug`: *Optional.* If true, the file `$TMPDIR/{check,in,out}-request` will be generated with the values passed to the script, with sensitive information redacted.
+
 ### File Names
 
 One of the following two options must be specified:

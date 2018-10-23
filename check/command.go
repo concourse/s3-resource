@@ -1,7 +1,10 @@
 package check
 
 import (
+	"encoding/json"
 	"errors"
+	"fmt"
+	"os"
 
 	"github.com/concourse/s3-resource"
 	"github.com/concourse/s3-resource/versions"
@@ -20,6 +23,25 @@ func NewCommand(s3client s3resource.S3Client) *Command {
 func (command *Command) Run(request Request) (Response, error) {
 	if ok, message := request.Source.IsValid(); !ok {
 		return Response{}, errors.New(message)
+	}
+
+	if request.Source.Debug {
+		outfile, err := os.Create(fmt.Sprintf("%s/check-request", os.Getenv("TMPDIR")))
+		defer outfile.Close()
+		if err != nil {
+			return Response{}, err
+		}
+
+		enc := json.NewEncoder(outfile)
+		enc.SetIndent("", "\t")
+
+		err = enc.Encode(Request{
+			Source:  s3resource.RedactSource(request.Source),
+			Version: request.Version,
+		})
+		if err != nil {
+			return Response{}, err
+		}
 	}
 
 	if request.Source.Regexp != "" {

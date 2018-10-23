@@ -2,6 +2,7 @@ package in
 
 import (
 	"encoding/base64"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"io/ioutil"
@@ -45,6 +46,26 @@ func NewCommand(s3client s3resource.S3Client) *Command {
 func (command *Command) Run(destinationDir string, request Request) (Response, error) {
 	if ok, message := request.Source.IsValid(); !ok {
 		return Response{}, errors.New(message)
+	}
+
+	if request.Source.Debug {
+		outfile, err := os.Create(fmt.Sprintf("%s/in-request", os.Getenv("TMPDIR")))
+		defer outfile.Close()
+		if err != nil {
+			return Response{}, err
+		}
+
+		enc := json.NewEncoder(outfile)
+		enc.SetIndent("", "\t")
+
+		err = enc.Encode(Request{
+			Source:  s3resource.RedactSource(request.Source),
+			Version: request.Version,
+			Params:  request.Params,
+		})
+		if err != nil {
+			return Response{}, err
+		}
 	}
 
 	err := os.MkdirAll(destinationDir, 0755)

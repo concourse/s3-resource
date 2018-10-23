@@ -1,6 +1,8 @@
 package out_test
 
 import (
+	"encoding/json"
+	"fmt"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -384,6 +386,30 @@ var _ = Describe("Out Command", func() {
 				_, _, _, options := s3client.UploadFileArgsForCall(0)
 
 				Ω(options.ContentType).Should(Equal(""))
+			})
+		})
+
+		Context("when debug is enabled", func() {
+			It("should output a valid resource with fields redacted", func() {
+				request.Source.Debug = true
+				request.Source.AccessKeyID = "test-access-key"
+				request.Source.SecretAccessKey = "test-secret-key"
+				request.Source.SSEKMSKeyId = "test-kms-key-id"
+
+				_, err := command.Run(sourceDir, request)
+				Expect(err).NotTo(HaveOccurred())
+
+				file, err := os.Open(fmt.Sprintf("%s/out-request", os.Getenv("TMPDIR")))
+				Expect(err).NotTo(HaveOccurred())
+				defer file.Close()
+
+				var r out.Request
+				err = json.NewDecoder(file).Decode(&r)
+				Expect(err).NotTo(HaveOccurred())
+
+				Expect(r.Source.AccessKeyID).To(Equal("redacted"))
+				Expect(r.Source.SecretAccessKey).To(Equal("redacted"))
+				Expect(r.Source.SSEKMSKeyId).To(Equal("redacted"))
 			})
 		})
 	})
