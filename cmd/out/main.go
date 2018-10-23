@@ -14,6 +14,8 @@ func main() {
 		os.Exit(1)
 	}
 
+	s3resource.Sayf("S3 resource: start\n\n")
+
 	var request out.Request
 	inputRequest(&request)
 
@@ -42,6 +44,8 @@ func main() {
 	}
 
 	outputResponse(response)
+
+	s3resource.Sayf("\nS3 resource: finish\n")
 }
 
 func inputRequest(request *out.Request) {

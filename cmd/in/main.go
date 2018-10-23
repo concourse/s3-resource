@@ -2,10 +2,9 @@ package main
 
 import (
 	"encoding/json"
-	"os"
-
 	"fmt"
 	"net/url"
+	"os"
 	"strings"
 
 	"github.com/aws/aws-sdk-go/aws"
@@ -18,6 +17,8 @@ func main() {
 		s3resource.Sayf("usage: %s <dest directory>\n", os.Args[0])
 		os.Exit(1)
 	}
+
+	s3resource.Sayf("S3 resource: start\n\n")
 
 	destinationDir := os.Args[1]
 
@@ -64,6 +65,8 @@ func main() {
 	}
 
 	outputResponse(response)
+
+	s3resource.Sayf("\nS3 resource: finish\n")
 }
 
 func inputRequest(request *in.Request) {
