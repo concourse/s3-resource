@@ -47,6 +47,8 @@ version numbers.
 
 * `use_v2_signing`: *Optional.* Use signature v2 signing, useful for S3 compatible providers that do not support v4.
 
+* `debug`: *Optional.* Whether or not to enable debugging aws sdk
+
 ### File Names
 
 One of the following two options must be specified:
