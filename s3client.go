@@ -13,6 +13,7 @@ import (
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/credentials"
+	"github.com/aws/aws-sdk-go/aws/request"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/s3"
 	"github.com/aws/aws-sdk-go/service/s3/s3manager"
@@ -46,10 +47,13 @@ type s3client struct {
 }
 
 type UploadFileOptions struct {
-	Acl                  string
-	ServerSideEncryption string
-	KmsKeyId             string
-	ContentType          string
+	Acl                    string
+	ServerSideEncryption   string
+	KmsKeyId               string
+	ContentType            string
+	DisableMultipartUpload bool
+	Debug                  bool
+	UsePut                 bool
 }
 
 func NewUploadFileOptions() UploadFileOptions {
@@ -86,6 +90,7 @@ func NewAwsConfig(
 	endpoint string,
 	disableSSL bool,
 	skipSSLVerification bool,
+	debug bool,
 ) *aws.Config {
 	var creds *credentials.Credentials
 
@@ -115,6 +120,13 @@ func NewAwsConfig(
 		MaxRetries:       aws.Int(maxRetries),
 		DisableSSL:       aws.Bool(disableSSL),
 		HTTPClient:       httpClient,
+	}
+
+	if debug {
+		awsConfig.LogLevel = aws.LogLevel(aws.LogDebugWithHTTPBody)
+		awsConfig.Logger = aws.LoggerFunc(func(args ...interface{}) {
+			fmt.Fprintln(os.Stderr, args...)
+		})
 	}
 
 	if len(endpoint) != 0 {
@@ -166,6 +178,7 @@ func (client *s3client) BucketFileVersions(bucketName string, remotePath string)
 }
 
 func (client *s3client) UploadFile(bucketName string, remotePath string, localPath string, options UploadFileOptions) (string, error) {
+
 	uploader := s3manager.NewUploaderWithClient(client.client)
 
 	if client.isGCSHost() {
@@ -214,6 +227,20 @@ func (client *s3client) UploadFile(bucketName string, remotePath string, localPa
 	}
 	if options.ContentType != "" {
 		uploadInput.ContentType = aws.String(options.ContentType)
+	}
+
+	if options.DisableMultipartUpload {
+		uploader.MaxUploadParts = 1
+		uploader.PartSize = stat.Size()
+		if options.Debug {
+			fmt.Fprintln(os.Stderr, "Setting MaxUploadParts to 1")
+			fmt.Fprintln(os.Stderr, fmt.Sprintf("Setting PartSize to %d", stat.Size()))
+		}
+	}
+	if options.UsePut {
+		uploader.RequestOptions = append(uploader.RequestOptions, func(theRequest *request.Request) {
+			theRequest.Operation.HTTPMethod = "PUT"
+		})
 	}
 
 	uploadOutput, err := uploader.Upload(&uploadInput)

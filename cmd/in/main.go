@@ -32,6 +32,7 @@ func main() {
 		request.Source.Endpoint,
 		request.Source.DisableSSL,
 		request.Source.SkipSSLVerification,
+		request.Source.Debug,
 	)
 
 	if len(request.Source.CloudfrontURL) != 0 {
