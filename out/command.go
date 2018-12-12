@@ -64,9 +64,7 @@ func (command *Command) Run(sourceDir string, request Request) (Response, error)
 	options.ContentType = request.Params.ContentType
 	options.ServerSideEncryption = request.Source.ServerSideEncryption
 	options.KmsKeyId = request.Source.SSEKMSKeyId
-	options.DisableMultipartUpload = request.Source.DisableMultipartUpload
-	options.Debug = request.Source.Debug
-	options.UsePut = request.Source.UsePut
+	options.DisableMultipart = request.Source.DisableMultipart
 
 	if request.Source.Debug {
 		fmt.Fprintln(os.Stderr, fmt.Sprintf("Upload options: %v", options))
