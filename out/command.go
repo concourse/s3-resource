@@ -64,6 +64,7 @@ func (command *Command) Run(sourceDir string, request Request) (Response, error)
 	options.ContentType = request.Params.ContentType
 	options.ServerSideEncryption = request.Source.ServerSideEncryption
 	options.KmsKeyId = request.Source.SSEKMSKeyId
+	options.DisableMultipart = request.Source.DisableMultipart
 
 	versionID, err := command.s3client.UploadFile(
 		bucketName,
