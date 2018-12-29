@@ -4,6 +4,7 @@ import (
 	"crypto/tls"
 	"errors"
 	"fmt"
+	"github.com/aws/aws-sdk-go/aws/defaults"
 	"io"
 	"os"
 	"strings"
@@ -91,7 +92,7 @@ func NewAwsConfig(
 	var creds *credentials.Credentials
 
 	if accessKey == "" && secretKey == "" {
-		creds = credentials.AnonymousCredentials
+		creds = defaults.Get().Config.Credentials
 	} else {
 		creds = credentials.NewStaticCredentials(accessKey, secretKey, sessionToken)
 	}
