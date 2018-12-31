@@ -13,7 +13,6 @@ import (
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/credentials"
-	"github.com/aws/aws-sdk-go/aws/defaults"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/s3"
 	"github.com/aws/aws-sdk-go/service/s3/s3manager"
@@ -100,7 +99,6 @@ func NewAwsConfig(
 
 	awsConfig := &aws.Config{
 		Region:           aws.String(regionName),
-		Credentials:      creds,
 		S3ForcePathStyle: aws.Bool(true),
 		MaxRetries:       aws.Int(maxRetries),
 		DisableSSL:       aws.Bool(disableSSL),
