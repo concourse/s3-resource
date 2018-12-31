@@ -4,7 +4,6 @@ import (
 	"crypto/tls"
 	"errors"
 	"fmt"
-	"github.com/aws/aws-sdk-go/aws/defaults"
 	"io"
 	"os"
 	"strings"
@@ -14,6 +13,7 @@ import (
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/credentials"
+	"github.com/aws/aws-sdk-go/aws/defaults"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/s3"
 	"github.com/aws/aws-sdk-go/service/s3/s3manager"
@@ -65,7 +65,7 @@ func NewS3Client(
 	awsConfig *aws.Config,
 	useV2Signing bool,
 ) S3Client {
-	sess := session.New(awsConfig)
+	sess := session.Must(session.NewSession())
 	client := s3.New(sess, awsConfig)
 
 	if useV2Signing {
@@ -89,18 +89,6 @@ func NewAwsConfig(
 	disableSSL bool,
 	skipSSLVerification bool,
 ) *aws.Config {
-	var creds *credentials.Credentials
-
-	if accessKey == "" && secretKey == "" {
-		creds = defaults.Get().Config.Credentials
-	} else {
-		creds = credentials.NewStaticCredentials(accessKey, secretKey, sessionToken)
-	}
-
-	if len(regionName) == 0 {
-		regionName = "us-east-1"
-	}
-
 	var httpClient *http.Client
 	if skipSSLVerification {
 		httpClient = &http.Client{Transport: &http.Transport{
@@ -117,6 +105,16 @@ func NewAwsConfig(
 		MaxRetries:       aws.Int(maxRetries),
 		DisableSSL:       aws.Bool(disableSSL),
 		HTTPClient:       httpClient,
+	}
+
+	if accessKey == "" && secretKey == "" {
+		awsConfig.Credentials = credentials.NewStaticCredentials(accessKey, secretKey, sessionToken)
+	} else {
+		println("Using default credential chain for authentication.")
+	}
+
+	if len(regionName) == 0 {
+		regionName = "us-east-1"
 	}
 
 	if len(endpoint) != 0 {
