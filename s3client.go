@@ -105,7 +105,7 @@ func NewAwsConfig(
 		HTTPClient:       httpClient,
 	}
 
-	if accessKey == "" && secretKey == "" {
+	if accessKey != "" && secretKey != "" {
 		awsConfig.Credentials = credentials.NewStaticCredentials(accessKey, secretKey, sessionToken)
 	} else {
 		println("Using default credential chain for authentication.")
