@@ -49,8 +49,6 @@ version numbers.
 
 * `disable_multipart`: *Optional.* Disable Multipart Upload. useful for S3 compatible providers that do not support multipart upload.
 
-* `debug`: *Optional.* Whether or not to enable debugging aws sdk
-
 ### File Names
 
 One of the following two options must be specified:

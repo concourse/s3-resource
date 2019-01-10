@@ -51,7 +51,6 @@ type UploadFileOptions struct {
 	KmsKeyId             string
 	ContentType          string
 	DisableMultipart     bool
-	Debug                bool
 }
 
 func NewUploadFileOptions() UploadFileOptions {
@@ -208,11 +207,6 @@ func (client *s3client) UploadFile(bucketName string, remotePath string, localPa
 		uploader.MaxUploadParts = 1
 		uploader.Concurrency = 1
 		uploader.PartSize = fSize + 1
-
-		if options.Debug {
-			fmt.Fprintln(os.Stderr, "Setting MaxUploadParts to 1")
-			fmt.Fprintln(os.Stderr, fmt.Sprintf("Setting PartSize to %d", stat.Size()))
-		}
 	}
 
 	progress := client.newProgressBar(fSize)
