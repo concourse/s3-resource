@@ -51,6 +51,7 @@ type UploadFileOptions struct {
 	KmsKeyId             string
 	ContentType          string
 	DisableMultipart     bool
+	Debug                bool
 }
 
 func NewUploadFileOptions() UploadFileOptions {
@@ -87,6 +88,7 @@ func NewAwsConfig(
 	endpoint string,
 	disableSSL bool,
 	skipSSLVerification bool,
+	debug bool,
 ) *aws.Config {
 	var creds *credentials.Credentials
 
@@ -116,6 +118,12 @@ func NewAwsConfig(
 		MaxRetries:       aws.Int(maxRetries),
 		DisableSSL:       aws.Bool(disableSSL),
 		HTTPClient:       httpClient,
+	}
+	if debug {
+		awsConfig.LogLevel = aws.LogLevel(aws.LogDebugWithHTTPBody)
+		awsConfig.Logger = aws.LoggerFunc(func(args ...interface{}) {
+			fmt.Fprintln(os.Stderr, args...)
+		})
 	}
 
 	if len(endpoint) != 0 {
@@ -200,6 +208,11 @@ func (client *s3client) UploadFile(bucketName string, remotePath string, localPa
 		uploader.MaxUploadParts = 1
 		uploader.Concurrency = 1
 		uploader.PartSize = fSize + 1
+
+		if options.Debug {
+			fmt.Fprintln(os.Stderr, "Setting MaxUploadParts to 1")
+			fmt.Fprintln(os.Stderr, fmt.Sprintf("Setting PartSize to %d", stat.Size()))
+		}
 	}
 
 	progress := client.newProgressBar(fSize)
