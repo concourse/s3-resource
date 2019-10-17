@@ -14,13 +14,13 @@ resources:
 - name: s3-resource
   type: git
   source:
-    uri: {{s3-resource-git-url}}
-    branch: {{s3-resource-git-branch}}
+    uri: ((s3-resource-git-url))
+    branch: ((s3-resource-git-branch))
 
 - name: docker-image-repo
   type: docker-image
   source:
-    email: {{docker-email}}
-    username: {{docker-username}}
-    password: {{docker-password}}
-    repository: {{docker-repository}}
+    email: ((docker-email))
+    username: ((docker-username))
+    password: ((docker-password))
+    repository: ((docker-repository))
