@@ -9,7 +9,7 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/concourse/s3-resource"
+	s3resource "github.com/concourse/s3-resource"
 	"github.com/concourse/s3-resource/versions"
 	"github.com/fatih/color"
 )
@@ -54,6 +54,16 @@ func (command *Command) Run(sourceDir string, request Request) (Response, error)
 	remotePath := command.remotePath(request, localPath, sourceDir)
 
 	bucketName := request.Source.Bucket
+
+	if request.Source.PreventFileOverwrite {
+		exists, err := command.s3client.FileExists(bucketName, remotePath)
+		if err != nil {
+			return Response{}, err
+		}
+		if exists {
+			return Response{}, fmt.Errorf("file %q already exists in bucket %q and PreventFileOverwrite is enabled", remotePath, bucketName)
+		}
+	}
 
 	options := s3resource.NewUploadFileOptions()
 

@@ -1,11 +1,13 @@
 package out_test
 
 import (
+	"errors"
 	"io/ioutil"
 	"os"
 	"path/filepath"
 
-	"github.com/concourse/s3-resource"
+	s3resource "github.com/concourse/s3-resource"
+
 	"github.com/concourse/s3-resource/fakes"
 	"github.com/concourse/s3-resource/out"
 	"github.com/onsi/gomega/gbytes"
@@ -44,6 +46,8 @@ var _ = Describe("Out Command", func() {
 			s3client = &fakes.FakeS3Client{}
 			stderr = gbytes.NewBuffer()
 			command = out.NewCommand(stderr, s3client)
+
+			s3client.FileExistsReturns(false, nil)
 		})
 
 		AfterEach(func() {
@@ -254,18 +258,19 @@ var _ = Describe("Out Command", func() {
 		})
 
 		Context("when using versioned buckets", func() {
+			const (
+				localFileName  = "not-the-same-name-as-versioned-file.tgz"
+				remoteFileName = "versioned-file.tgz"
+			)
+
 			BeforeEach(func() {
 				s3client.UploadFileReturns("123", nil)
-			})
-
-			It("renames the local file to match the name of the versioned file", func() {
-				localFileName := "not-the-same-name-as-versioned-file.tgz"
-				remoteFileName := "versioned-file.tgz"
-
 				request.Params.File = localFileName
 				request.Source.VersionedFile = remoteFileName
 				createFile(localFileName)
+			})
 
+			It("renames the local file to match the name of the versioned file", func() {
 				response, err := command.Run(sourceDir, request)
 
 				Ω(err).ShouldNot(HaveOccurred())
@@ -282,6 +287,43 @@ var _ = Describe("Out Command", func() {
 
 				Ω(response.Metadata[0].Name).Should(Equal("filename"))
 				Ω(response.Metadata[0].Value).Should(Equal(remoteFileName))
+			})
+
+			Context("when PreventFileOverwrite is configured on the source", func() {
+				BeforeEach(func() {
+					request.Source.PreventFileOverwrite = true
+				})
+
+				It("succeeds if the file doesn't exist in the bucket", func() {
+					s3client.FileExistsReturns(false, nil)
+
+					_, err := command.Run(sourceDir, request)
+					Expect(err).NotTo(HaveOccurred())
+
+					Expect(s3client.UploadFileCallCount()).To(Equal(1))
+				})
+
+				It("errors if the file exists in the bucket", func() {
+					s3client.FileExistsReturns(true, nil)
+
+					_, err := command.Run(sourceDir, request)
+					Expect(err).To(HaveOccurred())
+					Expect(err).To(MatchError(ContainSubstring("already exists")))
+					Expect(err).To(MatchError(ContainSubstring(remoteFileName)))
+					Expect(err).To(MatchError(ContainSubstring("bucket-name")))
+
+					Expect(s3client.UploadFileCallCount()).To(Equal(0))
+				})
+
+				It("errors if checking the file's existence errors", func() {
+					s3client.FileExistsReturns(false, errors.New("boom"))
+
+					_, err := command.Run(sourceDir, request)
+					Expect(err).To(HaveOccurred())
+					Expect(err).To(MatchError(ContainSubstring("boom")))
+
+					Expect(s3client.UploadFileCallCount()).To(Equal(0))
+				})
 			})
 		})
 
@@ -408,6 +450,5 @@ var _ = Describe("Out Command", func() {
 				Expect(response.Metadata[0].Value).To(Equal("special-file.tgz"))
 			})
 		})
-
 	})
 })

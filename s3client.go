@@ -25,6 +25,8 @@ type S3Client interface {
 	BucketFiles(bucketName string, prefixHint string) ([]string, error)
 	BucketFileVersions(bucketName string, remotePath string) ([]string, error)
 
+	FileExists(bucketName string, remotePath string) (bool, error)
+
 	UploadFile(bucketName string, remotePath string, localPath string, options UploadFileOptions) (string, error)
 	DownloadFile(bucketName string, remotePath string, versionID string, localPath string) error
 
@@ -164,6 +166,23 @@ func (client *s3client) BucketFileVersions(bucketName string, remotePath string)
 	}
 
 	return versions, nil
+}
+
+func (client *s3client) FileExists(bucketName string, remotePath string) (bool, error) {
+	headRequest := new(s3.HeadObjectInput)
+	headRequest.SetBucket(bucketName)
+	headRequest.SetKey(remotePath)
+
+	_, err := client.client.HeadObject(headRequest)
+	if err != nil {
+		requestFailure, ok := err.(s3.RequestFailure)
+		if ok && requestFailure.StatusCode() == 404 {
+			return false, nil
+		}
+		return false, err
+	}
+
+	return true, nil
 }
 
 func (client *s3client) UploadFile(bucketName string, remotePath string, localPath string, options UploadFileOptions) (string, error) {
