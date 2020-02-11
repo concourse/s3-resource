@@ -135,6 +135,19 @@ func (command *Command) Run(destinationDir string, request Request) (Response, e
 				}
 			}
 		}
+
+		if request.Params.DownloadTags {
+			err = command.downloadTags(
+				request.Source.Bucket,
+				remotePath,
+				versionID,
+				destinationDir,
+			)
+			if err != nil {
+				return Response{}, err
+			}
+		}
+
 		url = command.urlProvider.GetURL(request, remotePath)
 		if err = command.writeURLFile(destinationDir, url); err != nil {
 			return Response{}, err
@@ -177,6 +190,17 @@ func (command *Command) downloadFile(bucketName string, remotePath string, versi
 	localPath := filepath.Join(destinationDir, destinationFile)
 
 	return command.s3client.DownloadFile(
+		bucketName,
+		remotePath,
+		versionID,
+		localPath,
+	)
+}
+
+func (command *Command) downloadTags(bucketName string, remotePath string, versionID string, destinationDir string) error {
+	localPath := filepath.Join(destinationDir, "tags.json")
+
+	return command.s3client.DownloadTags(
 		bucketName,
 		remotePath,
 		versionID,

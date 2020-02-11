@@ -2,9 +2,11 @@ package s3resource
 
 import (
 	"crypto/tls"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
+	"io/ioutil"
 	"os"
 	"strings"
 	"time"
@@ -27,6 +29,9 @@ type S3Client interface {
 
 	UploadFile(bucketName string, remotePath string, localPath string, options UploadFileOptions) (string, error)
 	DownloadFile(bucketName string, remotePath string, versionID string, localPath string) error
+
+	SetTags(bucketName string, remotePath string, versionID string, tags map[string]string) error
+	DownloadTags(bucketName string, remotePath string, versionID string, localPath string) error
 
 	DeleteFile(bucketName string, remotePath string) error
 	DeleteVersionedFile(bucketName string, remotePath string, versionID string) error
@@ -281,6 +286,55 @@ func (client *s3client) DownloadFile(bucketName string, remotePath string, versi
 	}
 
 	return nil
+}
+
+func (client *s3client) SetTags(bucketName string, remotePath string, versionID string, tags map[string]string) error {
+	var tagSet []*s3.Tag
+	for key, value := range tags {
+		tagSet = append(tagSet, &s3.Tag{
+			Key:   aws.String(key),
+			Value: aws.String(value),
+		})
+	}
+
+	putObjectTagging := &s3.PutObjectTaggingInput{
+		Bucket:  aws.String(bucketName),
+		Key:     aws.String(remotePath),
+		Tagging: &s3.Tagging{TagSet: tagSet},
+	}
+	if versionID != "" {
+		putObjectTagging.VersionId = aws.String(versionID)
+	}
+
+	_, err := client.client.PutObjectTagging(putObjectTagging)
+	return err
+}
+
+func (client *s3client) DownloadTags(bucketName string, remotePath string, versionID string, localPath string) error {
+	getObjectTagging := &s3.GetObjectTaggingInput{
+		Bucket: aws.String(bucketName),
+		Key:    aws.String(remotePath),
+	}
+	if versionID != "" {
+		getObjectTagging.VersionId = aws.String(versionID)
+	}
+
+	objectTagging, err := client.client.GetObjectTagging(getObjectTagging)
+	if err != nil {
+		return err
+	}
+
+	tags := map[string]string{}
+	for _, tag := range objectTagging.TagSet {
+		tags[*tag.Key] = *tag.Value
+	}
+
+	tagsJSON, err := json.Marshal(tags)
+	if err != nil {
+		return err
+	}
+
+	return ioutil.WriteFile(localPath, tagsJSON, 0644)
 }
 
 func (client *s3client) URL(bucketName string, remotePath string, private bool, versionID string) string {

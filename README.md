@@ -103,11 +103,15 @@ Places the following files in the destination:
 
 * `version`: The version identified in the file name.
 
+* `tags.json`: The object's tags represented as a JSON object. Only written if `download_tags` is set to true.
+
 #### Parameters
 
-* `skip_download`: *Optional.* Skip downloading object from S3. Same parameter as source configuration but used to define/override by get. Value need to be a true/false string.
+* `skip_download`: *Optional.* Skip downloading object from S3. Same parameter as source configuration but used to define/override by get. Value needs to be a true/false string.
 
 * `unpack`: *Optional.* If true and the file is an archive (tar, gzipped tar, other gzipped file, or zip), unpack the file. Gzipped tarballs will be both ungzipped and untarred. It is ignored when `get` is running on the initial version.
+
+* `download_tags`: *Optional.* Write object tags to `tags.json`. Value needs to be a true/false string.
 
 ### `out`: Upload an object to the bucket.
 
