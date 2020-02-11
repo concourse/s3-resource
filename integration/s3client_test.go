@@ -56,6 +56,14 @@ var _ = Describe("S3client", func() {
 			err := s3client.DeleteVersionedFile(versionedBucketName, filepath.Join(directoryPrefix, "file-to-upload-2"), fileTwoVersion)
 			Ω(err).ShouldNot(HaveOccurred())
 		}
+
+		fileThreeVersions, err := s3client.BucketFileVersions(versionedBucketName, filepath.Join(directoryPrefix, "file-to-upload-3"))
+		Ω(err).ShouldNot(HaveOccurred())
+
+		for _, fileThreeVersion := range fileThreeVersions {
+			err := s3client.DeleteVersionedFile(versionedBucketName, filepath.Join(directoryPrefix, "file-to-upload-3"), fileThreeVersion)
+			Ω(err).ShouldNot(HaveOccurred())
+		}
 	})
 
 	It("can interact with buckets", func() {
