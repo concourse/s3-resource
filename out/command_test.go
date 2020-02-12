@@ -386,5 +386,28 @@ var _ = Describe("Out Command", func() {
 				Ω(options.ContentType).Should(Equal(""))
 			})
 		})
+
+		Context("when specifying disable multipart upload", func() {
+			It("uploads to the parent directory without multipart upload", func() {
+				request.Params.File = "my/special-file.tgz"
+				request.Source.Regexp = "a-folder/some-file-(.*).tgz"
+				request.Source.DisableMultipart = true
+				createFile("my/special-file.tgz")
+
+				response, err := command.Run(sourceDir, request)
+				Expect(err).ToNot(HaveOccurred())
+				Ω(s3client.UploadFileCallCount()).Should(Equal(1))
+
+				bucketName, remotePath, localPath, options := s3client.UploadFileArgsForCall(0)
+				Expect(bucketName).To(Equal("bucket-name"))
+				Expect(remotePath).To(Equal("a-folder/special-file.tgz"))
+				Expect(localPath).To(Equal(filepath.Join(sourceDir, "my/special-file.tgz")))
+				Ω(options).Should(Equal(s3resource.UploadFileOptions{Acl: "private", DisableMultipart: true}))
+
+				Expect(response.Metadata[0].Name).To(Equal("filename"))
+				Expect(response.Metadata[0].Value).To(Equal("special-file.tgz"))
+			})
+		})
+
 	})
 })

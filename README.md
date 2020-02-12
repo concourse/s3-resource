@@ -49,6 +49,8 @@ version numbers.
 
 * `use_v2_signing`: *Optional.* Use signature v2 signing, useful for S3 compatible providers that do not support v4.
 
+* `disable_multipart`: *Optional.* Disable Multipart Upload. useful for S3 compatible providers that do not support multipart upload.
+
 ### File Names
 
 One of the following two options must be specified:
@@ -219,10 +221,11 @@ environment is consistent across any `docker` enabled platform. When the docker
 image builds, the test are run inside the docker container, on failure they
 will stop the build.
 
-Run the tests with the following command:
+Run the tests with the following commands for both `alpine` and `ubuntu` images:
 
 ```sh
-docker build -t s3-resource .
+docker build -t s3-resource -f dockerfiles/alpine/Dockerfile .
+docker build -t s3-resource -f dockerfiles/ubuntu/Dockerfile .
 ```
 
 #### Integration tests
@@ -234,7 +237,21 @@ integration will run.
 Run the tests with the following command:
 
 ```sh
-docker build . -t s3-resource --build-arg S3_TESTING_ACCESS_KEY_ID="access-key" --build-arg S3_TESTING_SECRET_ACCESS_KEY="some-secret" --build-arg S3_TESTING_BUCKET="bucket-non-versioned" --build-arg S3_VERSIONED_TESTING_BUCKET="bucket-versioned" --build-arg S3_TESTING_REGION="us-east-1" --build-arg S3_ENDPOINT="https://s3.amazonaws.com"
+docker build . -t s3-resource -f dockerfiles/alpine/Dockerfile \
+  --build-arg S3_TESTING_ACCESS_KEY_ID="access-key" \
+  --build-arg S3_TESTING_SECRET_ACCESS_KEY="some-secret" \
+  --build-arg S3_TESTING_BUCKET="bucket-non-versioned" \
+  --build-arg S3_VERSIONED_TESTING_BUCKET="bucket-versioned" \
+  --build-arg S3_TESTING_REGION="us-east-1" \
+  --build-arg S3_ENDPOINT="https://s3.amazonaws.com"
+
+docker build . -t s3-resource -f dockerfiles/ubuntu/Dockerfile \
+  --build-arg S3_TESTING_ACCESS_KEY_ID="access-key" \
+  --build-arg S3_TESTING_SECRET_ACCESS_KEY="some-secret" \
+  --build-arg S3_TESTING_BUCKET="bucket-non-versioned" \
+  --build-arg S3_VERSIONED_TESTING_BUCKET="bucket-versioned" \
+  --build-arg S3_TESTING_REGION="us-east-1" \
+  --build-arg S3_ENDPOINT="https://s3.amazonaws.com"
 ```
 
 ### Contributing

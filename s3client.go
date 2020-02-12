@@ -52,6 +52,7 @@ type UploadFileOptions struct {
 	ServerSideEncryption string
 	KmsKeyId             string
 	ContentType          string
+	DisableMultipart     bool
 }
 
 func NewUploadFileOptions() UploadFileOptions {
@@ -200,12 +201,21 @@ func (client *s3client) UploadFile(bucketName string, remotePath string, localPa
 
 	// Automatically adjust partsize for larger files.
 	fSize := stat.Size()
-	if fSize > int64(uploader.MaxUploadParts) * uploader.PartSize {
-		partSize := fSize / int64(uploader.MaxUploadParts)
-		if fSize % int64(uploader.MaxUploadParts) != 0 {
-			partSize++
+	if !options.DisableMultipart {
+		if fSize > int64(uploader.MaxUploadParts)*uploader.PartSize {
+			partSize := fSize / int64(uploader.MaxUploadParts)
+			if fSize%int64(uploader.MaxUploadParts) != 0 {
+				partSize++
+			}
+			uploader.PartSize = partSize
 		}
-		uploader.PartSize = partSize
+	} else {
+		uploader.MaxUploadParts = 1
+		uploader.Concurrency = 1
+		uploader.PartSize = fSize + 1
+		if fSize <= s3manager.MinUploadPartSize {
+			uploader.PartSize = s3manager.MinUploadPartSize
+		}
 	}
 
 	progress := client.newProgressBar(fSize)
@@ -398,8 +408,8 @@ func (client *s3client) getVersionedBucketContents(bucketName string, prefix str
 	for {
 
 		params := &s3.ListObjectVersionsInput{
-			Bucket:    aws.String(bucketName),
-			Prefix:    aws.String(prefix),
+			Bucket: aws.String(bucketName),
+			Prefix: aws.String(prefix),
 		}
 
 		if keyMarker != "" {
