@@ -289,16 +289,49 @@ var _ = Describe("Out Command", func() {
 				Ω(response.Metadata[0].Value).Should(Equal(remoteFileName))
 			})
 
-			Context("when PreventFileOverwrite is configured on the source", func() {
+			Context("when OnOverwrite is 'allow'", func() {
 				BeforeEach(func() {
-					request.Source.PreventFileOverwrite = true
+					request.Source.OnOverwrite = "allow"
 				})
 
 				It("succeeds if the file doesn't exist in the bucket", func() {
 					s3client.FileExistsReturns(false, nil)
 
-					_, err := command.Run(sourceDir, request)
+					response, err := command.Run(sourceDir, request)
 					Expect(err).NotTo(HaveOccurred())
+					Expect(response.Version.VersionID).To(Equal("123"))
+					Expect(response.Metadata[0].Name).To(Equal("filename"))
+					Expect(response.Metadata[0].Value).To(Equal(remoteFileName))
+
+					Expect(s3client.UploadFileCallCount()).To(Equal(1))
+				})
+
+				It("succeeds if the file exists in the bucket", func() {
+					s3client.FileExistsReturns(true, nil)
+
+					response, err := command.Run(sourceDir, request)
+					Expect(err).NotTo(HaveOccurred())
+					Expect(response.Version.VersionID).To(Equal("123"))
+					Expect(response.Metadata[0].Name).To(Equal("filename"))
+					Expect(response.Metadata[0].Value).To(Equal(remoteFileName))
+
+					Expect(s3client.UploadFileCallCount()).To(Equal(1))
+				})
+			})
+
+			Context("when OnOverwrite is 'fail'", func() {
+				BeforeEach(func() {
+					request.Source.OnOverwrite = "fail"
+				})
+
+				It("succeeds if the file doesn't exist in the bucket", func() {
+					s3client.FileExistsReturns(false, nil)
+
+					response, err := command.Run(sourceDir, request)
+					Expect(err).NotTo(HaveOccurred())
+					Expect(response.Version.VersionID).To(Equal("123"))
+					Expect(response.Metadata[0].Name).To(Equal("filename"))
+					Expect(response.Metadata[0].Value).To(Equal(remoteFileName))
 
 					Expect(s3client.UploadFileCallCount()).To(Equal(1))
 				})
@@ -328,11 +361,13 @@ var _ = Describe("Out Command", func() {
 		})
 
 		Context("when using regexp", func() {
-			It("uploads to the parent directory", func() {
+			BeforeEach(func() {
 				request.Params.File = "my/special-file.tgz"
 				request.Source.Regexp = "a-folder/some-file-(.*).tgz"
 				createFile("my/special-file.tgz")
+			})
 
+			It("uploads to the parent directory", func() {
 				response, err := command.Run(sourceDir, request)
 				Expect(err).ToNot(HaveOccurred())
 
@@ -346,6 +381,118 @@ var _ = Describe("Out Command", func() {
 
 				Expect(response.Metadata[0].Name).To(Equal("filename"))
 				Expect(response.Metadata[0].Value).To(Equal("special-file.tgz"))
+			})
+
+			Context("when OnOverwrite is 'allow'", func() {
+				BeforeEach(func() {
+					request.Source.OnOverwrite = "allow"
+				})
+
+				It("succeeds if the file doesn't exist in the bucket", func() {
+					s3client.FileExistsReturns(false, nil)
+
+					response, err := command.Run(sourceDir, request)
+					Expect(err).NotTo(HaveOccurred())
+					Expect(response.Version.VersionID).To(Equal(""))
+					Expect(response.Metadata[0].Name).To(Equal("filename"))
+					Expect(response.Metadata[0].Value).To(Equal("special-file.tgz"))
+
+					Expect(s3client.UploadFileCallCount()).To(Equal(1))
+				})
+
+				It("succeeds if the file exists in the bucket", func() {
+					s3client.FileExistsReturns(true, nil)
+
+					response, err := command.Run(sourceDir, request)
+					Expect(err).NotTo(HaveOccurred())
+					Expect(response.Version.VersionID).To(Equal(""))
+					Expect(response.Metadata[0].Name).To(Equal("filename"))
+					Expect(response.Metadata[0].Value).To(Equal("special-file.tgz"))
+
+					Expect(s3client.UploadFileCallCount()).To(Equal(1))
+				})
+			})
+
+			Context("when OnOverwrite is 'fail'", func() {
+				BeforeEach(func() {
+					request.Source.OnOverwrite = "fail"
+				})
+
+				It("succeeds if the file doesn't exist in the bucket", func() {
+					s3client.FileExistsReturns(false, nil)
+
+					response, err := command.Run(sourceDir, request)
+					Expect(err).NotTo(HaveOccurred())
+					Expect(response.Version.VersionID).To(Equal(""))
+					Expect(response.Metadata[0].Name).To(Equal("filename"))
+					Expect(response.Metadata[0].Value).To(Equal("special-file.tgz"))
+
+					Expect(s3client.UploadFileCallCount()).To(Equal(1))
+				})
+
+				It("errors if the file exists in the bucket", func() {
+					s3client.FileExistsReturns(true, nil)
+
+					_, err := command.Run(sourceDir, request)
+					Expect(err).To(HaveOccurred())
+					Expect(err).To(MatchError(ContainSubstring("already exists")))
+					Expect(err).To(MatchError(ContainSubstring("special-file.tgz")))
+					Expect(err).To(MatchError(ContainSubstring("bucket-name")))
+
+					Expect(s3client.UploadFileCallCount()).To(Equal(0))
+				})
+
+				It("errors if checking the file's existence errors", func() {
+					s3client.FileExistsReturns(false, errors.New("boom"))
+
+					_, err := command.Run(sourceDir, request)
+					Expect(err).To(HaveOccurred())
+					Expect(err).To(MatchError(ContainSubstring("boom")))
+
+					Expect(s3client.UploadFileCallCount()).To(Equal(0))
+				})
+			})
+
+			Context("when OnOverwrite is 'ignore'", func() {
+				BeforeEach(func() {
+					request.Source.OnOverwrite = "ignore"
+				})
+
+				It("succeeds if the file doesn't exist in the bucket", func() {
+					s3client.FileExistsReturns(false, nil)
+
+					response, err := command.Run(sourceDir, request)
+					Expect(err).NotTo(HaveOccurred())
+					Expect(response.Version.VersionID).To(Equal(""))
+					Expect(response.Metadata[0].Name).To(Equal("filename"))
+					Expect(response.Metadata[0].Value).To(Equal("special-file.tgz"))
+
+					Expect(s3client.UploadFileCallCount()).To(Equal(1))
+				})
+
+				It("succeeds if the file exists in the bucket, but doesn't overwrite it", func() {
+					s3client.FileExistsReturns(true, nil)
+
+					response, err := command.Run(sourceDir, request)
+					Expect(err).NotTo(HaveOccurred())
+					Expect(response.Version.VersionID).To(Equal(""))
+					Expect(response.Metadata[0].Name).To(Equal("filename"))
+					Expect(response.Metadata[0].Value).To(Equal("special-file.tgz"))
+
+					Expect(stderr.Contents()).To(ContainSubstring("Nothing was written"))
+
+					Expect(s3client.UploadFileCallCount()).To(Equal(0))
+				})
+
+				It("errors if checking the file's existence errors", func() {
+					s3client.FileExistsReturns(false, errors.New("boom"))
+
+					_, err := command.Run(sourceDir, request)
+					Expect(err).To(HaveOccurred())
+					Expect(err).To(MatchError(ContainSubstring("boom")))
+
+					Expect(s3client.UploadFileCallCount()).To(Equal(0))
+				})
 			})
 		})
 

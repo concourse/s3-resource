@@ -55,14 +55,9 @@ func (command *Command) Run(sourceDir string, request Request) (Response, error)
 
 	bucketName := request.Source.Bucket
 
-	if request.Source.PreventFileOverwrite {
-		exists, err := command.s3client.FileExists(bucketName, remotePath)
-		if err != nil {
-			return Response{}, err
-		}
-		if exists {
-			return Response{}, fmt.Errorf("file %q already exists in bucket %q and PreventFileOverwrite is enabled", remotePath, bucketName)
-		}
+	response, done, err := command.handleOvewriteProtection(request, bucketName, remotePath)
+	if done {
+		return response, err
 	}
 
 	options := s3resource.NewUploadFileOptions()
@@ -102,6 +97,34 @@ func (command *Command) Run(sourceDir string, request Request) (Response, error)
 		Version:  version,
 		Metadata: command.metadata(bucketName, remotePath, request.Source.Private, versionID),
 	}, nil
+}
+
+func (command *Command) handleOvewriteProtection(request Request, bucketName string, remotePath string) (Response, bool, error) {
+	onOverwrite := request.Source.OnOverwrite
+	if onOverwrite == "" || onOverwrite == "allow" {
+		return Response{}, false, nil
+	}
+
+	exists, err := command.s3client.FileExists(bucketName, remotePath)
+	if err != nil {
+		return Response{}, true, err
+	}
+	if !exists {
+		return Response{}, false, nil
+	}
+
+	if onOverwrite == "ignore" {
+		command.stderr.Write([]byte(fmt.Sprintf(
+			"Nothing was written to s3. File %q already exists in bucket %q and on_overwrite is set to %q.",
+			remotePath, bucketName, onOverwrite,
+		)))
+		return Response{
+			Version:  s3resource.Version{Path: remotePath},
+			Metadata: command.metadata(bucketName, remotePath, request.Source.Private, ""),
+		}, true, nil
+	}
+
+	return Response{}, true, fmt.Errorf("file %q already exists in bucket %q and on_overwrite is set to %q", remotePath, bucketName, onOverwrite)
 }
 
 func (command *Command) remotePath(request Request, localPath string, sourceDir string) string {

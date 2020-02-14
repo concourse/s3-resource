@@ -22,7 +22,7 @@ type Source struct {
 	InitialContentText   string `json:"initial_content_text"`
 	InitialContentBinary string `json:"initial_content_binary"`
 	DisableMultipart     bool   `json:"disable_multipart"`
-	PreventFileOverwrite bool   `json:"prevent_file_overwrite"`
+	OnOverwrite          string `json:"on_overwrite"`
 }
 
 func (source Source) IsValid() (bool, string) {
@@ -45,6 +45,17 @@ func (source Source) IsValid() (bool, string) {
 	hasInitialContent := source.InitialContentText != "" || source.InitialContentBinary != ""
 	if hasInitialContent && source.InitialVersion == "" && source.InitialPath == "" {
 		return false, "please specify initial_version or initial_path if initial content is set"
+	}
+
+	switch source.OnOverwrite {
+	case "", "allow", "fail":
+		// valid option, so ignore
+	case "ignore":
+		if source.VersionedFile != "" {
+			return false, `on_overwrite cannot be set to "ignore" when using versioned_file`
+		}
+	default:
+		return false, `on_overwrite must be one of "allow" (default), "fail" or "ignore"`
 	}
 
 	return true, ""
