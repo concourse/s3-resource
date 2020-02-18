@@ -55,7 +55,7 @@ func (command *Command) Run(sourceDir string, request Request) (Response, error)
 
 	bucketName := request.Source.Bucket
 
-	response, done, err := command.handleOvewriteProtection(request, bucketName, remotePath)
+	response, done, err := command.handleOverwriteProtection(request, bucketName, remotePath)
 	if done {
 		return response, err
 	}
@@ -99,7 +99,7 @@ func (command *Command) Run(sourceDir string, request Request) (Response, error)
 	}, nil
 }
 
-func (command *Command) handleOvewriteProtection(request Request, bucketName string, remotePath string) (Response, bool, error) {
+func (command *Command) handleOverwriteProtection(request Request, bucketName string, remotePath string) (Response, bool, error) {
 	onOverwrite := request.Source.OnOverwrite
 	if onOverwrite == "" || onOverwrite == "allow" {
 		return Response{}, false, nil
