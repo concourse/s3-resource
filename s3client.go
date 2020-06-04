@@ -197,6 +197,9 @@ func (client *s3client) UploadFile(bucketName string, remotePath string, localPa
 		uploader.MaxUploadParts = 1
 		uploader.Concurrency = 1
 		uploader.PartSize = fSize + 1
+		if fSize <= s3manager.MinUploadPartSize {
+			uploader.PartSize = s3manager.MinUploadPartSize
+		}
 	}
 
 	progress := client.newProgressBar(fSize)
