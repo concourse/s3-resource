@@ -10,6 +10,7 @@ import (
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/s3"
+	"github.com/aws/aws-sdk-go/service/s3/s3manager"
 	"github.com/concourse/s3-resource"
 	"github.com/concourse/s3-resource/out"
 	. "github.com/onsi/ginkgo"
@@ -289,6 +290,49 @@ var _ = Describe("out", func() {
 				resp, err := s3Service.GetObjectAcl(params)
 				Ω(err).ShouldNot(HaveOccurred())
 				Ω(resp.Grants).Should(ContainElement(&expectedGrant))
+			})
+		})
+
+		Context("with a large file that is multiple of MaxUploadParts", func() {
+			BeforeEach(func() {
+				path := filepath.Join(sourceDir, "large-file-to-upload")
+
+				// touch the file
+				file, err := os.Create(path)
+				Ω(err).NotTo(HaveOccurred())
+				Ω(file.Close()).To(Succeed())
+
+				Ω(os.Truncate(path, s3manager.MinUploadPartSize*s3manager.MaxUploadParts)).To(Succeed())
+
+				outRequest := out.Request{
+					Source: s3resource.Source{
+						AccessKeyID:     accessKeyID,
+						SecretAccessKey: secretAccessKey,
+						SessionToken:    sessionToken,
+						Bucket:          bucketName,
+						RegionName:      regionName,
+						Endpoint:        endpoint,
+					},
+					Params: out.Params{
+						File: "large-file-to-upload",
+						To:   directoryPrefix + "/",
+					},
+				}
+
+				err = json.NewEncoder(stdin).Encode(&outRequest)
+				Ω(err).ShouldNot(HaveOccurred())
+			})
+
+			AfterEach(func() {
+				err := s3client.DeleteFile(bucketName, filepath.Join(directoryPrefix, "large-file-to-upload"))
+				Ω(err).ShouldNot(HaveOccurred())
+			})
+
+			It("uploads the file to the correct bucket and outputs the version", func() {
+				s3files, err := s3client.BucketFiles(bucketName, directoryPrefix)
+				Ω(err).ShouldNot(HaveOccurred())
+
+				Ω(s3files).Should(ConsistOf(filepath.Join(directoryPrefix, "large-file-to-upload")))
 			})
 		})
 
