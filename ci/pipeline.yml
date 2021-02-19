@@ -4,11 +4,10 @@ jobs:
   plan:
   - get: s3-resource
     trigger: true
-  - task: build
-    file: s3-resource/ci/build.yml
   - put: docker-image-repo
     params:
-      build: built-resource
+      build: s3-resource
+      dockerfile: s3-resource/dockerfiles/alpine/Dockerfile
 
 resources:
 - name: s3-resource
