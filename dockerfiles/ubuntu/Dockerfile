@@ -1,6 +1,7 @@
 FROM concourse/golang-builder as builder
 COPY . /go/src/github.com/concourse/s3-resource
 ENV CGO_ENABLED 0
+ENV GO111MODULE auto
 RUN go build -o /assets/in github.com/concourse/s3-resource/cmd/in
 RUN go build -o /assets/out github.com/concourse/s3-resource/cmd/out
 RUN go build -o /assets/check github.com/concourse/s3-resource/cmd/check
