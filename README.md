@@ -228,8 +228,8 @@ will stop the build.
 Run the tests with the following commands for both `alpine` and `ubuntu` images:
 
 ```sh
-docker build -t s3-resource -f dockerfiles/alpine/Dockerfile .
-docker build -t s3-resource -f dockerfiles/ubuntu/Dockerfile .
+docker build -t s3-resource --target tests -f dockerfiles/alpine/Dockerfile .
+docker build -t s3-resource --target tests -f dockerfiles/ubuntu/Dockerfile .
 ```
 
 #### Integration tests
@@ -241,7 +241,7 @@ integration will run.
 Run the tests with the following command:
 
 ```sh
-docker build . -t s3-resource -f dockerfiles/alpine/Dockerfile \
+docker build . -t s3-resource --target tests -f dockerfiles/alpine/Dockerfile \
   --build-arg S3_TESTING_ACCESS_KEY_ID="access-key" \
   --build-arg S3_TESTING_SECRET_ACCESS_KEY="some-secret" \
   --build-arg S3_TESTING_BUCKET="bucket-non-versioned" \
@@ -249,7 +249,7 @@ docker build . -t s3-resource -f dockerfiles/alpine/Dockerfile \
   --build-arg S3_TESTING_REGION="us-east-1" \
   --build-arg S3_ENDPOINT="https://s3.amazonaws.com"
 
-docker build . -t s3-resource -f dockerfiles/ubuntu/Dockerfile \
+docker build . -t s3-resource --target tests -f dockerfiles/ubuntu/Dockerfile \
   --build-arg S3_TESTING_ACCESS_KEY_ID="access-key" \
   --build-arg S3_TESTING_SECRET_ACCESS_KEY="some-secret" \
   --build-arg S3_TESTING_BUCKET="bucket-non-versioned" \
