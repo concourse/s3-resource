@@ -36,6 +36,21 @@ type FakeS3Client struct {
 		result1 []string
 		result2 error
 	}
+	ChunkedBucketListStub        func(string, string, string) (s3resource.BucketListChunk, error)
+	chunkedBucketListMutex       sync.RWMutex
+	chunkedBucketListArgsForCall []struct {
+		arg1 string
+		arg2 string
+		arg3 string
+	}
+	chunkedBucketListReturns struct {
+		result1 s3resource.BucketListChunk
+		result2 error
+	}
+	chunkedBucketListReturnsOnCall map[int]struct {
+		result1 s3resource.BucketListChunk
+		result2 error
+	}
 	DeleteFileStub        func(string, string) error
 	deleteFileMutex       sync.RWMutex
 	deleteFileArgsForCall []struct {
@@ -261,6 +276,72 @@ func (fake *FakeS3Client) BucketFilesReturnsOnCall(i int, result1 []string, resu
 	}
 	fake.bucketFilesReturnsOnCall[i] = struct {
 		result1 []string
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *FakeS3Client) ChunkedBucketList(arg1 string, arg2 string, arg3 string) (s3resource.BucketListChunk, error) {
+	fake.chunkedBucketListMutex.Lock()
+	ret, specificReturn := fake.chunkedBucketListReturnsOnCall[len(fake.chunkedBucketListArgsForCall)]
+	fake.chunkedBucketListArgsForCall = append(fake.chunkedBucketListArgsForCall, struct {
+		arg1 string
+		arg2 string
+		arg3 string
+	}{arg1, arg2, arg3})
+	stub := fake.ChunkedBucketListStub
+	fakeReturns := fake.chunkedBucketListReturns
+	fake.recordInvocation("ChunkedBucketList", []interface{}{arg1, arg2, arg3})
+	fake.chunkedBucketListMutex.Unlock()
+	if stub != nil {
+		return stub(arg1, arg2, arg3)
+	}
+	if specificReturn {
+		return ret.result1, ret.result2
+	}
+	return fakeReturns.result1, fakeReturns.result2
+}
+
+func (fake *FakeS3Client) ChunkedBucketListCallCount() int {
+	fake.chunkedBucketListMutex.RLock()
+	defer fake.chunkedBucketListMutex.RUnlock()
+	return len(fake.chunkedBucketListArgsForCall)
+}
+
+func (fake *FakeS3Client) ChunkedBucketListCalls(stub func(string, string, string) (s3resource.BucketListChunk, error)) {
+	fake.chunkedBucketListMutex.Lock()
+	defer fake.chunkedBucketListMutex.Unlock()
+	fake.ChunkedBucketListStub = stub
+}
+
+func (fake *FakeS3Client) ChunkedBucketListArgsForCall(i int) (string, string, string) {
+	fake.chunkedBucketListMutex.RLock()
+	defer fake.chunkedBucketListMutex.RUnlock()
+	argsForCall := fake.chunkedBucketListArgsForCall[i]
+	return argsForCall.arg1, argsForCall.arg2, argsForCall.arg3
+}
+
+func (fake *FakeS3Client) ChunkedBucketListReturns(result1 s3resource.BucketListChunk, result2 error) {
+	fake.chunkedBucketListMutex.Lock()
+	defer fake.chunkedBucketListMutex.Unlock()
+	fake.ChunkedBucketListStub = nil
+	fake.chunkedBucketListReturns = struct {
+		result1 s3resource.BucketListChunk
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *FakeS3Client) ChunkedBucketListReturnsOnCall(i int, result1 s3resource.BucketListChunk, result2 error) {
+	fake.chunkedBucketListMutex.Lock()
+	defer fake.chunkedBucketListMutex.Unlock()
+	fake.ChunkedBucketListStub = nil
+	if fake.chunkedBucketListReturnsOnCall == nil {
+		fake.chunkedBucketListReturnsOnCall = make(map[int]struct {
+			result1 s3resource.BucketListChunk
+			result2 error
+		})
+	}
+	fake.chunkedBucketListReturnsOnCall[i] = struct {
+		result1 s3resource.BucketListChunk
 		result2 error
 	}{result1, result2}
 }
@@ -713,6 +794,8 @@ func (fake *FakeS3Client) Invocations() map[string][][]interface{} {
 	defer fake.bucketFileVersionsMutex.RUnlock()
 	fake.bucketFilesMutex.RLock()
 	defer fake.bucketFilesMutex.RUnlock()
+	fake.chunkedBucketListMutex.RLock()
+	defer fake.chunkedBucketListMutex.RUnlock()
 	fake.deleteFileMutex.RLock()
 	defer fake.deleteFileMutex.RUnlock()
 	fake.deleteVersionedFileMutex.RLock()
