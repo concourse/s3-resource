@@ -37,12 +37,21 @@ var _ = Describe("Check Command", func() {
 			s3client = &fakes.FakeS3Client{}
 			command = NewCommand(s3client)
 
-			s3client.BucketFilesReturns([]string{
-				"files/abc-0.0.1.tgz",
-				"files/abc-2.33.333.tgz",
-				"files/abc-2.4.3.tgz",
-				"files/abc-3.53.tgz",
-				"files/abc-3/53.tgz",
+			s3client.ChunkedBucketListReturnsOnCall(0, s3resource.BucketListChunk{
+				Truncated:         false,
+				ContinuationToken: "",
+				CommonPrefixes:    []string{"files/abc-3/"},
+				Paths: []string{
+					"files/abc-0.0.1.tgz",
+					"files/abc-2.33.333.tgz",
+					"files/abc-2.4.3.tgz",
+					"files/abc-3.53.tgz",
+				},
+			}, nil)
+			s3client.ChunkedBucketListReturnsOnCall(1, s3resource.BucketListChunk{
+				Truncated:         false,
+				ContinuationToken: "",
+				Paths:             []string{"files/abc-3/53.tgz"},
 			}, nil)
 		})
 
