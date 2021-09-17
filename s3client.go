@@ -28,6 +28,8 @@ type S3Client interface {
 	BucketFiles(bucketName string, prefixHint string) ([]string, error)
 	BucketFileVersions(bucketName string, remotePath string) ([]string, error)
 
+	ChunkedBucketList(bucketName string, prefix string, continuationToken string) (BucketListChunk, error)
+
 	UploadFile(bucketName string, remotePath string, localPath string, options UploadFileOptions) (string, error)
 	DownloadFile(bucketName string, remotePath string, versionID string, localPath string) error
 
@@ -187,6 +189,45 @@ func (client *s3client) BucketFileVersions(bucketName string, remotePath string)
 	}
 
 	return versions, nil
+}
+
+type BucketListChunk struct {
+	Truncated         bool
+	ContinuationToken string
+	CommonPrefixes    []string
+	Paths             []string
+}
+
+func (client *s3client) ChunkedBucketList(bucketName string, prefix string, continuationToken string) (BucketListChunk, error) {
+	params := &s3.ListObjectsV2Input{
+		Bucket:    aws.String(bucketName),
+		Delimiter: aws.String("/"),
+		Prefix:    aws.String(prefix),
+	}
+	if continuationToken != "" {
+		params.ContinuationToken = aws.String(continuationToken)
+	}
+	response, err := client.client.ListObjectsV2(params)
+	if err != nil {
+		return BucketListChunk{}, err
+	}
+	commonPrefixes := make([]string, len(response.CommonPrefixes))
+	paths := make([]string, len(response.Contents))
+	for idx, commonPrefix := range response.CommonPrefixes {
+		commonPrefixes[idx] = *commonPrefix.Prefix
+	}
+	for idx, path := range response.Contents {
+		paths[idx] = *path.Key
+	}
+	if *response.IsTruncated {
+		continuationToken = *response.NextContinuationToken
+	}
+	return BucketListChunk{
+		Truncated:         *response.IsTruncated,
+		ContinuationToken: continuationToken,
+		CommonPrefixes:    commonPrefixes,
+		Paths:             paths,
+	}, nil
 }
 
 func (client *s3client) UploadFile(bucketName string, remotePath string, localPath string, options UploadFileOptions) (string, error) {
