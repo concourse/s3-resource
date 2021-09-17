@@ -5,7 +5,7 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/concourse/s3-resource"
+	s3resource "github.com/concourse/s3-resource"
 	"github.com/cppforlife/go-semi-semantic/version"
 )
 
@@ -126,23 +126,76 @@ func PrefixHint(regex string) string {
 	return strings.Join(validSections, "/") + "/"
 }
 
-func GetBucketFileVersions(client s3resource.S3Client, source s3resource.Source) Extractions {
-	regexp := source.Regexp
-	hint := PrefixHint(regexp)
+func GetMatchingPathsFromBucket(client s3resource.S3Client, bucketName string, regex string) ([]string, error) {
+	type work struct {
+		prefix  string
+		remains []string
+	}
 
-	paths, err := client.BucketFiles(source.Bucket, hint)
+	specialCharsRE := regexp.MustCompile(`[\\\*\.\[\]\(\)\{\}\?\|\^\$\+]`)
+
+	matchingPaths := []string{}
+	queue := []work{{prefix: "", remains: strings.Split(regex, "/")}}
+	for len(queue) != 0 {
+		prefix := queue[0].prefix
+		remains := queue[0].remains
+		section := remains[0]
+		remains = remains[1:]
+		queue = queue[1:]
+		if !specialCharsRE.MatchString(section) && len(remains) != 0 {
+			// No special char so it can match a single string and we can just extend the prefix
+			// but only if some remains exists, i.e. the section is not a leaf.
+			prefix += section + "/"
+			queue = append(queue, work{prefix: prefix, remains: remains})
+			continue
+		}
+		// Let's list what's under the current prefix and see if that matches with the section
+		var prefixRE *regexp.Regexp
+		if len(remains) != 0 {
+			// We need to look deeper so full prefix will end with a /
+			prefixRE = regexp.MustCompile(prefix + section + "/")
+		} else {
+			prefixRE = regexp.MustCompile(prefix + section)
+		}
+		for continuationToken, truncated := "", true; truncated; {
+			s3ListChunk, err := client.ChunkedBucketList(bucketName, prefix, continuationToken)
+			if err != nil {
+				return []string{}, err
+			}
+			truncated = s3ListChunk.Truncated
+			continuationToken = s3ListChunk.ContinuationToken
+
+			if len(remains) != 0 {
+				// We need to look deeper so full prefix will end with a /
+				for _, commonPrefix := range s3ListChunk.CommonPrefixes {
+					if prefixRE.MatchString(commonPrefix) {
+						queue = append(queue, work{prefix: commonPrefix, remains: remains})
+					}
+				}
+			} else {
+				// We're looking for a leaf
+				for _, path := range s3ListChunk.Paths {
+					if prefixRE.MatchString(path) {
+						matchingPaths = append(matchingPaths, path)
+					}
+				}
+			}
+		}
+	}
+	return matchingPaths, nil
+}
+
+func GetBucketFileVersions(client s3resource.S3Client, source s3resource.Source) Extractions {
+	regex := source.Regexp
+
+	matchingPaths, err := GetMatchingPathsFromBucket(client, source.Bucket, regex)
 	if err != nil {
 		s3resource.Fatal("listing files", err)
 	}
 
-	matchingPaths, err := Match(paths, source.Regexp)
-	if err != nil {
-		s3resource.Fatal("finding matches", err)
-	}
-
 	var extractions = make(Extractions, 0, len(matchingPaths))
 	for _, path := range matchingPaths {
-		extraction, ok := Extract(path, regexp)
+		extraction, ok := Extract(path, regex)
 
 		if ok {
 			extractions = append(extractions, extraction)
