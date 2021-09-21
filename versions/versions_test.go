@@ -12,7 +12,7 @@ var ItMatchesPaths = func(matchFunc MatchFunc) {
 	Describe("checking if paths in the bucket should be searched", func() {
 		Context("when given an empty list of paths", func() {
 			It("returns an empty list of matches", func() {
-				result, err := versions.Match([]string{}, "regex")
+				result, err := matchFunc([]string{}, "regex")
 
 				Ω(err).ShouldNot(HaveOccurred())
 				Ω(result).Should(BeEmpty())
@@ -24,7 +24,7 @@ var ItMatchesPaths = func(matchFunc MatchFunc) {
 				paths := []string{"abc"}
 				regex := "abc"
 
-				result, err := versions.Match(paths, regex)
+				result, err := matchFunc(paths, regex)
 				Ω(err).ShouldNot(HaveOccurred())
 				Ω(result).Should(ConsistOf("abc"))
 			})
@@ -33,7 +33,7 @@ var ItMatchesPaths = func(matchFunc MatchFunc) {
 				paths := []string{"abc"}
 				regex := "ad"
 
-				result, err := versions.Match(paths, regex)
+				result, err := matchFunc(paths, regex)
 				Ω(err).ShouldNot(HaveOccurred())
 				Ω(result).Should(BeEmpty())
 			})
@@ -42,7 +42,7 @@ var ItMatchesPaths = func(matchFunc MatchFunc) {
 				paths := []string{"abc"}
 				regex := "a.*c"
 
-				result, err := versions.Match(paths, regex)
+				result, err := matchFunc(paths, regex)
 				Ω(err).ShouldNot(HaveOccurred())
 				Ω(result).Should(ConsistOf("abc"))
 			})
@@ -51,7 +51,7 @@ var ItMatchesPaths = func(matchFunc MatchFunc) {
 				paths := []string{"abc"}
 				regex := "a(c"
 
-				_, err := versions.Match(paths, regex)
+				_, err := matchFunc(paths, regex)
 				Ω(err).Should(HaveOccurred())
 			})
 		})
@@ -61,7 +61,7 @@ var ItMatchesPaths = func(matchFunc MatchFunc) {
 				paths := []string{"abc", "bcd"}
 				regex := ".*bc.*"
 
-				result, err := versions.Match(paths, regex)
+				result, err := matchFunc(paths, regex)
 				Ω(err).ShouldNot(HaveOccurred())
 				Ω(result).Should(ConsistOf("abc", "bcd"))
 			})
@@ -70,7 +70,7 @@ var ItMatchesPaths = func(matchFunc MatchFunc) {
 				paths := []string{"abc", "def"}
 				regex := "ge.*h"
 
-				result, err := versions.Match(paths, regex)
+				result, err := matchFunc(paths, regex)
 				Ω(err).ShouldNot(HaveOccurred())
 				Ω(result).Should(BeEmpty())
 			})
