@@ -51,7 +51,10 @@ var _ = Describe("Check Command", func() {
 			s3client.ChunkedBucketListReturnsOnCall(1, s3resource.BucketListChunk{
 				Truncated:         false,
 				ContinuationToken: "",
-				Paths:             []string{"files/abc-3/53.tgz"},
+				Paths: []string{
+					"files/abc-3/53.tgz",
+					"files/abc-3/no-magic",
+				},
 			}, nil)
 		})
 
@@ -131,6 +134,16 @@ var _ = Describe("Check Command", func() {
 
 					Ω(response).Should(HaveLen(1))
 					Expect(response).To(ConsistOf(s3resource.Version{Path: "files/abc-2.33.333.tgz"}))
+				})
+			})
+
+			Context("when the regexp does not contain any magic regexp char", func() {
+				It("does not explode", func() {
+					request.Source.Regexp = "files/abc-3/no-magic"
+					response, err := command.Run(request)
+					Ω(err).ShouldNot(HaveOccurred())
+
+					Ω(response).Should(HaveLen(0))
 				})
 			})
 		})
