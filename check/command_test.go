@@ -42,6 +42,7 @@ var _ = Describe("Check Command", func() {
 				"files/abc-2.33.333.tgz",
 				"files/abc-2.4.3.tgz",
 				"files/abc-3.53.tgz",
+				"files/abc-3/53.tgz",
 			}, nil)
 		})
 
