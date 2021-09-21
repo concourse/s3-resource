@@ -78,46 +78,8 @@ var ItMatchesPaths = func(matchFunc MatchFunc) {
 	})
 }
 
-var _ = Describe("Match", func() {
-	Describe("Match", func() {
-		ItMatchesPaths(versions.Match)
-
-		It("does not contain files that are in some subdirectory that is not explicitly mentioned", func() {
-			paths := []string{"folder/abc", "abc"}
-			regex := "abc"
-
-			result, err := versions.Match(paths, regex)
-			Ω(err).ShouldNot(HaveOccurred())
-			Ω(result).Should(ConsistOf("abc"))
-		})
-	})
-
-	Describe("MatchUnanchored", func() {
-		ItMatchesPaths(versions.MatchUnanchored)
-	})
-})
-
-var _ = Describe("PrefixHint", func() {
-	It("turns a regexp into a limiter for s3", func() {
-		By("having a directory prefix in the simple case")
-		Ω(versions.PrefixHint("hello/(.*).tgz")).Should(Equal("hello/"))
-		Ω(versions.PrefixHint("hello/world-(.*)")).Should(Equal("hello/"))
-		Ω(versions.PrefixHint("hello-world/some-file-(.*)")).Should(Equal("hello-world/"))
-
-		By("not having a prefix if there is no parent directory")
-		Ω(versions.PrefixHint("(.*).tgz")).Should(Equal(""))
-		Ω(versions.PrefixHint("hello-(.*).tgz")).Should(Equal(""))
-
-		By("skipping regexp path names")
-		Ω(versions.PrefixHint("hello/(.*)/what.txt")).Should(Equal("hello/"))
-
-		By("handling escaped regexp characters")
-		Ω(versions.PrefixHint(`hello/cruel\[\\\^\$\.\|\?\*\+\(\)world/fizz-(.*).tgz`)).Should(Equal(`hello/cruel[\^$.|?*+()world/`))
-
-		By("handling regexp-specific escapes")
-		Ω(versions.PrefixHint(`hello/\d{3}/fizz-(.*).tgz`)).Should(Equal(`hello/`))
-		Ω(versions.PrefixHint(`hello/\d/fizz-(.*).tgz`)).Should(Equal(`hello/`))
-	})
+var _ = Describe("MatchUnanchored", func() {
+	ItMatchesPaths(versions.MatchUnanchored)
 })
 
 var _ = Describe("Extract", func() {
