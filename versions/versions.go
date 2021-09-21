@@ -9,10 +9,6 @@ import (
 	"github.com/cppforlife/go-semi-semantic/version"
 )
 
-func Match(paths []string, pattern string) ([]string, error) {
-	return MatchUnanchored(paths, "^"+pattern+"$")
-}
-
 func MatchUnanchored(paths []string, pattern string) ([]string, error) {
 	matched := []string{}
 
@@ -99,31 +95,6 @@ type Extraction struct {
 
 	// the raw version match
 	VersionNumber string
-}
-
-const regexpSpecialChars = `\\\*\.\[\]\(\)\{\}\?\|\^\$\+`
-
-func PrefixHint(regex string) string {
-	nonRE := regexp.MustCompile(`\\(?P<chr>[` + regexpSpecialChars + `])|(?P<chr>[^` + regexpSpecialChars + `])`)
-	re := regexp.MustCompile(`^(` + nonRE.String() + `)*$`)
-
-	validSections := []string{}
-
-	sections := strings.Split(regex, "/")
-
-	for _, section := range sections {
-		if re.MatchString(section) {
-			validSections = append(validSections, nonRE.ReplaceAllString(section, "${chr}"))
-		} else {
-			break
-		}
-	}
-
-	if len(validSections) == 0 {
-		return ""
-	}
-
-	return strings.Join(validSections, "/") + "/"
 }
 
 func GetMatchingPathsFromBucket(client s3resource.S3Client, bucketName string, regex string) ([]string, error) {
