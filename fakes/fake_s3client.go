@@ -36,12 +36,12 @@ type FakeS3Client struct {
 		result1 []string
 		result2 error
 	}
-	ChunkedBucketListStub        func(string, string, string) (s3resource.BucketListChunk, error)
+	ChunkedBucketListStub        func(string, string, *string) (s3resource.BucketListChunk, error)
 	chunkedBucketListMutex       sync.RWMutex
 	chunkedBucketListArgsForCall []struct {
 		arg1 string
 		arg2 string
-		arg3 string
+		arg3 *string
 	}
 	chunkedBucketListReturns struct {
 		result1 s3resource.BucketListChunk
@@ -280,13 +280,13 @@ func (fake *FakeS3Client) BucketFilesReturnsOnCall(i int, result1 []string, resu
 	}{result1, result2}
 }
 
-func (fake *FakeS3Client) ChunkedBucketList(arg1 string, arg2 string, arg3 string) (s3resource.BucketListChunk, error) {
+func (fake *FakeS3Client) ChunkedBucketList(arg1 string, arg2 string, arg3 *string) (s3resource.BucketListChunk, error) {
 	fake.chunkedBucketListMutex.Lock()
 	ret, specificReturn := fake.chunkedBucketListReturnsOnCall[len(fake.chunkedBucketListArgsForCall)]
 	fake.chunkedBucketListArgsForCall = append(fake.chunkedBucketListArgsForCall, struct {
 		arg1 string
 		arg2 string
-		arg3 string
+		arg3 *string
 	}{arg1, arg2, arg3})
 	stub := fake.ChunkedBucketListStub
 	fakeReturns := fake.chunkedBucketListReturns
@@ -307,13 +307,13 @@ func (fake *FakeS3Client) ChunkedBucketListCallCount() int {
 	return len(fake.chunkedBucketListArgsForCall)
 }
 
-func (fake *FakeS3Client) ChunkedBucketListCalls(stub func(string, string, string) (s3resource.BucketListChunk, error)) {
+func (fake *FakeS3Client) ChunkedBucketListCalls(stub func(string, string, *string) (s3resource.BucketListChunk, error)) {
 	fake.chunkedBucketListMutex.Lock()
 	defer fake.chunkedBucketListMutex.Unlock()
 	fake.ChunkedBucketListStub = stub
 }
 
-func (fake *FakeS3Client) ChunkedBucketListArgsForCall(i int) (string, string, string) {
+func (fake *FakeS3Client) ChunkedBucketListArgsForCall(i int) (string, string, *string) {
 	fake.chunkedBucketListMutex.RLock()
 	defer fake.chunkedBucketListMutex.RUnlock()
 	argsForCall := fake.chunkedBucketListArgsForCall[i]

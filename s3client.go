@@ -28,7 +28,7 @@ type S3Client interface {
 	BucketFiles(bucketName string, prefixHint string) ([]string, error)
 	BucketFileVersions(bucketName string, remotePath string) ([]string, error)
 
-	ChunkedBucketList(bucketName string, prefix string, continuationToken string) (BucketListChunk, error)
+	ChunkedBucketList(bucketName string, prefix string, continuationToken *string) (BucketListChunk, error)
 
 	UploadFile(bucketName string, remotePath string, localPath string, options UploadFileOptions) (string, error)
 	DownloadFile(bucketName string, remotePath string, versionID string, localPath string) error
@@ -193,19 +193,17 @@ func (client *s3client) BucketFileVersions(bucketName string, remotePath string)
 
 type BucketListChunk struct {
 	Truncated         bool
-	ContinuationToken string
+	ContinuationToken *string
 	CommonPrefixes    []string
 	Paths             []string
 }
 
-func (client *s3client) ChunkedBucketList(bucketName string, prefix string, continuationToken string) (BucketListChunk, error) {
+func (client *s3client) ChunkedBucketList(bucketName string, prefix string, continuationToken *string) (BucketListChunk, error) {
 	params := &s3.ListObjectsV2Input{
-		Bucket:    aws.String(bucketName),
-		Delimiter: aws.String("/"),
-		Prefix:    aws.String(prefix),
-	}
-	if continuationToken != "" {
-		params.ContinuationToken = aws.String(continuationToken)
+		Bucket:            aws.String(bucketName),
+		ContinuationToken: continuationToken,
+		Delimiter:         aws.String("/"),
+		Prefix:            aws.String(prefix),
 	}
 	response, err := client.client.ListObjectsV2(params)
 	if err != nil {
@@ -219,12 +217,9 @@ func (client *s3client) ChunkedBucketList(bucketName string, prefix string, cont
 	for idx, path := range response.Contents {
 		paths[idx] = *path.Key
 	}
-	if *response.IsTruncated {
-		continuationToken = *response.NextContinuationToken
-	}
 	return BucketListChunk{
 		Truncated:         *response.IsTruncated,
-		ContinuationToken: continuationToken,
+		ContinuationToken: response.NextContinuationToken,
 		CommonPrefixes:    commonPrefixes,
 		Paths:             paths,
 	}, nil

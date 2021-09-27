@@ -128,7 +128,11 @@ func GetMatchingPathsFromBucket(client s3resource.S3Client, bucketName string, r
 		} else {
 			prefixRE = regexp.MustCompile(prefix + section)
 		}
-		for continuationToken, truncated := "", true; truncated; {
+		var (
+			continuationToken *string
+			truncated         bool
+		)
+		for continuationToken, truncated = nil, true; truncated; {
 			s3ListChunk, err := client.ChunkedBucketList(bucketName, prefix, continuationToken)
 			if err != nil {
 				return []string{}, err

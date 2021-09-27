@@ -7,7 +7,7 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
-	"github.com/concourse/s3-resource"
+	s3resource "github.com/concourse/s3-resource"
 	"github.com/concourse/s3-resource/fakes"
 
 	. "github.com/concourse/s3-resource/check"
@@ -39,7 +39,7 @@ var _ = Describe("Check Command", func() {
 
 			s3client.ChunkedBucketListReturnsOnCall(0, s3resource.BucketListChunk{
 				Truncated:         false,
-				ContinuationToken: "",
+				ContinuationToken: nil,
 				CommonPrefixes:    []string{"files/abc-3/"},
 				Paths: []string{
 					"files/abc-0.0.1.tgz",
@@ -50,7 +50,7 @@ var _ = Describe("Check Command", func() {
 			}, nil)
 			s3client.ChunkedBucketListReturnsOnCall(1, s3resource.BucketListChunk{
 				Truncated:         false,
-				ContinuationToken: "",
+				ContinuationToken: nil,
 				Paths: []string{
 					"files/abc-3/53.tgz",
 					"files/abc-3/no-magic",
