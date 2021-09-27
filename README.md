@@ -203,20 +203,14 @@ The objects in the bucket (e.g. `"arn:aws:s3:::your-bucket/*"`):
 * `s3:PutObjectVersionAcl`
 * `s3:GetObjectVersionTagging` (if using the `download_tags` option)
 
-## Developing on this resource
-
-First get the resource via:
-`go get github.com/concourse/s3-resource`
-
 ## Development
 
 ### Prerequisites
 
-* golang is *required* - version 1.9.x is tested; earlier versions may also
+* Go is *required* - version 1.13 is tested; earlier versions may also
   work.
 * docker is *required* - version 17.06.x is tested; earlier versions may also
   work.
-* godep is used for dependency management of the golang packages.
 
 ### Running the tests
 
