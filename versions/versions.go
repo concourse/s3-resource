@@ -97,6 +97,17 @@ type Extraction struct {
 	VersionNumber string
 }
 
+/* Get all the paths in the S3 bucket `bucketName` which match all the sections of `regex`
+ *
+ * `regex` is a forward-slash (`/`) delimited list of regular expressions that
+ * must match each corresponding sub-directories and file name for the path to
+ * be retained.
+ *
+ * The function walk the file tree stored in the S3 bucket `bucketName` and
+ * collect the full paths that match `regex` along the way. It takes care of
+ * following only the branches (prefix in S3 terms) that match with the
+ * corresponding section of `regex`.
+ */
 func GetMatchingPathsFromBucket(client s3resource.S3Client, bucketName string, regex string) ([]string, error) {
 	type work struct {
 		prefix  string

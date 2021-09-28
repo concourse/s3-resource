@@ -56,10 +56,11 @@ version numbers.
 
 One of the following two options must be specified:
 
-* `regexp`: *Optional.* The pattern to match filenames against within S3. The first
-  grouped match is used to extract the version, or if a group is explicitly
-  named `version`, that group is used. At least one capture group must be
-  specified, with parentheses.
+* `regexp`: *Optional.* The forward-slash (`/`) delimited list of patterns to
+  match against the sub-directories and filenames of the objects stored within
+  the S3 bucket. The first grouped match is used to extract the version, or if
+  a group is explicitly named `version`, that group is used. At least one
+  capture group must be specified, with parentheses.
 
   The version extracted from this pattern is used to version the resource.
   Semantic versions, or just numbers, are supported. Accordingly, full regular
