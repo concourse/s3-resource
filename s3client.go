@@ -198,6 +198,14 @@ type BucketListChunk struct {
 	Paths             []string
 }
 
+/* List the S3 bucket `bucketName` content's under `prefix` one chunk at a time
+ *
+ * The returned `BucketListChunk` contains part of the files and subdirectories
+ * present in `bucketName` under `prefix`. The files are listed in `Paths` and
+ * the subdirectories in `CommonPrefixes`. If the returned chunk does not
+ * include all the files and subdirectories, the `Truncated` flag will be set
+ * to `true` and the `ContinuationToken` can be used to retrieve the next chunk.
+ */
 func (client *s3client) ChunkedBucketList(bucketName string, prefix string, continuationToken *string) (BucketListChunk, error) {
 	params := &s3.ListObjectsV2Input{
 		Bucket:            aws.String(bucketName),
