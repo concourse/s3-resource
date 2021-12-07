@@ -82,7 +82,7 @@ func getSessionTokenS3Client(awsConfig *aws.Config) (*s3.S3, s3resource.S3Client
 		false,
 	)
 	s3Service := s3.New(session.New(newAwsConfig), newAwsConfig)
-	s3client := s3resource.NewS3Client(ioutil.Discard, newAwsConfig, v2signing == "true")
+	s3client := s3resource.NewS3Client(ioutil.Discard, newAwsConfig, v2signing == "true", "")
 
 	return s3Service, s3client
 }
@@ -130,7 +130,7 @@ var _ = SynchronizedBeforeSuite(func() []byte {
 
 		s3Service = s3.New(session.New(awsConfig), awsConfig)
 
-		s3client = s3resource.NewS3Client(ioutil.Discard, awsConfig, v2signing == "true")
+		s3client = s3resource.NewS3Client(ioutil.Discard, awsConfig, v2signing == "true", "")
 	}
 })
 

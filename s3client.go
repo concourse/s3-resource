@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/aws/aws-sdk-go/aws/credentials/stscreds"
 	"io"
 	"io/ioutil"
 	"os"
@@ -68,9 +69,13 @@ func NewS3Client(
 	progressOutput io.Writer,
 	awsConfig *aws.Config,
 	useV2Signing bool,
+	roleToAssume string,
 ) S3Client {
 	sess := session.New(awsConfig)
-	client := s3.New(sess, awsConfig)
+
+	assumedRoleAwsConfig := fetchCredentialsForRoleIfDefined(roleToAssume, awsConfig)
+
+	client := s3.New(sess, awsConfig, &assumedRoleAwsConfig)
 
 	if useV2Signing {
 		setv2Handlers(client)
@@ -82,6 +87,19 @@ func NewS3Client(
 
 		progressOutput: progressOutput,
 	}
+}
+
+func fetchCredentialsForRoleIfDefined(roleToAssume string, awsConfig *aws.Config) aws.Config {
+	assumedRoleAwsConfig := aws.Config{}
+	if len(roleToAssume) != 0 {
+		stsConfig := awsConfig.Copy()
+		stsConfig.Endpoint = nil
+		stsSession := session.Must(session.NewSession(stsConfig))
+		roleCredentials := stscreds.NewCredentials(stsSession, roleToAssume)
+
+		assumedRoleAwsConfig.Credentials = roleCredentials
+	}
+	return assumedRoleAwsConfig
 }
 
 func NewAwsConfig(

@@ -26,6 +26,7 @@ func main() {
 		os.Stderr,
 		awsConfig,
 		request.Source.UseV2Signing,
+		request.Source.AssumeRole,
 	)
 
 	command := check.NewCommand(client)
