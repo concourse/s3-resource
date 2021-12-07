@@ -54,6 +54,7 @@ func main() {
 		os.Stderr,
 		awsConfig,
 		request.Source.UseV2Signing,
+		request.Source.AssumeRole,
 	)
 
 	command := in.NewCommand(client)
