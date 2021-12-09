@@ -255,6 +255,12 @@ docker build . -t s3-resource --target tests -f dockerfiles/ubuntu/Dockerfile \
   --build-arg S3_ENDPOINT="https://s3.amazonaws.com"
 ```
 
+##### Integration tests using role assumption
+
+If `S3_TESTING_ASSUME_ROLE` is set to a roleARN, this role will be assumed for accessing
+the S3 bucket during integration tests. The whole integration test suite runs either
+completely using role assumption or completely by direct access via the credentials.
+
 ##### Required IAM permissions
 
 In addition to the required permissions above, the `s3:PutObjectTagging` permission is required to run integration tests.
