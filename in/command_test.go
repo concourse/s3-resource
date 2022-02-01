@@ -79,7 +79,7 @@ var _ = Describe("In Command", func() {
 			})
 		})
 
-		Context("when configured globaly to skip download", func() {
+		Context("when configured globally to skip download", func() {
 			BeforeEach(func() {
 				request.Source.SkipDownload = true
 			})
@@ -91,7 +91,7 @@ var _ = Describe("In Command", func() {
 			})
 		})
 
-		Context("when configured localy to skip download", func() {
+		Context("when configured locally to skip download", func() {
 			BeforeEach(func() {
 				request.Params.SkipDownload = "true"
 			})
@@ -103,7 +103,7 @@ var _ = Describe("In Command", func() {
 			})
 		})
 
-		Context("when override localy to not skip download", func() {
+		Context("when override locally to not skip download", func() {
 			BeforeEach(func() {
 				request.Source.SkipDownload = true
 				request.Params.SkipDownload = "false"

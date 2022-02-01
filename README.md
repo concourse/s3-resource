@@ -16,6 +16,9 @@ version numbers.
 * `session_token`: *Optional.* The AWS STS session token to use when
   accessing the bucket.
 
+* `aws_role_arn`: *Optional.* The AWS role ARN to be assumed by the user
+  identified by `access_key_id` and `secret_access_key`.
+
 * `region_name`: *Optional.* The region the bucket is in. Defaults to
   `us-east-1`.
 
@@ -251,6 +254,12 @@ docker build . -t s3-resource --target tests -f dockerfiles/ubuntu/Dockerfile \
   --build-arg S3_TESTING_REGION="us-east-1" \
   --build-arg S3_ENDPOINT="https://s3.amazonaws.com"
 ```
+
+##### Integration tests using role assumption
+
+If `S3_TESTING_AWS_ROLE_ARN` is set to a role ARN, this role will be assumed for accessing
+the S3 bucket during integration tests. The whole integration test suite runs either
+completely using role assumption or completely by direct access via the credentials.
 
 ##### Required IAM permissions
 
