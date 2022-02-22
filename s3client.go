@@ -5,12 +5,13 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/aws/aws-sdk-go/aws/credentials/stscreds"
 	"io"
 	"io/ioutil"
 	"os"
 	"strings"
 	"time"
+
+	"github.com/aws/aws-sdk-go/aws/credentials/stscreds"
 
 	"net/http"
 
@@ -151,17 +152,23 @@ func NewAwsConfig(
 	return awsConfig
 }
 
-func (client *s3client) BucketFiles(bucketName string, prefixHint string) ([]string, error) {
-	entries, err := client.getBucketContents(bucketName, prefixHint)
-
-	if err != nil {
-		return []string{}, err
+func (client *s3client) BucketFiles(bucketName string, directoryPrefix string) ([]string, error) {
+	if directoryPrefix[len(directoryPrefix)-1] != '/' {
+		directoryPrefix = directoryPrefix + "/"
 	}
-
-	paths := make([]string, 0, len(entries))
-
-	for _, entry := range entries {
-		paths = append(paths, *entry.Key)
+	var (
+		continuationToken *string
+		truncated         bool
+		paths             []string
+	)
+	for continuationToken, truncated = nil, true; truncated; {
+		s3ListChunk, err := client.ChunkedBucketList(bucketName, directoryPrefix, continuationToken)
+		if err != nil {
+			return []string{}, err
+		}
+		truncated = s3ListChunk.Truncated
+		continuationToken = s3ListChunk.ContinuationToken
+		paths = append(paths, s3ListChunk.Paths...)
 	}
 	return paths, nil
 }
@@ -440,51 +447,6 @@ func (client *s3client) DeleteFile(bucketName string, remotePath string) error {
 	})
 
 	return err
-}
-
-func (client *s3client) getBucketContents(bucketName string, prefix string) (map[string]*s3.Object, error) {
-	bucketContents := map[string]*s3.Object{}
-	marker := ""
-
-	for {
-		listObjectsResponse, err := client.client.ListObjects(&s3.ListObjectsInput{
-			Bucket: aws.String(bucketName),
-			Prefix: aws.String(prefix),
-			Marker: aws.String(marker),
-		})
-
-		if err != nil {
-			return bucketContents, err
-		}
-
-		lastKey := ""
-
-		for _, key := range listObjectsResponse.Contents {
-			bucketContents[*key.Key] = key
-
-			lastKey = *key.Key
-		}
-
-		if *listObjectsResponse.IsTruncated {
-			prevMarker := marker
-			if listObjectsResponse.NextMarker == nil {
-				// From the s3 docs: If response does not include the
-				// NextMarker and it is truncated, you can use the value of the
-				// last Key in the response as the marker in the subsequent
-				// request to get the next set of object keys.
-				marker = lastKey
-			} else {
-				marker = *listObjectsResponse.NextMarker
-			}
-			if marker == prevMarker {
-				return nil, errors.New("Unable to list all bucket objects; perhaps this is a CloudFront S3 bucket that needs its `Query String Forwarding and Caching` set to `Forward all, cache based on all`?")
-			}
-		} else {
-			break
-		}
-	}
-
-	return bucketContents, nil
 }
 
 func (client *s3client) getBucketVersioning(bucketName string) (bool, error) {
