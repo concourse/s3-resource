@@ -256,6 +256,14 @@ docker build . -t s3-resource --target tests -f dockerfiles/ubuntu/Dockerfile \
   --build-arg S3_ENDPOINT="https://s3.amazonaws.com"
 ```
 
+##### Speeding up integration tests by skipping large file upload
+
+One of the integration test upload a large file (>40GB) and so can be slow.
+It can be skipped by adding the following option when running the tests:
+```
+  --build-arg S3_TESTING_NO_LARGE_UPLOAD=true
+```
+
 ##### Integration tests using role assumption
 
 If `S3_TESTING_AWS_ROLE_ARN` is set to a role ARN, this role will be assumed for accessing

@@ -11,14 +11,14 @@ import (
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/s3"
 	"github.com/aws/aws-sdk-go/service/s3/s3manager"
-	"github.com/concourse/s3-resource"
+	s3resource "github.com/concourse/s3-resource"
 	"github.com/concourse/s3-resource/out"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"github.com/onsi/gomega/gbytes"
 	"github.com/onsi/gomega/gexec"
 
-	"github.com/nu7hatch/gouuid"
+	uuid "github.com/nu7hatch/gouuid"
 )
 
 var _ = Describe("out", func() {
@@ -300,6 +300,10 @@ var _ = Describe("out", func() {
 
 		Context("with a large file that is multiple of MaxUploadParts", func() {
 			BeforeEach(func() {
+				if len(os.Getenv("S3_TESTING_NO_LARGE_UPLOAD")) != 0 {
+					Skip("'S3_TESTING_NO_LARGE_UPLOAD' is set, skipping.")
+				}
+
 				path := filepath.Join(sourceDir, "large-file-to-upload")
 
 				// touch the file
