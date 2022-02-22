@@ -152,8 +152,9 @@ func NewAwsConfig(
 	return awsConfig
 }
 
+// BucketFiles returns all the files in bucketName immediately under directoryPrefix
 func (client *s3client) BucketFiles(bucketName string, directoryPrefix string) ([]string, error) {
-	if directoryPrefix[len(directoryPrefix)-1] != '/' {
+	if !strings.HasSuffix(directoryPrefix, "/") {
 		directoryPrefix = directoryPrefix + "/"
 	}
 	var (
@@ -205,14 +206,13 @@ type BucketListChunk struct {
 	Paths             []string
 }
 
-/* List the S3 bucket `bucketName` content's under `prefix` one chunk at a time
- *
- * The returned `BucketListChunk` contains part of the files and subdirectories
- * present in `bucketName` under `prefix`. The files are listed in `Paths` and
- * the subdirectories in `CommonPrefixes`. If the returned chunk does not
- * include all the files and subdirectories, the `Truncated` flag will be set
- * to `true` and the `ContinuationToken` can be used to retrieve the next chunk.
- */
+// ChunkedBucketList lists the S3 bucket `bucketName` content's under `prefix` one chunk at a time
+//
+// The returned `BucketListChunk` contains part of the files and subdirectories
+// present in `bucketName` under `prefix`. The files are listed in `Paths` and
+// the subdirectories in `CommonPrefixes`. If the returned chunk does not
+// include all the files and subdirectories, the `Truncated` flag will be set
+// to `true` and the `ContinuationToken` can be used to retrieve the next chunk.
 func (client *s3client) ChunkedBucketList(bucketName string, prefix string, continuationToken *string) (BucketListChunk, error) {
 	params := &s3.ListObjectsV2Input{
 		Bucket:            aws.String(bucketName),
@@ -224,13 +224,13 @@ func (client *s3client) ChunkedBucketList(bucketName string, prefix string, cont
 	if err != nil {
 		return BucketListChunk{}, err
 	}
-	commonPrefixes := make([]string, len(response.CommonPrefixes))
-	paths := make([]string, len(response.Contents))
-	for idx, commonPrefix := range response.CommonPrefixes {
-		commonPrefixes[idx] = *commonPrefix.Prefix
+	commonPrefixes := make([]string, 0, len(response.CommonPrefixes))
+	paths := make([]string, 0, len(response.Contents))
+	for _, commonPrefix := range response.CommonPrefixes {
+		commonPrefixes = append(commonPrefixes, *commonPrefix.Prefix)
 	}
-	for idx, path := range response.Contents {
-		paths[idx] = *path.Key
+	for _, path := range response.Contents {
+		paths = append(paths, *path.Key)
 	}
 	return BucketListChunk{
 		Truncated:         *response.IsTruncated,

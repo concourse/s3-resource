@@ -56,7 +56,7 @@ version numbers.
 
 One of the following two options must be specified:
 
-* `regexp`: *Optional.* The forward-slash (`/`) delimited list of patterns to
+* `regexp`: *Optional.* The forward-slash (`/`) delimited sequence of patterns to
   match against the sub-directories and filenames of the objects stored within
   the S3 bucket. The first grouped match is used to extract the version, or if
   a group is explicitly named `version`, that group is used. At least one
@@ -258,7 +258,7 @@ docker build . -t s3-resource --target tests -f dockerfiles/ubuntu/Dockerfile \
 
 ##### Speeding up integration tests by skipping large file upload
 
-One of the integration test upload a large file (>40GB) and so can be slow.
+One of the integration tests uploads a large file (>40GB) and so can be slow.
 It can be skipped by adding the following option when running the tests:
 ```
   --build-arg S3_TESTING_NO_LARGE_UPLOAD=true

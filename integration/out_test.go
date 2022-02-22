@@ -300,7 +300,7 @@ var _ = Describe("out", func() {
 
 		Context("with a large file that is multiple of MaxUploadParts", func() {
 			BeforeEach(func() {
-				if len(os.Getenv("S3_TESTING_NO_LARGE_UPLOAD")) != 0 {
+				if os.Getenv("S3_TESTING_NO_LARGE_UPLOAD") != "" {
 					Skip("'S3_TESTING_NO_LARGE_UPLOAD' is set, skipping.")
 				}
 
