@@ -5,13 +5,9 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/concourse/s3-resource"
+	s3resource "github.com/concourse/s3-resource"
 	"github.com/cppforlife/go-semi-semantic/version"
 )
-
-func Match(paths []string, pattern string) ([]string, error) {
-	return MatchUnanchored(paths, "^"+pattern+"$")
-}
 
 func MatchUnanchored(paths []string, pattern string) ([]string, error) {
 	matched := []string{}
@@ -101,48 +97,90 @@ type Extraction struct {
 	VersionNumber string
 }
 
-const regexpSpecialChars = `\\\*\.\[\]\(\)\{\}\?\|\^\$\+`
+// GetMatchingPathsFromBucket gets all the paths in the S3 bucket `bucketName` which match all the sections of `regex`
+//
+// `regex` is a forward-slash (`/`) delimited list of regular expressions that
+// must match each corresponding sub-directories and file name for the path to
+// be retained.
+//
+// The function walks the file tree stored in the S3 bucket `bucketName` and
+// collects the full paths that matches `regex` along the way. It takes care of
+// following only the branches (prefix in S3 terms) that matches with the
+// corresponding section of `regex`.
+func GetMatchingPathsFromBucket(client s3resource.S3Client, bucketName string, regex string) ([]string, error) {
+	type work struct {
+		prefix  string
+		remains []string
+	}
 
-func PrefixHint(regex string) string {
-	nonRE := regexp.MustCompile(`\\(?P<chr>[` + regexpSpecialChars + `])|(?P<chr>[^` + regexpSpecialChars + `])`)
-	re := regexp.MustCompile(`^(` + nonRE.String() + `)*$`)
+	specialCharsRE := regexp.MustCompile(`[\\\*\.\[\]\(\)\{\}\?\|\^\$\+]`)
 
-	validSections := []string{}
-
-	sections := strings.Split(regex, "/")
-
-	for _, section := range sections {
-		if re.MatchString(section) {
-			validSections = append(validSections, nonRE.ReplaceAllString(section, "${chr}"))
+	matchingPaths := []string{}
+	queue := []work{{prefix: "", remains: strings.Split(regex, "/")}}
+	for len(queue) != 0 {
+		prefix := queue[0].prefix
+		remains := queue[0].remains
+		section := remains[0]
+		remains = remains[1:]
+		queue = queue[1:]
+		if !specialCharsRE.MatchString(section) && len(remains) != 0 {
+			// No special char so it can match a single string and we can just extend the prefix
+			// but only if some remains exists, i.e. the section is not a leaf.
+			prefix += section + "/"
+			queue = append(queue, work{prefix: prefix, remains: remains})
+			continue
+		}
+		// Let's list what's under the current prefix and see if that matches with the section
+		var prefixRE *regexp.Regexp
+		if len(remains) != 0 {
+			// We need to look deeper so full prefix will end with a /
+			prefixRE = regexp.MustCompile(prefix + section + "/")
 		} else {
-			break
+			prefixRE = regexp.MustCompile(prefix + section)
+		}
+		var (
+			continuationToken *string
+			truncated         bool
+		)
+		for continuationToken, truncated = nil, true; truncated; {
+			s3ListChunk, err := client.ChunkedBucketList(bucketName, prefix, continuationToken)
+			if err != nil {
+				return []string{}, err
+			}
+			truncated = s3ListChunk.Truncated
+			continuationToken = s3ListChunk.ContinuationToken
+
+			if len(remains) != 0 {
+				// We need to look deeper so full prefix will end with a /
+				for _, commonPrefix := range s3ListChunk.CommonPrefixes {
+					if prefixRE.MatchString(commonPrefix) {
+						queue = append(queue, work{prefix: commonPrefix, remains: remains})
+					}
+				}
+			} else {
+				// We're looking for a leaf
+				for _, path := range s3ListChunk.Paths {
+					if prefixRE.MatchString(path) {
+						matchingPaths = append(matchingPaths, path)
+					}
+				}
+			}
 		}
 	}
-
-	if len(validSections) == 0 {
-		return ""
-	}
-
-	return strings.Join(validSections, "/") + "/"
+	return matchingPaths, nil
 }
 
 func GetBucketFileVersions(client s3resource.S3Client, source s3resource.Source) Extractions {
-	regexp := source.Regexp
-	hint := PrefixHint(regexp)
+	regex := source.Regexp
 
-	paths, err := client.BucketFiles(source.Bucket, hint)
+	matchingPaths, err := GetMatchingPathsFromBucket(client, source.Bucket, regex)
 	if err != nil {
 		s3resource.Fatal("listing files", err)
 	}
 
-	matchingPaths, err := Match(paths, source.Regexp)
-	if err != nil {
-		s3resource.Fatal("finding matches", err)
-	}
-
 	var extractions = make(Extractions, 0, len(matchingPaths))
 	for _, path := range matchingPaths {
-		extraction, ok := Extract(path, regexp)
+		extraction, ok := Extract(path, regex)
 
 		if ok {
 			extractions = append(extractions, extraction)

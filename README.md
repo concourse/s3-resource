@@ -56,10 +56,11 @@ version numbers.
 
 One of the following two options must be specified:
 
-* `regexp`: *Optional.* The pattern to match filenames against within S3. The first
-  grouped match is used to extract the version, or if a group is explicitly
-  named `version`, that group is used. At least one capture group must be
-  specified, with parentheses.
+* `regexp`: *Optional.* The forward-slash (`/`) delimited sequence of patterns to
+  match against the sub-directories and filenames of the objects stored within
+  the S3 bucket. The first grouped match is used to extract the version, or if
+  a group is explicitly named `version`, that group is used. At least one
+  capture group must be specified, with parentheses.
 
   The version extracted from this pattern is used to version the resource.
   Semantic versions, or just numbers, are supported. Accordingly, full regular
@@ -253,6 +254,14 @@ docker build . -t s3-resource --target tests -f dockerfiles/ubuntu/Dockerfile \
   --build-arg S3_VERSIONED_TESTING_BUCKET="bucket-versioned" \
   --build-arg S3_TESTING_REGION="us-east-1" \
   --build-arg S3_ENDPOINT="https://s3.amazonaws.com"
+```
+
+##### Speeding up integration tests by skipping large file upload
+
+One of the integration tests uploads a large file (>40GB) and so can be slow.
+It can be skipped by adding the following option when running the tests:
+```
+  --build-arg S3_TESTING_NO_LARGE_UPLOAD=true
 ```
 
 ##### Integration tests using role assumption
