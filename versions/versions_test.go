@@ -333,6 +333,46 @@ var _ = Describe("GetMatchingPathsFromBucket", func() {
 		})
 	})
 
+	Context("When regexp is anchored explicitly and has not prefix", func() {
+		It("still works", func() {
+			s3client.ChunkedBucketListReturnsOnCall(0, s3resource.BucketListChunk{
+				Paths: []string{
+					"substring",
+					"also-substring",
+					"subscribing",
+					"substring.suffix",
+				},
+			}, nil)
+
+			matchingPaths, err := versions.GetMatchingPathsFromBucket(
+				s3client, "bucket", "^sub(.*)ing$",
+			)
+			Ω(err).ShouldNot(HaveOccurred())
+			Ω(s3client.ChunkedBucketListCallCount()).Should(Equal(1))
+			Ω(matchingPaths).Should(ConsistOf("substring", "subscribing"))
+		})
+	})
+
+	Context("When regexp is anchored explicitly and has prefix", func() {
+		It("still works", func() {
+			s3client.ChunkedBucketListReturnsOnCall(0, s3resource.BucketListChunk{
+				Paths: []string{
+					"pre/ssing",
+					"pre/singer",
+				},
+			}, nil)
+
+			matchingPaths, err := versions.GetMatchingPathsFromBucket(
+				s3client, "bucket", "^pre/(.*)ing$",
+			)
+			Ω(err).ShouldNot(HaveOccurred())
+			Ω(s3client.ChunkedBucketListCallCount()).Should(Equal(1))
+			_, prefix, _ := s3client.ChunkedBucketListArgsForCall(0)
+			Ω(prefix).Should(Equal("pre/"))
+			Ω(matchingPaths).Should(ConsistOf("pre/ssing"))
+		})
+	})
+
 	Context("When S3 returns an error", func() {
 		BeforeEach(func() {
 			s3client.ChunkedBucketListReturns(
