@@ -134,9 +134,9 @@ func GetMatchingPathsFromBucket(client s3resource.S3Client, bucketName string, r
 		var prefixRE *regexp.Regexp
 		if len(remains) != 0 {
 			// We need to look deeper so full prefix will end with a /
-			prefixRE = regexp.MustCompile(prefix + section + "/")
+			prefixRE = regexp.MustCompile("^" + prefix + section + "/$")
 		} else {
-			prefixRE = regexp.MustCompile(prefix + section)
+			prefixRE = regexp.MustCompile("^" + prefix + section + "$")
 		}
 		var (
 			continuationToken *string
