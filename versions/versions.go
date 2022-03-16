@@ -115,6 +115,13 @@ func GetMatchingPathsFromBucket(client s3resource.S3Client, bucketName string, r
 
 	specialCharsRE := regexp.MustCompile(`[\\\*\.\[\]\(\)\{\}\?\|\^\$\+]`)
 
+	if strings.HasPrefix(regex, "^") {
+		regex = regex[1:]
+	}
+	if strings.HasSuffix(regex, "$") {
+		regex = regex[:len(regex)-1]
+	}
+
 	matchingPaths := []string{}
 	queue := []work{{prefix: "", remains: strings.Split(regex, "/")}}
 	for len(queue) != 0 {
@@ -134,9 +141,9 @@ func GetMatchingPathsFromBucket(client s3resource.S3Client, bucketName string, r
 		var prefixRE *regexp.Regexp
 		if len(remains) != 0 {
 			// We need to look deeper so full prefix will end with a /
-			prefixRE = regexp.MustCompile(prefix + section + "/")
+			prefixRE = regexp.MustCompile("^" + prefix + section + "/$")
 		} else {
-			prefixRE = regexp.MustCompile(prefix + section)
+			prefixRE = regexp.MustCompile("^" + prefix + section + "$")
 		}
 		var (
 			continuationToken *string
