@@ -15,6 +15,7 @@ resources:
   source:
     uri: ((s3-resource-git-url))
     branch: ((s3-resource-git-branch))
+    commit_verification_keys: ((cloud-gov-pgp-keys))
 
 - name: docker-image-repo
   type: docker-image
