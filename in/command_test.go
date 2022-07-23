@@ -4,7 +4,6 @@ import (
 	"archive/tar"
 	"archive/zip"
 	"compress/gzip"
-	"fmt"
 	"io"
 	"io/ioutil"
 	"log"
@@ -254,9 +253,10 @@ var _ = Describe("In Command", func() {
 		})
 
 		Context("when params is configured to unpack into a specific dir", func() {
+			customUnpackDir := "custom-unpack-into-dir"
+
 			BeforeEach(func() {
-				request.Params.Unpack = true
-				request.Params.UnpackInto = "custom-unpack-into-dir"
+				request.Params.UnpackInto = customUnpackDir
 
 				s3client.DownloadFileStub = func(bucketName string, remotePath string, versionID string, localPath string) error {
 					src := filepath.Join(tmpPath, "some-file")
@@ -274,11 +274,34 @@ var _ = Describe("In Command", func() {
 				}
 			})
 
-			It("extracts the archive into the specified dir", func() {
+			It("extracts the archives' contents into the specified dir", func() {
 				_, err := command.Run(destDir, request)
 				Expect(err).NotTo(HaveOccurred())
 
-				bs, err := ioutil.ReadFile(filepath.Join(destDir, "custom-unpack-into-dir", "some-file"))
+				bs, err := ioutil.ReadFile(filepath.Join(destDir, customUnpackDir, "some-file"))
+				Expect(err).NotTo(HaveOccurred())
+
+				Expect(bs).To(Equal([]byte("some-contents")))
+			})
+
+			It("extracts the archives' contents into the current directory if unpack_into=.", func() {
+				request.Params.UnpackInto = "."
+				_, err := command.Run(destDir, request)
+				Expect(err).NotTo(HaveOccurred())
+
+				bs, err := ioutil.ReadFile(filepath.Join(destDir, "some-file"))
+				Expect(err).NotTo(HaveOccurred())
+
+				Expect(bs).To(Equal([]byte("some-contents")))
+			})
+
+			It("still unpacks even if the 'unpack' param is set to false", func() {
+				request.Params.Unpack = false
+
+				_, err := command.Run(destDir, request)
+				Expect(err).NotTo(HaveOccurred())
+
+				bs, err := ioutil.ReadFile(filepath.Join(destDir, customUnpackDir, "some-file"))
 				Expect(err).NotTo(HaveOccurred())
 
 				Expect(bs).To(Equal([]byte("some-contents")))

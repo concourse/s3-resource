@@ -137,11 +137,6 @@ func (command *Command) Run(destinationDir string, request Request) (Response, e
 					unpackInto = filepath.Dir(archiveFilePath)
 				}
 
-				fmt.Printf("\n**** params: Unpack=%t | UnpackInto='%s'", request.Params.Unpack, request.Params.UnpackInto)
-				fmt.Printf("\n     remotePath=%s", remotePath)
-				fmt.Printf("\n     archiveFilePath=%s", archiveFilePath)
-				fmt.Printf("\n     unpacking into: %s\n", unpackInto)
-
 				mime := archiveMimetype(archiveFilePath)
 				if mime == "" {
 					return Response{}, fmt.Errorf("not an archive: %s", archiveFilePath)
