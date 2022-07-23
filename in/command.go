@@ -122,14 +122,32 @@ func (command *Command) Run(destinationDir string, request Request) (Response, e
 				return Response{}, err
 			}
 
+			if request.Params.UnpackInto != "" {
+				request.Params.Unpack = true
+			}
 			if request.Params.Unpack {
-				destinationPath := filepath.Join(destinationDir, path.Base(remotePath))
-				mime := archiveMimetype(destinationPath)
-				if mime == "" {
-					return Response{}, fmt.Errorf("not an archive: %s", destinationPath)
+				archiveFilePath := filepath.Join(destinationDir, path.Base(remotePath))
+
+				var unpackInto string
+				if request.Params.UnpackInto != "" {
+					customOutputDir := filepath.Join(destinationDir, request.Params.UnpackInto)
+					os.Mkdir(customOutputDir, os.ModeDir)
+					unpackInto = customOutputDir
+				} else {
+					unpackInto = filepath.Dir(archiveFilePath)
 				}
 
-				err = extractArchive(mime, destinationPath)
+				fmt.Printf("\n**** params: Unpack=%t | UnpackInto='%s'", request.Params.Unpack, request.Params.UnpackInto)
+				fmt.Printf("\n     remotePath=%s", remotePath)
+				fmt.Printf("\n     archiveFilePath=%s", archiveFilePath)
+				fmt.Printf("\n     unpacking into: %s\n", unpackInto)
+
+				mime := archiveMimetype(archiveFilePath)
+				if mime == "" {
+					return Response{}, fmt.Errorf("not an archive: %s", archiveFilePath)
+				}
+
+				err = extractArchive(mime, archiveFilePath, unpackInto)
 				if err != nil {
 					return Response{}, err
 				}
@@ -232,8 +250,8 @@ func (command *Command) metadata(remotePath string, private bool, url string) []
 	return metadata
 }
 
-func extractArchive(mime, filename string) error {
-	destDir := filepath.Dir(filename)
+func extractArchive(mime, filename string, destDir string) error {
+	// destDir := filepath.Dir(filename)
 
 	err := inflate(mime, filename, destDir)
 	if err != nil {

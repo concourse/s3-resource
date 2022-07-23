@@ -4,6 +4,7 @@ import (
 	"archive/tar"
 	"archive/zip"
 	"compress/gzip"
+	"fmt"
 	"io"
 	"io/ioutil"
 	"log"
@@ -15,7 +16,7 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
-	"github.com/concourse/s3-resource"
+	s3resource "github.com/concourse/s3-resource"
 	. "github.com/concourse/s3-resource/in"
 
 	"github.com/concourse/s3-resource/fakes"
@@ -249,6 +250,38 @@ var _ = Describe("In Command", func() {
 				Expect(err).To(HaveOccurred())
 				Expect(err.Error()).To(ContainSubstring("regex does not match provided version"))
 				Expect(err.Error()).To(ContainSubstring("files/a-file-1.3"))
+			})
+		})
+
+		Context("when params is configured to unpack into a specific dir", func() {
+			BeforeEach(func() {
+				request.Params.Unpack = true
+				request.Params.UnpackInto = "custom-unpack-into-dir"
+
+				s3client.DownloadFileStub = func(bucketName string, remotePath string, versionID string, localPath string) error {
+					src := filepath.Join(tmpPath, "some-file")
+
+					err := ioutil.WriteFile(src, []byte("some-contents"), os.ModePerm)
+					Expect(err).NotTo(HaveOccurred())
+
+					err = createTarball([]string{src}, tmpPath, localPath)
+					Expect(err).NotTo(HaveOccurred())
+
+					_, err = os.Stat(localPath)
+					Expect(err).NotTo(HaveOccurred())
+
+					return nil
+				}
+			})
+
+			It("extracts the archive into the specified dir", func() {
+				_, err := command.Run(destDir, request)
+				Expect(err).NotTo(HaveOccurred())
+
+				bs, err := ioutil.ReadFile(filepath.Join(destDir, "custom-unpack-into-dir", "some-file"))
+				Expect(err).NotTo(HaveOccurred())
+
+				Expect(bs).To(Equal([]byte("some-contents")))
 			})
 		})
 
