@@ -118,6 +118,8 @@ Places the following files in the destination:
 
 * `unpack`: *Optional.* If true and the file is an archive (tar, gzipped tar, other gzipped file, or zip), unpack the file. Gzipped tarballs will be both ungzipped and untarred. It is ignored when `get` is running on the initial version.
 
+* `unpack_into`: *Optional.* If set (to a string) and the file is an archive, unpack the file into a directory whose name is the value of the parameter. Note that setting this paramter auto-sets the `unpack` parameter to `true`, no matter if you set `unpack` to `false` or don't set it at all.
+
 * `download_tags`: *Optional.* Write object tags to `tags.json`. Value needs to be a true/false string.
 
 ### `out`: Upload an object to the bucket.
