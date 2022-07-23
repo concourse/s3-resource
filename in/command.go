@@ -10,7 +10,7 @@ import (
 	"path/filepath"
 	"strconv"
 
-	"github.com/concourse/s3-resource"
+	s3resource "github.com/concourse/s3-resource"
 	"github.com/concourse/s3-resource/versions"
 )
 
@@ -257,7 +257,7 @@ func extractArchive(mime, filename string, destDir string) error {
 		}
 
 		if len(fileInfos) != 1 {
-			return fmt.Errorf("%d files found after gunzip; expected 1", len(fileInfos))
+			return fmt.Errorf("\n%d files found after gunzip; expected 1\nTried to extract archive %s with type '%s' into dir: %s", len(fileInfos), filename, mime, destDir)
 		}
 
 		filename = filepath.Join(destDir, fileInfos[0].Name())
