@@ -246,8 +246,6 @@ func (command *Command) metadata(remotePath string, private bool, url string) []
 }
 
 func extractArchive(mime, filename string, destDir string) error {
-	// destDir := filepath.Dir(filename)
-
 	err := inflate(mime, filename, destDir)
 	if err != nil {
 		return fmt.Errorf("failed to extract archive: %s", err)
