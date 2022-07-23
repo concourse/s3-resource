@@ -126,7 +126,11 @@ func (command *Command) Run(destinationDir string, request Request) (Response, e
 				request.Params.Unpack = true
 			}
 			if request.Params.Unpack {
-				archiveFilePath := filepath.Join(destinationDir, path.Base(remotePath))
+				destinationPath := filepath.Join(destinationDir, path.Base(remotePath))
+				mime := archiveMimetype(destinationPath)
+				if mime == "" {
+					return Response{}, fmt.Errorf("not an archive: %s", destinationPath)
+				}
 
 				var unpackInto string
 				if request.Params.UnpackInto != "" {
@@ -134,15 +138,10 @@ func (command *Command) Run(destinationDir string, request Request) (Response, e
 					os.Mkdir(customOutputDir, os.ModeDir)
 					unpackInto = customOutputDir
 				} else {
-					unpackInto = filepath.Dir(archiveFilePath)
+					unpackInto = filepath.Dir(destinationPath)
 				}
 
-				mime := archiveMimetype(archiveFilePath)
-				if mime == "" {
-					return Response{}, fmt.Errorf("not an archive: %s", archiveFilePath)
-				}
-
-				err = extractArchive(mime, archiveFilePath, unpackInto)
+				err = extractArchive(mime, destinationPath, unpackInto)
 				if err != nil {
 					return Response{}, err
 				}
