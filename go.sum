@@ -1,5 +1,5 @@
-github.com/aws/aws-sdk-go v1.32.0 h1:P38SNbJIasEcA9gAlz/AG309VvhNv2CfNIJXQ61Oh6I=
-github.com/aws/aws-sdk-go v1.32.0/go.mod h1:5zCpMtNQVjRREroY7sYe8lOMRSxkhG6MZveU8YkpAk0=
+github.com/aws/aws-sdk-go v1.33.0 h1:Bq5Y6VTLbfnJp1IV8EL/qUU5qO1DYHda/zis/sqevkY=
+github.com/aws/aws-sdk-go v1.33.0/go.mod h1:5zCpMtNQVjRREroY7sYe8lOMRSxkhG6MZveU8YkpAk0=
 github.com/cheggaaa/pb v0.0.0-20150813110609-da1f27ad1d95 h1:KTjNvNiNWsDbIw/w87/d3z3Yts0pKrTu0yxsuQ6yDjo=
 github.com/cheggaaa/pb v0.0.0-20150813110609-da1f27ad1d95/go.mod h1:pQciLPpbU0oxA0h+VJYYLxO+XeDQb5pZijXscXHm81s=
 github.com/cppforlife/go-semi-semantic v0.0.0-20160921010311-576b6af77ae4 h1:J+ghqo7ZubTzelkjo9hntpTtP/9lUCWH9icEmAW+B+Q=
