@@ -3,7 +3,7 @@ module github.com/concourse/s3-resource
 go 1.13
 
 require (
-	github.com/aws/aws-sdk-go v1.32.0
+	github.com/aws/aws-sdk-go v1.34.0
 	github.com/cheggaaa/pb v0.0.0-20150813110609-da1f27ad1d95
 	github.com/cppforlife/go-semi-semantic v0.0.0-20160921010311-576b6af77ae4
 	github.com/fatih/color v1.1.1-0.20170106221514-e8e01ee22a7d
