@@ -10,7 +10,7 @@ import (
 	"path/filepath"
 	"strconv"
 
-	"github.com/concourse/s3-resource"
+	s3resource "github.com/concourse/s3-resource"
 	"github.com/concourse/s3-resource/versions"
 )
 
@@ -26,6 +26,10 @@ func (up *RequestURLProvider) GetURL(request Request, remotePath string) string 
 
 func (up *RequestURLProvider) s3URL(request Request, remotePath string) string {
 	return up.s3Client.URL(request.Source.Bucket, remotePath, request.Source.Private, request.Version.VersionID)
+}
+
+func GetS3URI(request Request, remotePath string) string {
+	return "s3://" + request.Source.Bucket + remotePath
 }
 
 type Command struct {
@@ -56,6 +60,7 @@ func (command *Command) Run(destinationDir string, request Request) (Response, e
 	var versionNumber string
 	var versionID string
 	var url string
+	var s3_uri string
 	var isInitialVersion bool
 	var skipDownload bool
 
@@ -152,6 +157,10 @@ func (command *Command) Run(destinationDir string, request Request) (Response, e
 		if err = command.writeURLFile(destinationDir, url); err != nil {
 			return Response{}, err
 		}
+		s3_uri = GetS3URI(request, remotePath)
+		if err = command.writeS3URIFile(destinationDir, s3_uri); err != nil {
+			return Response{}, err
+		}
 	}
 
 	err = command.writeVersionFile(versionNumber, destinationDir)
@@ -180,6 +189,10 @@ func (command *Command) Run(destinationDir string, request Request) (Response, e
 
 func (command *Command) writeURLFile(destDir string, url string) error {
 	return ioutil.WriteFile(filepath.Join(destDir, "url"), []byte(url), 0644)
+}
+
+func (command *Command) writeS3URIFile(destDir string, s3_uri string) error {
+	return ioutil.WriteFile(filepath.Join(destDir, "s3_uri"), []byte(s3_uri), 0644)
 }
 
 func (command *Command) writeVersionFile(versionNumber string, destDir string) error {
