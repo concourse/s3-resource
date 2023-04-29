@@ -9,6 +9,16 @@ import (
 	"github.com/cppforlife/go-semi-semantic/version"
 )
 
+func sliceIndex(haystack []string, needle string) int {
+	for i, element := range haystack {
+		if element == needle {
+			return i
+		}
+	}
+
+	return -1
+}
+
 func MatchUnanchored(paths []string, pattern string) ([]string, error) {
 	matched := []string{}
 
@@ -28,13 +38,13 @@ func MatchUnanchored(paths []string, pattern string) ([]string, error) {
 	return matched, nil
 }
 
-func Extract(path string, pattern string) (Extraction, bool) {
+func GetMatch(path string, pattern string) (string, bool) {
 	compiled := regexp.MustCompile(pattern)
 	matches := compiled.FindStringSubmatch(path)
 
 	var match string
 	if len(matches) < 2 { // whole string and match
-		return Extraction{}, false
+		return "", false
 	} else if len(matches) == 2 {
 		match = matches[1]
 	} else if len(matches) > 2 { // many matches
@@ -47,29 +57,58 @@ func Extract(path string, pattern string) (Extraction, bool) {
 			match = matches[1]
 		}
 	}
+	return match, true
+}
+
+func Extract(path string, pattern string, order_by string) (Extraction, bool) {
+	if order_by == "string" {
+		return ExtractString(path, pattern)
+	} else {
+		return ExtractSemver(path, pattern)
+	}
+}
+func ExtractSemver(path string, pattern string) (SemverExtraction, bool) {
+
+	match, ok := GetMatch(path, pattern)
+
+	if !ok {
+		return SemverExtraction{}, false
+	}
 
 	ver, err := version.NewVersionFromString(match)
 	if err != nil {
 		panic("version number was not valid: " + err.Error())
 	}
 
-	extraction := Extraction{
+	extraction := SemverExtraction{
 		Path:          path,
 		Version:       ver,
 		VersionNumber: match,
 	}
 
-	return extraction, true
+	return extraction, ok
 }
+func ExtractString(path string, pattern string) (StringExtraction, bool) {
 
-func sliceIndex(haystack []string, needle string) int {
-	for i, element := range haystack {
-		if element == needle {
-			return i
-		}
+	match, ok := GetMatch(path, pattern)
+
+	if !ok {
+		return StringExtraction{}, false
 	}
 
-	return -1
+	extraction := StringExtraction{
+		Path:          path,
+		VersionNumber: match,
+	}
+
+	return extraction, ok
+}
+
+type Extraction interface {
+	Compare(other Extraction) int
+	GetPath() string
+	GetVersion() version.Version
+	GetVersionNumber() string
 }
 
 type Extractions []Extraction
@@ -79,14 +118,14 @@ func (e Extractions) Len() int {
 }
 
 func (e Extractions) Less(i int, j int) bool {
-	return e[i].Version.IsLt(e[j].Version)
+	return e[i].Compare(e[j]) == -1
 }
 
 func (e Extractions) Swap(i int, j int) {
 	e[i], e[j] = e[j], e[i]
 }
 
-type Extraction struct {
+type SemverExtraction struct {
 	// path to s3 object in bucket
 	Path string
 
@@ -95,6 +134,46 @@ type Extraction struct {
 
 	// the raw version match
 	VersionNumber string
+}
+
+func (s SemverExtraction) Compare(other Extraction) int {
+	return s.Version.Compare(other.GetVersion())
+}
+
+func (s SemverExtraction) GetPath() string {
+	return s.Path
+}
+
+func (s SemverExtraction) GetVersion() version.Version {
+	return s.Version
+}
+
+func (s SemverExtraction) GetVersionNumber() string {
+	return s.VersionNumber
+}
+
+type StringExtraction struct {
+	// path to s3 object in bucket
+	Path string
+
+	// the raw version match
+	VersionNumber string
+}
+
+func (s StringExtraction) Compare(other Extraction) int {
+	return strings.Compare(s.VersionNumber, other.GetVersionNumber())
+}
+
+func (s StringExtraction) GetPath() string {
+	return s.Path
+}
+
+func (s StringExtraction) GetVersion() version.Version {
+	panic("StringExtraction does not have a parsed Version")
+}
+
+func (s StringExtraction) GetVersionNumber() string {
+	return s.VersionNumber
 }
 
 // GetMatchingPathsFromBucket gets all the paths in the S3 bucket `bucketName` which match all the sections of `regex`
@@ -187,7 +266,7 @@ func GetBucketFileVersions(client s3resource.S3Client, source s3resource.Source)
 
 	var extractions = make(Extractions, 0, len(matchingPaths))
 	for _, path := range matchingPaths {
-		extraction, ok := Extract(path, regex)
+		extraction, ok := Extract(path, regex, source.OrderBy)
 
 		if ok {
 			extractions = append(extractions, extraction)

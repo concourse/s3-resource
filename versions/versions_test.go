@@ -86,10 +86,10 @@ var _ = Describe("MatchUnanchored", func() {
 	ItMatchesPaths(versions.MatchUnanchored)
 })
 
-var _ = Describe("Extract", func() {
+var _ = Describe("ExtractSemver", func() {
 	Context("when the path does not contain extractable information", func() {
 		It("doesn't extract it", func() {
-			result, ok := versions.Extract("abc.tgz", "abc-(.*).tgz")
+			result, ok := versions.ExtractSemver("abc.tgz", "abc-(.*).tgz")
 			Ω(ok).Should(BeFalse())
 			Ω(result).Should(BeZero())
 		})
@@ -97,7 +97,7 @@ var _ = Describe("Extract", func() {
 
 	Context("when the path contains extractable information", func() {
 		It("extracts it", func() {
-			result, ok := versions.Extract("abc-105.tgz", "abc-(.*).tgz")
+			result, ok := versions.ExtractSemver("abc-105.tgz", "abc-(.*).tgz")
 			Ω(ok).Should(BeTrue())
 
 			Ω(result.Path).Should(Equal("abc-105.tgz"))
@@ -106,7 +106,7 @@ var _ = Describe("Extract", func() {
 		})
 
 		It("extracts semantic version numbers", func() {
-			result, ok := versions.Extract("abc-1.0.5.tgz", "abc-(.*).tgz")
+			result, ok := versions.ExtractSemver("abc-1.0.5.tgz", "abc-(.*).tgz")
 			Ω(ok).Should(BeTrue())
 
 			Ω(result.Path).Should(Equal("abc-1.0.5.tgz"))
@@ -115,7 +115,7 @@ var _ = Describe("Extract", func() {
 		})
 
 		It("extracts versions with more than 3 segments", func() {
-			result, ok := versions.Extract("abc-1.0.6.1-rc7.tgz", "abc-(.*).tgz")
+			result, ok := versions.ExtractSemver("abc-1.0.6.1-rc7.tgz", "abc-(.*).tgz")
 			Ω(ok).Should(BeTrue())
 
 			Ω(result.VersionNumber).Should(Equal("1.0.6.1-rc7"))
@@ -123,7 +123,7 @@ var _ = Describe("Extract", func() {
 		})
 
 		It("takes the first match if there are many", func() {
-			result, ok := versions.Extract("abc-1.0.5-def-2.3.4.tgz", "abc-(.*)-def-(.*).tgz")
+			result, ok := versions.ExtractSemver("abc-1.0.5-def-2.3.4.tgz", "abc-(.*)-def-(.*).tgz")
 			Ω(ok).Should(BeTrue())
 
 			Ω(result.Path).Should(Equal("abc-1.0.5-def-2.3.4.tgz"))
@@ -132,12 +132,74 @@ var _ = Describe("Extract", func() {
 		})
 
 		It("extracts a named group called 'version' above all others", func() {
-			result, ok := versions.Extract("abc-1.0.5-def-2.3.4.tgz", "abc-(.*)-def-(?P<version>.*).tgz")
+			result, ok := versions.ExtractSemver("abc-1.0.5-def-2.3.4.tgz", "abc-(.*)-def-(?P<version>.*).tgz")
 			Ω(ok).Should(BeTrue())
 
 			Ω(result.Path).Should(Equal("abc-1.0.5-def-2.3.4.tgz"))
 			Ω(result.Version.String()).Should(Equal("2.3.4"))
 			Ω(result.VersionNumber).Should(Equal("2.3.4"))
+		})
+	})
+})
+
+var _ = Describe("ExtractString", func() {
+	Context("when the path does not contain extractable information", func() {
+		It("doesn't extract it", func() {
+			result, ok := versions.ExtractString("abc.tgz", "abc-(.*).tgz")
+			Ω(ok).Should(BeFalse())
+			Ω(result).Should(BeZero())
+		})
+	})
+
+	Context("when the path contains extractable information", func() {
+		It("extracts it", func() {
+			result, ok := versions.ExtractString("abc-105.tgz", "abc-(.*).tgz")
+			Ω(ok).Should(BeTrue())
+
+			Ω(result.Path).Should(Equal("abc-105.tgz"))
+			Ω(result.VersionNumber).Should(Equal("105"))
+		})
+		It("extracts any pattern as a version", func() {
+			result, ok := versions.ExtractString("abc-still-a-file.tgz", "abc-(.*).tgz")
+			Ω(ok).Should(BeTrue())
+			Ω(result.VersionNumber).Should(Equal("still-a-file"))
+		})
+		It("handles datetime-like files", func() {
+			result, ok := versions.ExtractString("abc-2022-12-01.tgz", "abc-(.*).tgz")
+			Ω(ok).Should(BeTrue())
+			Ω(result.VersionNumber).Should(Equal("2022-12-01"))
+		})
+		It("extracts versions with more than 3 segments", func() {
+			result, ok := versions.ExtractString("abc-1.0.6.1-rc7.tgz", "abc-(.*).tgz")
+			Ω(ok).Should(BeTrue())
+
+			Ω(result.VersionNumber).Should(Equal("1.0.6.1-rc7"))
+		})
+
+		It("takes the first match if there are many", func() {
+			result, ok := versions.ExtractString("abc-1.0.5-def-2.3.4.tgz", "abc-(.*)-def-(.*).tgz")
+			Ω(ok).Should(BeTrue())
+
+			Ω(result.Path).Should(Equal("abc-1.0.5-def-2.3.4.tgz"))
+			Ω(result.VersionNumber).Should(Equal("1.0.5"))
+		})
+
+		It("extracts a named group called 'version' above all others", func() {
+			result, ok := versions.ExtractString("abc-1.0.5-def-2.3.4.tgz", "abc-(.*)-def-(?P<version>.*).tgz")
+			Ω(ok).Should(BeTrue())
+
+			Ω(result.Path).Should(Equal("abc-1.0.5-def-2.3.4.tgz"))
+			Ω(result.VersionNumber).Should(Equal("2.3.4"))
+		})
+
+		It("sorts files correctly", func() {
+			result1, ok := versions.ExtractString("abc-2022-01-21.tgz", "abc-(.*).tgz")
+			Ω(ok).Should(BeTrue())
+			result2, ok := versions.ExtractString("abc-2022-12-01.tgz", "abc-(.*).tgz")
+			Ω(ok).Should(BeTrue())
+			Ω(result1.VersionNumber).Should(Equal("2022-01-21"))
+			Ω(result2.VersionNumber).Should(Equal("2022-12-01"))
+			Ω(result1.Compare(result2)).Should(Equal(-1))
 		})
 	})
 })
