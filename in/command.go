@@ -167,7 +167,7 @@ func (command *Command) Run(destinationDir string, request Request) (Response, e
 		}
 	}
 
-	err = command.writeVersionFile(versionNumber, destinationDir)
+	err = command.writeVersionFile(destinationDir, versionNumber)
 	if err != nil {
 		return Response{}, err
 	}
@@ -203,7 +203,7 @@ func (command *Command) WriteFilePathFile(destDir string, destinationPath string
 	return ioutil.WriteFile(filepath.Join(destDir, "file_path"), []byte(destinationPath), 0644)
 }
 
-func (command *Command) writeVersionFile(versionNumber string, destDir string) error {
+func (command *Command) writeVersionFile(destDir string, versionNumber string) error {
 	return ioutil.WriteFile(filepath.Join(destDir, "version"), []byte(versionNumber), 0644)
 }
 
