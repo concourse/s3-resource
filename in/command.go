@@ -29,7 +29,7 @@ func (up *RequestURLProvider) s3URL(request Request, remotePath string) string {
 }
 
 func GetS3URI(request Request, remotePath string) string {
-	return "s3://" + request.Source.Bucket + remotePath
+	return "s3://" + request.Source.Bucket + "/" + remotePath
 }
 
 type Command struct {
