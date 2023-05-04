@@ -127,8 +127,8 @@ func (command *Command) Run(destinationDir string, request Request) (Response, e
 				return Response{}, err
 			}
 
-			destinationPath := filepath.Join(destinationDir, path.Base(remotePath))
 			if request.Params.Unpack {
+				destinationPath := filepath.Join(destinationDir, path.Base(remotePath))
 				mime := archiveMimetype(destinationPath)
 				if mime == "" {
 					return Response{}, fmt.Errorf("not an archive: %s", destinationPath)
@@ -139,10 +139,6 @@ func (command *Command) Run(destinationDir string, request Request) (Response, e
 					return Response{}, err
 				}
 			}
-			if err = command.WriteFilePathFile(destinationDir, destinationPath); err != nil {
-				return Response{}, err
-			}
-
 		}
 
 		if request.Params.DownloadTags {
@@ -197,10 +193,6 @@ func (command *Command) writeURLFile(destDir string, url string) error {
 
 func (command *Command) writeS3URIFile(destDir string, s3_uri string) error {
 	return ioutil.WriteFile(filepath.Join(destDir, "s3_uri"), []byte(s3_uri), 0644)
-}
-
-func (command *Command) WriteFilePathFile(destDir string, destinationPath string) error {
-	return ioutil.WriteFile(filepath.Join(destDir, "file_path"), []byte(destinationPath), 0644)
 }
 
 func (command *Command) writeVersionFile(destDir string, versionNumber string) error {

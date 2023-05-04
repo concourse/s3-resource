@@ -110,8 +110,6 @@ Places the following files in the destination:
 
 * `s3_uri`: A file containing the S3 URI of the object (for use with `aws cp`, etc.)
 
-* `file_path`: A file containing the absolute path to the downloaded filename (if `skip_download` is not `true`). Makes for easy use with the `load_var` step
-
 * `version`: The version identified in the file name.
 
 * `tags.json`: The object's tags represented as a JSON object. Only written if `download_tags` is set to true.
