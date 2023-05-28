@@ -52,6 +52,10 @@ version numbers.
 
 * `disable_multipart`: *Optional.* Disable Multipart Upload. useful for S3 compatible providers that do not support multipart upload.
 
+* `order_by`: *default: 'semver'*:
+  - `'semver'`: The pattern in the regex capture group will be parsed and sorted as a semantic version
+  - `'string'`: The pattern in the regex capture group will be stored raw and sorted using string sorting rules
+
 ### File Names
 
 One of the following two options must be specified:
@@ -63,7 +67,7 @@ One of the following two options must be specified:
   capture group must be specified, with parentheses.
 
   The version extracted from this pattern is used to version the resource.
-  Semantic versions, or just numbers, are supported. Accordingly, full regular
+  By default, semantic versions, or just numbers, are supported. If the `order_by: 'string'` option is given, the extracted version will be compared against the other versions as plain strings. Accordingly, full regular
   expressions are supported, to specify the capture groups.
 
   The full `regexp` will be matched against the S3 objects as if it was anchored

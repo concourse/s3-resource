@@ -3,7 +3,7 @@ package check
 import (
 	"errors"
 
-	"github.com/concourse/s3-resource"
+	s3resource "github.com/concourse/s3-resource"
 	"github.com/concourse/s3-resource/versions"
 )
 
@@ -33,7 +33,7 @@ func (command *Command) checkByRegex(request Request) Response {
 	extractions := versions.GetBucketFileVersions(command.s3client, request.Source)
 
 	if request.Source.InitialPath != "" {
-		extraction, ok := versions.Extract(request.Source.InitialPath, request.Source.Regexp)
+		extraction, ok := versions.Extract(request.Source.InitialPath, request.Source.Regexp, request.Source.OrderBy)
 		if ok {
 			extractions = append([]versions.Extraction{extraction}, extractions...)
 		}
@@ -43,7 +43,7 @@ func (command *Command) checkByRegex(request Request) Response {
 		return nil
 	}
 
-	lastVersion, matched := versions.Extract(request.Version.Path, request.Source.Regexp)
+	lastVersion, matched := versions.Extract(request.Version.Path, request.Source.Regexp, request.Source.OrderBy)
 	if !matched {
 		return latestVersion(extractions)
 	} else {
@@ -98,16 +98,16 @@ func (command *Command) checkByVersionedFile(request Request) Response {
 
 func latestVersion(extractions versions.Extractions) Response {
 	lastExtraction := extractions[len(extractions)-1]
-	return []s3resource.Version{{Path: lastExtraction.Path}}
+	return []s3resource.Version{{Path: lastExtraction.GetPath()}}
 }
 
 func newVersions(lastVersion versions.Extraction, extractions versions.Extractions) Response {
 	response := Response{}
 
 	for _, extraction := range extractions {
-		if extraction.Version.Compare(lastVersion.Version) >= 0 {
+		if extraction.Compare(lastVersion) >= 0 {
 			version := s3resource.Version{
-				Path: extraction.Path,
+				Path: extraction.GetPath(),
 			}
 			response = append(response, version)
 		}
