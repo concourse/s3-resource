@@ -10,6 +10,7 @@ type Request struct {
 
 type Params struct {
 	Unpack       bool   `json:"unpack"`
+	DownloadTags bool   `json:"download_tags"`
 	SkipDownload string `json:"skip_download"`
 }
 

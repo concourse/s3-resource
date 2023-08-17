@@ -10,14 +10,15 @@ import (
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/s3"
-	"github.com/concourse/s3-resource"
+	"github.com/aws/aws-sdk-go/service/s3/s3manager"
+	s3resource "github.com/concourse/s3-resource"
 	"github.com/concourse/s3-resource/out"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"github.com/onsi/gomega/gbytes"
 	"github.com/onsi/gomega/gexec"
 
-	"github.com/nu7hatch/gouuid"
+	uuid "github.com/nu7hatch/gouuid"
 )
 
 var _ = Describe("out", func() {
@@ -65,6 +66,7 @@ var _ = Describe("out", func() {
 					AccessKeyID:     accessKeyID,
 					SecretAccessKey: secretAccessKey,
 					SessionToken:    sessionToken,
+					AwsRoleARN:      awsRoleARN,
 					Bucket:          versionedBucketName,
 					RegionName:      regionName,
 					Endpoint:        endpoint,
@@ -93,6 +95,7 @@ var _ = Describe("out", func() {
 					AccessKeyID:     accessKeyID,
 					SecretAccessKey: secretAccessKey,
 					SessionToken:    sessionToken,
+					AwsRoleARN:      awsRoleARN,
 					Bucket:          bucketName,
 					RegionName:      regionName,
 					Endpoint:        endpoint,
@@ -136,6 +139,7 @@ var _ = Describe("out", func() {
 					AccessKeyID:     accessKeyID,
 					SecretAccessKey: secretAccessKey,
 					SessionToken:    sessionToken,
+					AwsRoleARN:      awsRoleARN,
 					Bucket:          bucketName,
 					RegionName:      regionName,
 					Endpoint:        endpoint,
@@ -177,6 +181,7 @@ var _ = Describe("out", func() {
 					AccessKeyID:     accessKeyID,
 					SecretAccessKey: secretAccessKey,
 					SessionToken:    sessionToken,
+					AwsRoleARN:      awsRoleARN,
 					Bucket:          bucketName,
 					RegionName:      regionName,
 					Endpoint:        endpoint,
@@ -223,6 +228,7 @@ var _ = Describe("out", func() {
 						AccessKeyID:     accessKeyID,
 						SecretAccessKey: secretAccessKey,
 						SessionToken:    sessionToken,
+						AwsRoleARN:      awsRoleARN,
 						Bucket:          bucketName,
 						RegionName:      regionName,
 						Endpoint:        endpoint,
@@ -292,6 +298,54 @@ var _ = Describe("out", func() {
 			})
 		})
 
+		Context("with a large file that is multiple of MaxUploadParts", func() {
+			BeforeEach(func() {
+				if os.Getenv("S3_TESTING_NO_LARGE_UPLOAD") != "" {
+					Skip("'S3_TESTING_NO_LARGE_UPLOAD' is set, skipping.")
+				}
+
+				path := filepath.Join(sourceDir, "large-file-to-upload")
+
+				// touch the file
+				file, err := os.Create(path)
+				Ω(err).NotTo(HaveOccurred())
+				Ω(file.Close()).To(Succeed())
+
+				Ω(os.Truncate(path, s3manager.MinUploadPartSize*s3manager.MaxUploadParts)).To(Succeed())
+
+				outRequest := out.Request{
+					Source: s3resource.Source{
+						AccessKeyID:     accessKeyID,
+						SecretAccessKey: secretAccessKey,
+						SessionToken:    sessionToken,
+						AwsRoleARN:      awsRoleARN,
+						Bucket:          bucketName,
+						RegionName:      regionName,
+						Endpoint:        endpoint,
+					},
+					Params: out.Params{
+						File: "large-file-to-upload",
+						To:   directoryPrefix + "/",
+					},
+				}
+
+				err = json.NewEncoder(stdin).Encode(&outRequest)
+				Ω(err).ShouldNot(HaveOccurred())
+			})
+
+			AfterEach(func() {
+				err := s3client.DeleteFile(bucketName, filepath.Join(directoryPrefix, "large-file-to-upload"))
+				Ω(err).ShouldNot(HaveOccurred())
+			})
+
+			It("uploads the file to the correct bucket and outputs the version", func() {
+				s3files, err := s3client.BucketFiles(bucketName, directoryPrefix)
+				Ω(err).ShouldNot(HaveOccurred())
+
+				Ω(s3files).Should(ConsistOf(filepath.Join(directoryPrefix, "large-file-to-upload")))
+			})
+		})
+
 		Context("with regexp", func() {
 			BeforeEach(func() {
 				err := ioutil.WriteFile(filepath.Join(sourceDir, "file-to-upload"), []byte("contents"), 0755)
@@ -302,6 +356,7 @@ var _ = Describe("out", func() {
 						AccessKeyID:     accessKeyID,
 						SecretAccessKey: secretAccessKey,
 						SessionToken:    sessionToken,
+						AwsRoleARN:      awsRoleARN,
 						Bucket:          bucketName,
 						RegionName:      regionName,
 						Endpoint:        endpoint,
@@ -356,6 +411,7 @@ var _ = Describe("out", func() {
 						AccessKeyID:     accessKeyID,
 						SecretAccessKey: secretAccessKey,
 						SessionToken:    sessionToken,
+						AwsRoleARN:      awsRoleARN,
 						Bucket:          bucketName,
 						RegionName:      regionName,
 						VersionedFile:   filepath.Join(directoryPrefix, "file-to-upload"),
@@ -406,6 +462,7 @@ var _ = Describe("out", func() {
 						AccessKeyID:     accessKeyID,
 						SecretAccessKey: secretAccessKey,
 						SessionToken:    sessionToken,
+						AwsRoleARN:      awsRoleARN,
 						Bucket:          versionedBucketName,
 						RegionName:      regionName,
 						VersionedFile:   filepath.Join(directoryPrefix, "file-to-upload"),
@@ -464,6 +521,7 @@ var _ = Describe("out", func() {
 						AccessKeyID:     accessKeyID,
 						SecretAccessKey: secretAccessKey,
 						SessionToken:    sessionToken,
+						AwsRoleARN:      awsRoleARN,
 						Bucket:          versionedBucketName,
 						RegionName:      regionName,
 						Endpoint:        endpoint,

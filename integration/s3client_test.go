@@ -1,6 +1,7 @@
 package integration_test
 
 import (
+	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"os"
@@ -55,6 +56,14 @@ var _ = Describe("S3client", func() {
 			err := s3client.DeleteVersionedFile(versionedBucketName, filepath.Join(directoryPrefix, "file-to-upload-2"), fileTwoVersion)
 			Ω(err).ShouldNot(HaveOccurred())
 		}
+
+		fileThreeVersions, err := s3client.BucketFileVersions(versionedBucketName, filepath.Join(directoryPrefix, "file-to-upload-3"))
+		Ω(err).ShouldNot(HaveOccurred())
+
+		for _, fileThreeVersion := range fileThreeVersions {
+			err := s3client.DeleteVersionedFile(versionedBucketName, filepath.Join(directoryPrefix, "file-to-upload-3"), fileThreeVersion)
+			Ω(err).ShouldNot(HaveOccurred())
+		}
 	})
 
 	It("can interact with buckets", func() {
@@ -65,6 +74,13 @@ var _ = Describe("S3client", func() {
 		Ω(err).ShouldNot(HaveOccurred())
 
 		_, err = s3client.UploadFile(versionedBucketName, filepath.Join(directoryPrefix, "file-to-upload-2"), tempFile.Name(), s3resource.NewUploadFileOptions())
+		Ω(err).ShouldNot(HaveOccurred())
+
+		tags := map[string]string{
+			"tag1": "value1",
+			"tag2": "value2",
+		}
+		err = s3client.SetTags(versionedBucketName, filepath.Join(directoryPrefix, "file-to-upload-1"), "", tags)
 		Ω(err).ShouldNot(HaveOccurred())
 
 		options := s3resource.NewUploadFileOptions()
@@ -87,6 +103,16 @@ var _ = Describe("S3client", func() {
 		read, err := ioutil.ReadFile(filepath.Join(tempDir, "downloaded-file"))
 		Ω(err).ShouldNot(HaveOccurred())
 		Ω(read).Should(Equal([]byte("hello-" + runtime)))
+
+		err = s3client.DownloadTags(versionedBucketName, filepath.Join(directoryPrefix, "file-to-upload-1"), "", filepath.Join(tempDir, "tags.json"))
+		Ω(err).ShouldNot(HaveOccurred())
+
+		expectedTagsJSON, err := json.Marshal(tags)
+		Ω(err).ShouldNot(HaveOccurred())
+
+		actualTagsJSON, err := ioutil.ReadFile(filepath.Join(tempDir, "tags.json"))
+		Ω(err).ShouldNot(HaveOccurred())
+		Ω(actualTagsJSON).Should(MatchJSON(expectedTagsJSON))
 
 		resp, err := s3Service.HeadObject(&s3.HeadObjectInput{
 			Bucket: aws.String(versionedBucketName),
