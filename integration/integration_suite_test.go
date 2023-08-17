@@ -2,6 +2,7 @@ package integration_test
 
 import (
 	"encoding/json"
+	"github.com/aws/aws-sdk-go/aws/credentials/stscreds"
 	"io/ioutil"
 	"os"
 
@@ -25,6 +26,7 @@ var useInstanceProfile = os.Getenv("S3_USE_INSTANCE_PROFILE")
 var accessKeyID = os.Getenv("S3_TESTING_ACCESS_KEY_ID")
 var secretAccessKey = os.Getenv("S3_TESTING_SECRET_ACCESS_KEY")
 var sessionToken = os.Getenv("S3_TESTING_SESSION_TOKEN")
+var awsRoleARN = os.Getenv("S3_TESTING_AWS_ROLE_ARN")
 var versionedBucketName = os.Getenv("S3_VERSIONED_TESTING_BUCKET")
 var bucketName = os.Getenv("S3_TESTING_BUCKET")
 var regionName = os.Getenv("S3_TESTING_REGION")
@@ -83,7 +85,7 @@ func getSessionTokenS3Client(awsConfig *aws.Config) (*s3.S3, s3resource.S3Client
 		false,
 	)
 	s3Service := s3.New(session.New(newAwsConfig), newAwsConfig)
-	s3client := s3resource.NewS3Client(ioutil.Discard, newAwsConfig, v2signing == "true")
+	s3client := s3resource.NewS3Client(ioutil.Discard, newAwsConfig, v2signing == "true", awsRoleARN)
 
 	return s3Service, s3client
 }

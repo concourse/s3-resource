@@ -65,6 +65,7 @@ var _ = Describe("in", func() {
 					AccessKeyID:     accessKeyID,
 					SecretAccessKey: secretAccessKey,
 					SessionToken:    sessionToken,
+					AwsRoleARN:      awsRoleARN,
 					Bucket:          versionedBucketName,
 					RegionName:      regionName,
 					Endpoint:        endpoint,
@@ -92,6 +93,7 @@ var _ = Describe("in", func() {
 					AccessKeyID:     accessKeyID,
 					SecretAccessKey: secretAccessKey,
 					SessionToken:    sessionToken,
+					AwsRoleARN:      awsRoleARN,
 					Bucket:          bucketName,
 					RegionName:      regionName,
 					Endpoint:        endpoint,
@@ -215,6 +217,7 @@ var _ = Describe("in", func() {
 					AccessKeyID:     accessKeyID,
 					SecretAccessKey: secretAccessKey,
 					SessionToken:    sessionToken,
+					AwsRoleARN:      awsRoleARN,
 					Bucket:          versionedBucketName,
 					RegionName:      regionName,
 					Endpoint:        endpoint,
@@ -346,6 +349,7 @@ var _ = Describe("in", func() {
 					AccessKeyID:     accessKeyID,
 					SecretAccessKey: secretAccessKey,
 					SessionToken:    sessionToken,
+					AwsRoleARN:      awsRoleARN,
 					CloudfrontURL:   os.Getenv("S3_TESTING_CLOUDFRONT_URL"),
 					RegionName:      regionName,
 					Endpoint:        endpoint,
@@ -421,6 +425,7 @@ var _ = Describe("in", func() {
 					AccessKeyID:     accessKeyID,
 					SecretAccessKey: secretAccessKey,
 					SessionToken:    sessionToken,
+					AwsRoleARN:      awsRoleARN,
 					CloudfrontURL:   "https://no-dots-here",
 					RegionName:      regionName,
 					Endpoint:        endpoint,
@@ -436,6 +441,71 @@ var _ = Describe("in", func() {
 
 		It("returns an error", func() {
 			Ω(session.Err).Should(gbytes.Say(`'https://no-dots-here' doesn't have enough dots \('.'\), a typical format is 'https://d111111abcdef8.cloudfront.net'`))
+		})
+	})
+
+	Context("when download_tags is true", func() {
+		var (
+			directoryPrefix string
+			tags            map[string]string
+		)
+
+		BeforeEach(func() {
+			directoryPrefix = "in-request-download-tags"
+			inRequest = in.Request{
+				Source: s3resource.Source{
+					AccessKeyID:     accessKeyID,
+					SecretAccessKey: secretAccessKey,
+					SessionToken:    sessionToken,
+					AwsRoleARN:      awsRoleARN,
+					Bucket:          bucketName,
+					RegionName:      regionName,
+					Endpoint:        endpoint,
+					Regexp:          filepath.Join(directoryPrefix, "some-file-(.*)"),
+				},
+				Version: s3resource.Version{
+					Path: filepath.Join(directoryPrefix, "some-file-1"),
+				},
+				Params: in.Params{
+					DownloadTags: true,
+				},
+			}
+
+			err := json.NewEncoder(stdin).Encode(inRequest)
+			Ω(err).ShouldNot(HaveOccurred())
+
+			tempFile, err := ioutil.TempFile("", "file-to-upload")
+			Ω(err).ShouldNot(HaveOccurred())
+			tempFile.Close()
+
+			err = ioutil.WriteFile(tempFile.Name(), []byte("some-file-1"), 0755)
+			Ω(err).ShouldNot(HaveOccurred())
+
+			_, err = s3client.UploadFile(bucketName, filepath.Join(directoryPrefix, "some-file-1"), tempFile.Name(), s3resource.NewUploadFileOptions())
+			Ω(err).ShouldNot(HaveOccurred())
+
+			err = os.Remove(tempFile.Name())
+			Ω(err).ShouldNot(HaveOccurred())
+
+			tags = map[string]string{"tag1": "value1", "tag2": "value2"}
+			err = s3client.SetTags(bucketName, filepath.Join(directoryPrefix, "some-file-1"), "", tags)
+			Ω(err).ShouldNot(HaveOccurred())
+		})
+
+		AfterEach(func() {
+			err := s3client.DeleteFile(bucketName, filepath.Join(directoryPrefix, "some-file-1"))
+			Ω(err).ShouldNot(HaveOccurred())
+		})
+
+		It("writes the tags to tags.json", func() {
+			Ω(filepath.Join(destDir, "tags.json")).Should(BeARegularFile())
+			actualTagsJSON, err := ioutil.ReadFile(filepath.Join(destDir, "tags.json"))
+			Ω(err).ShouldNot(HaveOccurred())
+
+			expectedTagsJSON, err := json.Marshal(tags)
+			Ω(err).ShouldNot(HaveOccurred())
+
+			Ω(actualTagsJSON).Should(MatchJSON(expectedTagsJSON))
 		})
 	})
 })

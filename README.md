@@ -18,6 +18,9 @@ version numbers.
 * `session_token`: *Optional.* The AWS STS session token to use when
   accessing the bucket.
 
+* `aws_role_arn`: *Optional.* The AWS role ARN to be assumed by the user
+  identified by `access_key_id` and `secret_access_key`.
+
 * `region_name`: *Optional.* The region the bucket is in. Defaults to
   `us-east-1`.
 
@@ -55,14 +58,18 @@ version numbers.
 
 One of the following two options must be specified:
 
-* `regexp`: *Optional.* The pattern to match filenames against within S3. The first
-  grouped match is used to extract the version, or if a group is explicitly
-  named `version`, that group is used. At least one capture group must be
-  specified, with parentheses.
+* `regexp`: *Optional.* The forward-slash (`/`) delimited sequence of patterns to
+  match against the sub-directories and filenames of the objects stored within
+  the S3 bucket. The first grouped match is used to extract the version, or if
+  a group is explicitly named `version`, that group is used. At least one
+  capture group must be specified, with parentheses.
 
   The version extracted from this pattern is used to version the resource.
   Semantic versions, or just numbers, are supported. Accordingly, full regular
   expressions are supported, to specify the capture groups.
+
+  The full `regexp` will be matched against the S3 objects as if it was anchored
+  on both ends, even if you don't specify `^` and `$` explicitly.
 
 * `versioned_file`: *Optional* If you enable versioning for your S3 bucket then
   you can keep the file name the same and upload new versions of your file
@@ -105,11 +112,15 @@ Places the following files in the destination:
 
 * `version`: The version identified in the file name.
 
+* `tags.json`: The object's tags represented as a JSON object. Only written if `download_tags` is set to true.
+
 #### Parameters
 
-* `skip_download`: *Optional.* Skip downloading object from S3. Same parameter as source configuration but used to define/override by get. Value need to be a true/false string.
+* `skip_download`: *Optional.* Skip downloading object from S3. Same parameter as source configuration but used to define/override by get. Value needs to be a true/false string.
 
 * `unpack`: *Optional.* If true and the file is an archive (tar, gzipped tar, other gzipped file, or zip), unpack the file. Gzipped tarballs will be both ungzipped and untarred. It is ignored when `get` is running on the initial version.
+
+* `download_tags`: *Optional.* Write object tags to `tags.json`. Value needs to be a true/false string.
 
 ### `out`: Upload an object to the bucket.
 
@@ -186,6 +197,7 @@ The objects in the bucket (e.g. `"arn:aws:s3:::your-bucket/*"`):
 * `s3:PutObject`
 * `s3:PutObjectAcl`
 * `s3:GetObject`
+* `s3:GetObjectTagging` (if using the `download_tags` option)
 
 ### Versioned Buckets
 
@@ -198,21 +210,16 @@ The bucket itself (e.g. `"arn:aws:s3:::your-bucket"`):
 The objects in the bucket (e.g. `"arn:aws:s3:::your-bucket/*"`):
 * `s3:GetObjectVersion`
 * `s3:PutObjectVersionAcl`
-
-## Developing on this resource
-
-First get the resource via:
-`go get github.com/concourse/s3-resource`
+* `s3:GetObjectVersionTagging` (if using the `download_tags` option)
 
 ## Development
 
 ### Prerequisites
 
-* golang is *required* - version 1.9.x is tested; earlier versions may also
+* Go is *required* - version 1.13 is tested; earlier versions may also
   work.
 * docker is *required* - version 17.06.x is tested; earlier versions may also
   work.
-* godep is used for dependency management of the golang packages.
 
 ### Running the tests
 
@@ -253,6 +260,24 @@ docker build . -t s3-resource -f dockerfiles/ubuntu/Dockerfile \
   --build-arg S3_TESTING_REGION="us-east-1" \
   --build-arg S3_ENDPOINT="https://s3.amazonaws.com"
 ```
+
+##### Speeding up integration tests by skipping large file upload
+
+One of the integration tests uploads a large file (>40GB) and so can be slow.
+It can be skipped by adding the following option when running the tests:
+```
+  --build-arg S3_TESTING_NO_LARGE_UPLOAD=true
+```
+
+##### Integration tests using role assumption
+
+If `S3_TESTING_AWS_ROLE_ARN` is set to a role ARN, this role will be assumed for accessing
+the S3 bucket during integration tests. The whole integration test suite runs either
+completely using role assumption or completely by direct access via the credentials.
+
+##### Required IAM permissions
+
+In addition to the required permissions above, the `s3:PutObjectTagging` permission is required to run integration tests.
 
 ### Contributing
 
