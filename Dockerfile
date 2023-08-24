@@ -6,9 +6,10 @@ COPY . /go/src/github.com/concourse/s3-resource
 WORKDIR /go/src/github.com/concourse/s3-resource
 ENV CGO_ENABLED 0
 RUN go mod download
-RUN go build -o /assets/in ./cmd/in
-RUN go build -o /assets/out ./cmd/out
-RUN go build -o /assets/check ./cmd/check
+RUN go build -o /assets/in github.com/concourse/s3-resource/cmd/in
+RUN go build -o /assets/out github.com/concourse/s3-resource/cmd/out
+RUN go build -o /assets/check github.com/concourse/s3-resource/cmd/check
+WORKDIR /go/src/github.com/concourse/s3-resource
 RUN set -e; for pkg in $(go list ./...); do \
 		go test -o "/tests/$(basename $pkg).test" -c $pkg; \
 	done

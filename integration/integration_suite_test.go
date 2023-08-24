@@ -2,15 +2,16 @@ package integration_test
 
 import (
 	"encoding/json"
-	"github.com/aws/aws-sdk-go/aws/credentials/stscreds"
 	"io/ioutil"
 	"os"
+
+	"github.com/aws/aws-sdk-go/aws/credentials/stscreds"
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/s3"
 	"github.com/aws/aws-sdk-go/service/sts"
-	"github.com/concourse/s3-resource"
+	s3resource "github.com/concourse/s3-resource"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"github.com/onsi/gomega/gexec"
@@ -126,17 +127,25 @@ var _ = SynchronizedBeforeSuite(func() []byte {
 		Ω(endpoint).ShouldNot(BeEmpty(), "must specify $S3_ENDPOINT")
 
 		awsConfig = s3resource.NewAwsConfig(
-		       accessKeyID,
-		       secretAccessKey,
-		       sessionToken,
-		       regionName,
-		       endpoint,
-		       false,
-		       false,
+			accessKeyID,
+			secretAccessKey,
+			sessionToken,
+			regionName,
+			endpoint,
+			false,
+			false,
 		)
+		additionalAwsConfig := aws.Config{}
+		if len(awsRoleARN) != 0 {
+			stsConfig := awsConfig.Copy()
+			stsConfig.Endpoint = nil
+			stsSession := session.Must(session.NewSession(stsConfig))
+			roleCredentials := stscreds.NewCredentials(stsSession, awsRoleARN)
 
+			additionalAwsConfig.Credentials = roleCredentials
+		}
 		s3Service = s3.New(session.New(awsConfig), awsConfig)
-		s3client = s3resource.NewS3Client(ioutil.Discard, awsConfig, v2signing == "true")
+		s3client = s3resource.NewS3Client(ioutil.Discard, awsConfig, v2signing == "true", awsRoleARN)
 	}
 })
 
