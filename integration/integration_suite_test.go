@@ -134,7 +134,15 @@ var _ = SynchronizedBeforeSuite(func() []byte {
 		       false,
 		       false,
 		)
+		additionalAwsConfig := aws.Config{}
+		if len(awsRoleARN) != 0 {
+			stsConfig := awsConfig.Copy()
+			stsConfig.Endpoint = nil
+			stsSession := session.Must(session.NewSession(stsConfig))
+			roleCredentials := stscreds.NewCredentials(stsSession, awsRoleARN)
 
+			additionalAwsConfig.Credentials = roleCredentials
+		}
 		s3Service = s3.New(session.New(awsConfig), awsConfig)
 		s3client = s3resource.NewS3Client(ioutil.Discard, awsConfig, v2signing == "true")
 	}
