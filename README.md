@@ -3,7 +3,7 @@
 Versions objects in an S3 bucket, by pattern-matching filenames to identify
 version numbers.
 
-## Source Configuration
+## Source Configuration 
 
 * `bucket`: *Required.* The name of the bucket.
 
