@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"os"
 
-	"github.com/concourse/s3-resource"
+	s3resource "github.com/concourse/s3-resource"
 	"github.com/concourse/s3-resource/out"
 )
 
@@ -23,18 +23,22 @@ func main() {
 		request.Source.AccessKeyID,
 		request.Source.SecretAccessKey,
 		request.Source.SessionToken,
+		request.Source.AssumeAwsRoleARN,
 		request.Source.RegionName,
 		request.Source.Endpoint,
 		request.Source.DisableSSL,
 		request.Source.SkipSSLVerification,
 	)
 
-	client := s3resource.NewS3Client(
+	client, err := s3resource.NewS3Client(
 		os.Stderr,
 		awsConfig,
 		request.Source.UseV2Signing,
 		request.Source.AwsRoleARN,
 	)
+	if err != nil {
+		s3resource.Fatal("failed to create new S3 client", err)
+	}
 
 	command := out.NewCommand(os.Stderr, client)
 	response, err := command.Run(sourceDir, request)

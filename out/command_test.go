@@ -1,11 +1,10 @@
 package out_test
 
 import (
-	"io/ioutil"
 	"os"
 	"path/filepath"
 
-	"github.com/concourse/s3-resource"
+	s3resource "github.com/concourse/s3-resource"
 	"github.com/concourse/s3-resource/fakes"
 	"github.com/concourse/s3-resource/out"
 	"github.com/onsi/gomega/gbytes"
@@ -28,7 +27,7 @@ var _ = Describe("Out Command", func() {
 
 		BeforeEach(func() {
 			var err error
-			tmpPath, err = ioutil.TempDir("", "out_command")
+			tmpPath, err = os.MkdirTemp("", "out_command")
 			Ω(err).ShouldNot(HaveOccurred())
 
 			sourceDir = filepath.Join(tmpPath, "source")

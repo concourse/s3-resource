@@ -5,7 +5,6 @@ import (
 	"archive/zip"
 	"compress/gzip"
 	"io"
-	"io/ioutil"
 	"log"
 	"os"
 	"path"
@@ -15,7 +14,7 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
-	"github.com/concourse/s3-resource"
+	s3resource "github.com/concourse/s3-resource"
 	. "github.com/concourse/s3-resource/in"
 
 	"github.com/concourse/s3-resource/fakes"
@@ -34,7 +33,7 @@ var _ = Describe("In Command", func() {
 
 		BeforeEach(func() {
 			var err error
-			tmpPath, err = ioutil.TempDir("", "in_command")
+			tmpPath, err = os.MkdirTemp("", "in_command")
 			Ω(err).ShouldNot(HaveOccurred())
 
 			destDir = filepath.Join(tmpPath, "destination")
@@ -154,7 +153,7 @@ var _ = Describe("In Command", func() {
 				Ω(err).ShouldNot(HaveOccurred())
 
 				Ω(urlPath).Should(ExistOnFilesystem())
-				contents, err := ioutil.ReadFile(urlPath)
+				contents, err := os.ReadFile(urlPath)
 				Ω(err).ShouldNot(HaveOccurred())
 				Ω(string(contents)).Should(Equal("http://google.com"))
 
@@ -178,7 +177,7 @@ var _ = Describe("In Command", func() {
 					Ω(err).ShouldNot(HaveOccurred())
 
 					Ω(urlPath).Should(ExistOnFilesystem())
-					contents, err := ioutil.ReadFile(urlPath)
+					contents, err := os.ReadFile(urlPath)
 					Ω(err).ShouldNot(HaveOccurred())
 					Ω(string(contents)).Should(Equal("http://google.com"))
 
@@ -199,7 +198,7 @@ var _ = Describe("In Command", func() {
 				Ω(err).ShouldNot(HaveOccurred())
 
 				Ω(versionFile).Should(ExistOnFilesystem())
-				contents, err := ioutil.ReadFile(versionFile)
+				contents, err := os.ReadFile(versionFile)
 				Ω(err).ShouldNot(HaveOccurred())
 				Ω(string(contents)).Should(Equal("1.3"))
 			})
@@ -262,7 +261,7 @@ var _ = Describe("In Command", func() {
 					s3client.DownloadFileStub = func(bucketName string, remotePath string, versionID string, localPath string) error {
 						src := filepath.Join(tmpPath, "some-file")
 
-						err := ioutil.WriteFile(src, []byte("some-contents"), os.ModePerm)
+						err := os.WriteFile(src, []byte("some-contents"), os.ModePerm)
 						Expect(err).NotTo(HaveOccurred())
 
 						err = createTarball([]string{src}, tmpPath, localPath)
@@ -279,7 +278,7 @@ var _ = Describe("In Command", func() {
 					_, err := command.Run(destDir, request)
 					Expect(err).NotTo(HaveOccurred())
 
-					bs, err := ioutil.ReadFile(filepath.Join(destDir, "some-file"))
+					bs, err := os.ReadFile(filepath.Join(destDir, "some-file"))
 					Expect(err).NotTo(HaveOccurred())
 
 					Expect(bs).To(Equal([]byte("some-contents")))
@@ -289,10 +288,10 @@ var _ = Describe("In Command", func() {
 			Context("when the file is a zip", func() {
 				BeforeEach(func() {
 					s3client.DownloadFileStub = func(bucketName string, remotePath string, versionID string, localPath string) error {
-						inDir, err := ioutil.TempDir(tmpPath, "zip-dir")
+						inDir, err := os.MkdirTemp(tmpPath, "zip-dir")
 						Expect(err).NotTo(HaveOccurred())
 
-						err = ioutil.WriteFile(path.Join(inDir, "some-file"), []byte("some-contents"), os.ModePerm)
+						err = os.WriteFile(path.Join(inDir, "some-file"), []byte("some-contents"), os.ModePerm)
 						Expect(err).NotTo(HaveOccurred())
 
 						err = zipit(path.Join(inDir, "/"), localPath, "")
@@ -306,7 +305,7 @@ var _ = Describe("In Command", func() {
 					_, err := command.Run(destDir, request)
 					Expect(err).NotTo(HaveOccurred())
 
-					bs, err := ioutil.ReadFile(filepath.Join(destDir, "some-file"))
+					bs, err := os.ReadFile(filepath.Join(destDir, "some-file"))
 					Expect(err).NotTo(HaveOccurred())
 
 					Expect(bs).To(Equal([]byte("some-contents")))
@@ -338,7 +337,7 @@ var _ = Describe("In Command", func() {
 					_, err := command.Run(destDir, request)
 					Expect(err).NotTo(HaveOccurred())
 
-					bs, err := ioutil.ReadFile(filepath.Join(destDir, "a-file-1.3"))
+					bs, err := os.ReadFile(filepath.Join(destDir, "a-file-1.3"))
 					Expect(err).NotTo(HaveOccurred())
 
 					Expect(string(bs)).To(Equal("some-contents"))
@@ -356,12 +355,12 @@ var _ = Describe("In Command", func() {
 
 						someFile1 := filepath.Join(tmpPath, "some-dir", "some-file")
 
-						err = ioutil.WriteFile(someFile1, []byte("some-contents"), os.ModePerm)
+						err = os.WriteFile(someFile1, []byte("some-contents"), os.ModePerm)
 						Expect(err).NotTo(HaveOccurred())
 
 						someFile2 := filepath.Join(tmpPath, "some-file")
 
-						err = ioutil.WriteFile(someFile2, []byte("some-other-contents"), os.ModePerm)
+						err = os.WriteFile(someFile2, []byte("some-other-contents"), os.ModePerm)
 						Expect(err).NotTo(HaveOccurred())
 
 						tarPath := filepath.Join(tmpPath, "some-tar")
@@ -395,11 +394,11 @@ var _ = Describe("In Command", func() {
 
 					Expect(filepath.Join(destDir, "some-dir", "some-file")).To(BeARegularFile())
 
-					bs, err := ioutil.ReadFile(filepath.Join(destDir, "some-dir", "some-file"))
+					bs, err := os.ReadFile(filepath.Join(destDir, "some-dir", "some-file"))
 					Expect(err).NotTo(HaveOccurred())
 					Expect(bs).To(Equal([]byte("some-contents")))
 
-					bs, err = ioutil.ReadFile(filepath.Join(destDir, "some-file"))
+					bs, err = os.ReadFile(filepath.Join(destDir, "some-file"))
 					Expect(err).NotTo(HaveOccurred())
 					Expect(bs).To(Equal([]byte("some-other-contents")))
 				})
@@ -408,7 +407,7 @@ var _ = Describe("In Command", func() {
 			Context("when the file is not an archive", func() {
 				BeforeEach(func() {
 					s3client.DownloadFileStub = func(bucketName string, remotePath string, versionID string, localPath string) error {
-						err := ioutil.WriteFile(localPath, []byte("some-contents"), os.ModePerm)
+						err := os.WriteFile(localPath, []byte("some-contents"), os.ModePerm)
 						Expect(err).NotTo(HaveOccurred())
 
 						return nil
@@ -438,7 +437,7 @@ var _ = Describe("In Command", func() {
 
 				contentFile := filepath.Join(destDir, initialFilename)
 				Ω(contentFile).Should(BeARegularFile())
-				contents, err := ioutil.ReadFile(contentFile)
+				contents, err := os.ReadFile(contentFile)
 				Ω(err).ShouldNot(HaveOccurred())
 				Ω(string(contents)).Should(Equal(request.Source.InitialContentText))
 			})
@@ -454,7 +453,7 @@ var _ = Describe("In Command", func() {
 
 					contentFile := filepath.Join(destDir, initialFilename)
 					Ω(contentFile).Should(BeARegularFile())
-					contents, err := ioutil.ReadFile(contentFile)
+					contents, err := os.ReadFile(contentFile)
 					Ω(err).ShouldNot(HaveOccurred())
 					Ω(string(contents)).Should(Equal("the hard questions are hard 🙈"))
 				})
@@ -496,7 +495,7 @@ var _ = Describe("In Command", func() {
 
 				contentFile := filepath.Join(destDir, initialFilename)
 				Ω(contentFile).Should(BeARegularFile())
-				contents, err := ioutil.ReadFile(contentFile)
+				contents, err := os.ReadFile(contentFile)
 				Ω(err).ShouldNot(HaveOccurred())
 				Ω(string(contents)).Should(Equal(request.Source.InitialContentText))
 			})
@@ -519,7 +518,7 @@ var _ = Describe("In Command", func() {
 
 				contentFile := filepath.Join(destDir, filename)
 				Ω(contentFile).Should(BeARegularFile())
-				contents, err := ioutil.ReadFile(contentFile)
+				contents, err := os.ReadFile(contentFile)
 				Ω(err).ShouldNot(HaveOccurred())
 				Ω(string(contents)).Should(Equal(request.Source.InitialContentText))
 			})
@@ -535,7 +534,7 @@ var _ = Describe("In Command", func() {
 
 					contentFile := filepath.Join(destDir, filename)
 					Ω(contentFile).Should(BeARegularFile())
-					contents, err := ioutil.ReadFile(contentFile)
+					contents, err := os.ReadFile(contentFile)
 					Ω(err).ShouldNot(HaveOccurred())
 					Ω(string(contents)).Should(Equal("the hard questions are hard 🙈"))
 				})
@@ -577,7 +576,7 @@ var _ = Describe("In Command", func() {
 
 				contentFile := filepath.Join(destDir, filename)
 				Ω(contentFile).Should(BeARegularFile())
-				contents, err := ioutil.ReadFile(contentFile)
+				contents, err := os.ReadFile(contentFile)
 				Ω(err).ShouldNot(HaveOccurred())
 				Ω(string(contents)).Should(Equal(request.Source.InitialContentText))
 			})

@@ -3,14 +3,13 @@ package integration_test
 import (
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"time"
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/s3"
-	"github.com/concourse/s3-resource"
+	s3resource "github.com/concourse/s3-resource"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 )
@@ -28,10 +27,10 @@ var _ = Describe("S3client", func() {
 		directoryPrefix = "s3client-tests"
 		runtime = fmt.Sprintf("%d", time.Now().Unix())
 
-		tempDir, err = ioutil.TempDir("", "s3-upload-dir")
+		tempDir, err = os.MkdirTemp("", "s3-upload-dir")
 		Ω(err).ShouldNot(HaveOccurred())
 
-		tempFile, err = ioutil.TempFile(tempDir, "file-to-upload")
+		tempFile, err = os.CreateTemp(tempDir, "file-to-upload")
 		Ω(err).ShouldNot(HaveOccurred())
 
 		tempFile.Write([]byte("hello-" + runtime))
@@ -100,7 +99,7 @@ var _ = Describe("S3client", func() {
 		err = s3client.DownloadFile(versionedBucketName, filepath.Join(directoryPrefix, "file-to-upload-1"), "", filepath.Join(tempDir, "downloaded-file"))
 		Ω(err).ShouldNot(HaveOccurred())
 
-		read, err := ioutil.ReadFile(filepath.Join(tempDir, "downloaded-file"))
+		read, err := os.ReadFile(filepath.Join(tempDir, "downloaded-file"))
 		Ω(err).ShouldNot(HaveOccurred())
 		Ω(read).Should(Equal([]byte("hello-" + runtime)))
 
@@ -110,7 +109,7 @@ var _ = Describe("S3client", func() {
 		expectedTagsJSON, err := json.Marshal(tags)
 		Ω(err).ShouldNot(HaveOccurred())
 
-		actualTagsJSON, err := ioutil.ReadFile(filepath.Join(tempDir, "tags.json"))
+		actualTagsJSON, err := os.ReadFile(filepath.Join(tempDir, "tags.json"))
 		Ω(err).ShouldNot(HaveOccurred())
 		Ω(actualTagsJSON).Should(MatchJSON(expectedTagsJSON))
 

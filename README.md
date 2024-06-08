@@ -19,6 +19,11 @@ version numbers.
 * `aws_role_arn`: *Optional.* The AWS role ARN to be assumed by the user
   identified by `access_key_id` and `secret_access_key`.
 
+* `assume_aws_role_arn`: *Optional.* The AWS role ARN to be assumed using the
+    Concourse workers EC2 instance credentials. The workers instance role must
+    have permissions to assume the role. **This is different from the
+    `aws_role_arn` and takes precedence over it**
+
 * `region_name`: *Optional.* The region the bucket is in. Defaults to
   `us-east-1`.
 

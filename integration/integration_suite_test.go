@@ -2,15 +2,16 @@ package integration_test
 
 import (
 	"encoding/json"
-	"github.com/aws/aws-sdk-go/aws/credentials/stscreds"
-	"io/ioutil"
+	"io"
 	"os"
+
+	"github.com/aws/aws-sdk-go/aws/credentials/stscreds"
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/s3"
 	"github.com/aws/aws-sdk-go/service/sts"
-	"github.com/concourse/s3-resource"
+	s3resource "github.com/concourse/s3-resource"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"github.com/onsi/gomega/gexec"
@@ -31,6 +32,7 @@ var bucketName = os.Getenv("S3_TESTING_BUCKET")
 var regionName = os.Getenv("S3_TESTING_REGION")
 var endpoint = os.Getenv("S3_ENDPOINT")
 var v2signing = os.Getenv("S3_V2_SIGNING")
+var assumeRoleArn = ""
 var awsConfig *aws.Config
 var s3client s3resource.S3Client
 var s3Service *s3.S3
@@ -64,7 +66,9 @@ func getSessionTokenS3Client(awsConfig *aws.Config) (*s3.S3, s3resource.S3Client
 		HTTPClient:  awsConfig.HTTPClient,
 	}
 
-	svc := sts.New(session.New(stsAwsConfig), stsAwsConfig)
+	stsSess, err := session.NewSession(stsAwsConfig)
+	Ω(err).ShouldNot(HaveOccurred())
+	svc := sts.New(stsSess, stsAwsConfig)
 
 	duration := int64(900)
 	params := &sts.GetSessionTokenInput{
@@ -78,13 +82,18 @@ func getSessionTokenS3Client(awsConfig *aws.Config) (*s3.S3, s3resource.S3Client
 		*resp.Credentials.AccessKeyId,
 		*resp.Credentials.SecretAccessKey,
 		*resp.Credentials.SessionToken,
+		assumeRoleArn,
 		regionName,
 		endpoint,
 		false,
 		false,
 	)
-	s3Service := s3.New(session.New(newAwsConfig), newAwsConfig)
-	s3client := s3resource.NewS3Client(ioutil.Discard, newAwsConfig, v2signing == "true", awsRoleARN)
+
+	sess, err := session.NewSession(awsConfig)
+	Ω(err).ShouldNot(HaveOccurred())
+	s3Service = s3.New(sess, awsConfig, newAwsConfig)
+	s3client, err = s3resource.NewS3Client(io.Discard, awsConfig, v2signing == "true", awsRoleARN)
+	Ω(err).ShouldNot(HaveOccurred())
 
 	return s3Service, s3client
 }
@@ -124,6 +133,7 @@ var _ = SynchronizedBeforeSuite(func() []byte {
 			accessKeyID,
 			secretAccessKey,
 			sessionToken,
+			assumeRoleArn,
 			regionName,
 			endpoint,
 			false,
@@ -140,8 +150,11 @@ var _ = SynchronizedBeforeSuite(func() []byte {
 			additionalAwsConfig.Credentials = roleCredentials
 		}
 
-		s3Service = s3.New(session.New(awsConfig), awsConfig, &additionalAwsConfig)
-		s3client = s3resource.NewS3Client(ioutil.Discard, awsConfig, v2signing == "true", awsRoleARN)
+		sess, err := session.NewSession(awsConfig)
+		Ω(err).ShouldNot(HaveOccurred())
+		s3Service = s3.New(sess, awsConfig, &additionalAwsConfig)
+		s3client, err = s3resource.NewS3Client(io.Discard, awsConfig, v2signing == "true", awsRoleARN)
+		Ω(err).ShouldNot(HaveOccurred())
 	}
 })
 
