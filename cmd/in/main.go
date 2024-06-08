@@ -9,7 +9,7 @@ import (
 	"strings"
 
 	"github.com/aws/aws-sdk-go/aws"
-	"github.com/concourse/s3-resource"
+	s3resource "github.com/concourse/s3-resource"
 	"github.com/concourse/s3-resource/in"
 )
 
@@ -28,6 +28,7 @@ func main() {
 		request.Source.AccessKeyID,
 		request.Source.SecretAccessKey,
 		request.Source.SessionToken,
+		request.Source.AssumeAwsRoleARN,
 		request.Source.RegionName,
 		request.Source.Endpoint,
 		request.Source.DisableSSL,
@@ -50,12 +51,15 @@ func main() {
 		awsConfig.Endpoint = aws.String(fmt.Sprintf("%s://%s", cloudfrontUrl.Scheme, fqdn))
 	}
 
-	client := s3resource.NewS3Client(
+	client, err := s3resource.NewS3Client(
 		os.Stderr,
 		awsConfig,
 		request.Source.UseV2Signing,
 		request.Source.AwsRoleARN,
 	)
+	if err != nil {
+		s3resource.Fatal("failed to create new S3 client", err)
+	}
 
 	command := in.NewCommand(client)
 

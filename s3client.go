@@ -6,7 +6,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"os"
 	"strings"
 	"time"
@@ -73,8 +72,11 @@ func NewS3Client(
 	awsConfig *aws.Config,
 	useV2Signing bool,
 	roleToAssume string,
-) S3Client {
-	sess := session.New(awsConfig)
+) (S3Client, error) {
+	sess, err := session.NewSession(awsConfig)
+	if err != nil {
+		return nil, err
+	}
 
 	assumedRoleAwsConfig := fetchCredentialsForRoleIfDefined(roleToAssume, awsConfig)
 
@@ -89,12 +91,12 @@ func NewS3Client(
 		session: sess,
 
 		progressOutput: progressOutput,
-	}
+	}, nil
 }
 
 func fetchCredentialsForRoleIfDefined(roleToAssume string, awsConfig *aws.Config) aws.Config {
 	assumedRoleAwsConfig := aws.Config{}
-	if len(roleToAssume) != 0 {
+	if roleToAssume != "" {
 		stsConfig := awsConfig.Copy()
 		stsConfig.Endpoint = nil
 		stsSession := session.Must(session.NewSession(stsConfig))
@@ -109,6 +111,7 @@ func NewAwsConfig(
 	accessKey string,
 	secretKey string,
 	sessionToken string,
+	assumeRoleArn string,
 	regionName string,
 	endpoint string,
 	disableSSL bool,
@@ -116,14 +119,22 @@ func NewAwsConfig(
 ) *aws.Config {
 	var creds *credentials.Credentials
 
-	if accessKey == "" && secretKey == "" {
-		creds = credentials.AnonymousCredentials
-	} else {
-		creds = credentials.NewStaticCredentials(accessKey, secretKey, sessionToken)
+	if regionName == "" {
+		regionName = "us-east-1"
 	}
 
-	if len(regionName) == 0 {
-		regionName = "us-east-1"
+	switch {
+	case assumeRoleArn != "":
+		sess := session.Must(session.NewSession(&aws.Config{
+			Region: aws.String(regionName),
+		}))
+		creds = stscreds.NewCredentials(sess, assumeRoleArn)
+
+	case accessKey == "" && secretKey == "":
+		creds = credentials.AnonymousCredentials
+
+	default:
+		creds = credentials.NewStaticCredentials(accessKey, secretKey, sessionToken)
 	}
 
 	var httpClient *http.Client
@@ -403,7 +414,7 @@ func (client *s3client) DownloadTags(bucketName string, remotePath string, versi
 		return err
 	}
 
-	return ioutil.WriteFile(localPath, tagsJSON, 0644)
+	return os.WriteFile(localPath, tagsJSON, 0644)
 }
 
 func (client *s3client) URL(bucketName string, remotePath string, private bool, versionID string) string {

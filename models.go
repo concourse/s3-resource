@@ -5,6 +5,7 @@ type Source struct {
 	SecretAccessKey      string `json:"secret_access_key"`
 	SessionToken         string `json:"session_token"`
 	AwsRoleARN           string `json:"aws_role_arn"`
+	AssumeAwsRoleARN     string `json:"assume_aws_role_arn"`
 	Bucket               string `json:"bucket"`
 	Regexp               string `json:"regexp"`
 	VersionedFile        string `json:"versioned_file"`
