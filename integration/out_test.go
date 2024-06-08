@@ -3,7 +3,6 @@ package integration_test
 import (
 	"bytes"
 	"encoding/json"
-	"io/ioutil"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -33,7 +32,7 @@ var _ = Describe("out", func() {
 
 	BeforeEach(func() {
 		var err error
-		sourceDir, err = ioutil.TempDir("", "s3_out_integration_test")
+		sourceDir, err = os.MkdirTemp("", "s3_out_integration_test")
 		Ω(err).ShouldNot(HaveOccurred())
 
 		stdin = &bytes.Buffer{}
@@ -88,7 +87,7 @@ var _ = Describe("out", func() {
 
 	Context("with a content-type", func() {
 		BeforeEach(func() {
-			ioutil.WriteFile(filepath.Join(sourceDir, "content-typed-file"), []byte("text only"), 0755)
+			os.WriteFile(filepath.Join(sourceDir, "content-typed-file"), []byte("text only"), 0755)
 
 			outRequest := out.Request{
 				Source: s3resource.Source{
@@ -132,7 +131,7 @@ var _ = Describe("out", func() {
 
 	Context("without a content-type", func() {
 		BeforeEach(func() {
-			ioutil.WriteFile(filepath.Join(sourceDir, "uncontent-typed-file"), []byte("text only"), 0755)
+			os.WriteFile(filepath.Join(sourceDir, "uncontent-typed-file"), []byte("text only"), 0755)
 
 			outRequest := out.Request{
 				Source: s3resource.Source{
@@ -220,7 +219,7 @@ var _ = Describe("out", func() {
 
 		Context("with a file glob and public read ACL specified", func() {
 			BeforeEach(func() {
-				err := ioutil.WriteFile(filepath.Join(sourceDir, "glob-file-to-upload"), []byte("contents"), 0755)
+				err := os.WriteFile(filepath.Join(sourceDir, "glob-file-to-upload"), []byte("contents"), 0755)
 				Ω(err).ShouldNot(HaveOccurred())
 
 				outRequest := out.Request{
@@ -348,7 +347,7 @@ var _ = Describe("out", func() {
 
 		Context("with regexp", func() {
 			BeforeEach(func() {
-				err := ioutil.WriteFile(filepath.Join(sourceDir, "file-to-upload"), []byte("contents"), 0755)
+				err := os.WriteFile(filepath.Join(sourceDir, "file-to-upload"), []byte("contents"), 0755)
 				Ω(err).ShouldNot(HaveOccurred())
 
 				outRequest := out.Request{
@@ -403,7 +402,7 @@ var _ = Describe("out", func() {
 
 		Context("with versioned_file", func() {
 			BeforeEach(func() {
-				err := ioutil.WriteFile(filepath.Join(sourceDir, "file-to-upload-local"), []byte("contents"), 0755)
+				err := os.WriteFile(filepath.Join(sourceDir, "file-to-upload-local"), []byte("contents"), 0755)
 				Ω(err).ShouldNot(HaveOccurred())
 
 				outRequest := out.Request{
@@ -454,7 +453,7 @@ var _ = Describe("out", func() {
 
 		Context("with versioned_file", func() {
 			BeforeEach(func() {
-				err := ioutil.WriteFile(filepath.Join(sourceDir, "file-to-upload-local"), []byte("contents"), 0755)
+				err := os.WriteFile(filepath.Join(sourceDir, "file-to-upload-local"), []byte("contents"), 0755)
 				Ω(err).ShouldNot(HaveOccurred())
 
 				outRequest := out.Request{
@@ -513,7 +512,7 @@ var _ = Describe("out", func() {
 
 		Context("with regexp", func() {
 			BeforeEach(func() {
-				err := ioutil.WriteFile(filepath.Join(sourceDir, "file-to-upload"), []byte("contents"), 0755)
+				err := os.WriteFile(filepath.Join(sourceDir, "file-to-upload"), []byte("contents"), 0755)
 				Ω(err).ShouldNot(HaveOccurred())
 
 				outRequest := out.Request{

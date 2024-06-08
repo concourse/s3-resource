@@ -1,7 +1,6 @@
 package check_test
 
 import (
-	"io/ioutil"
 	"os"
 
 	. "github.com/onsi/ginkgo"
@@ -25,7 +24,7 @@ var _ = Describe("Check Command", func() {
 
 		BeforeEach(func() {
 			var err error
-			tmpPath, err = ioutil.TempDir("", "check_command")
+			tmpPath, err = os.MkdirTemp("", "check_command")
 			Ω(err).ShouldNot(HaveOccurred())
 
 			request = Request{

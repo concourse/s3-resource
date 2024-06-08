@@ -1,7 +1,6 @@
 package out_test
 
 import (
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"testing"
@@ -37,7 +36,7 @@ func TestOut(t *testing.T) {
 
 func Fixture(filename string) string {
 	path := filepath.Join("fixtures", filename)
-	contents, err := ioutil.ReadFile(path)
+	contents, err := os.ReadFile(path)
 	if err != nil {
 		panic(err)
 	}
