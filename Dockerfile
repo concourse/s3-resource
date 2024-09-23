@@ -5,25 +5,26 @@ FROM ${builder_image} as builder
 COPY . /go/src/github.com/concourse/s3-resource
 WORKDIR /go/src/github.com/concourse/s3-resource
 ENV CGO_ENABLED 0
+ENV AWS_USE_FIPS_ENDPOINT true
 RUN go mod download
 RUN go build -o /assets/in github.com/concourse/s3-resource/cmd/in
 RUN go build -o /assets/out github.com/concourse/s3-resource/cmd/out
 RUN go build -o /assets/check github.com/concourse/s3-resource/cmd/check
 WORKDIR /go/src/github.com/concourse/s3-resource
 RUN set -e; for pkg in $(go list ./...); do \
-		go test -o "/tests/$(basename $pkg).test" -c $pkg; \
-	done
+  go test -o "/tests/$(basename $pkg).test" -c $pkg; \
+  done
 
 FROM ${base_image} AS resource
 USER root
 RUN apt update && apt upgrade -y -o Dpkg::Options::="--force-confdef"
 RUN apt update \
-      && apt install -y --no-install-recommends \
-        tzdata \
-        ca-certificates \
-        unzip \
-        zip \
-      && rm -rf /var/lib/apt/lists/*
+  && apt install -y --no-install-recommends \
+  tzdata \
+  ca-certificates \
+  unzip \
+  zip \
+  && rm -rf /var/lib/apt/lists/*
 COPY --from=builder assets/ /opt/resource/
 RUN chmod +x /opt/resource/*
 
@@ -40,7 +41,7 @@ ARG TEST_SESSION_TOKEN
 COPY --from=builder /tests /go-tests
 WORKDIR /go-tests
 RUN set -e; for test in /go-tests/*.test; do \
-		$test; \
-	done
+  $test; \
+  done
 
 FROM resource
