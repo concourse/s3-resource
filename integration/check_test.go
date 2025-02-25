@@ -3,7 +3,6 @@ package integration_test
 import (
 	"bytes"
 	"encoding/json"
-	"io/ioutil"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -11,7 +10,7 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
-	"github.com/concourse/s3-resource"
+	s3resource "github.com/concourse/s3-resource"
 	"github.com/concourse/s3-resource/check"
 	"github.com/onsi/gomega/gbytes"
 	"github.com/onsi/gomega/gexec"
@@ -101,7 +100,7 @@ var _ = Describe("check", func() {
 					err := json.NewEncoder(stdin).Encode(checkRequest)
 					Ω(err).ShouldNot(HaveOccurred())
 
-					tempFile, err := ioutil.TempFile("", "file-to-upload")
+					tempFile, err := os.CreateTemp("", "file-to-upload")
 					Ω(err).ShouldNot(HaveOccurred())
 					tempFile.Close()
 
@@ -135,7 +134,7 @@ var _ = Describe("check", func() {
 					err := json.NewEncoder(stdin).Encode(checkRequest)
 					Ω(err).ShouldNot(HaveOccurred())
 
-					tempFile, err := ioutil.TempFile("", "file-to-upload")
+					tempFile, err := os.CreateTemp("", "file-to-upload")
 					Ω(err).ShouldNot(HaveOccurred())
 					tempFile.Close()
 
@@ -199,7 +198,7 @@ var _ = Describe("check", func() {
 					err := json.NewEncoder(stdin).Encode(checkRequest)
 					Ω(err).ShouldNot(HaveOccurred())
 
-					tempFile, err := ioutil.TempFile("", "file-to-upload")
+					tempFile, err := os.CreateTemp("", "file-to-upload")
 					Ω(err).ShouldNot(HaveOccurred())
 					tempFile.Close()
 
@@ -228,7 +227,7 @@ var _ = Describe("check", func() {
 					err := json.NewEncoder(stdin).Encode(checkRequest)
 					Ω(err).ShouldNot(HaveOccurred())
 
-					tempFile, err := ioutil.TempFile("", "file-to-upload")
+					tempFile, err := os.CreateTemp("", "file-to-upload")
 					Ω(err).ShouldNot(HaveOccurred())
 					tempFile.Close()
 
@@ -268,7 +267,7 @@ var _ = Describe("check", func() {
 					err := json.NewEncoder(stdin).Encode(checkRequest)
 					Ω(err).ShouldNot(HaveOccurred())
 
-					tempFile, err := ioutil.TempFile("", "file-to-upload")
+					tempFile, err := os.CreateTemp("", "file-to-upload")
 					Ω(err).ShouldNot(HaveOccurred())
 					tempFile.Close()
 
@@ -341,7 +340,7 @@ var _ = Describe("check", func() {
 					err := json.NewEncoder(stdin).Encode(checkRequest)
 					Ω(err).ShouldNot(HaveOccurred())
 
-					tempFile, err := ioutil.TempFile("", "file-to-upload")
+					tempFile, err := os.CreateTemp("", "file-to-upload")
 					Ω(err).ShouldNot(HaveOccurred())
 					tempFile.Close()
 
@@ -376,7 +375,7 @@ var _ = Describe("check", func() {
 					err := json.NewEncoder(stdin).Encode(checkRequest)
 					Ω(err).ShouldNot(HaveOccurred())
 
-					tempFile, err := ioutil.TempFile("", "file-to-upload")
+					tempFile, err := os.CreateTemp("", "file-to-upload")
 					Ω(err).ShouldNot(HaveOccurred())
 					tempFile.Close()
 
@@ -430,7 +429,7 @@ var _ = Describe("check", func() {
 					err := json.NewEncoder(stdin).Encode(checkRequest)
 					Ω(err).ShouldNot(HaveOccurred())
 
-					tempFile, err := ioutil.TempFile("", "file-to-upload")
+					tempFile, err := os.CreateTemp("", "file-to-upload")
 					Ω(err).ShouldNot(HaveOccurred())
 					tempFile.Close()
 
@@ -500,7 +499,7 @@ var _ = Describe("check", func() {
 				BeforeEach(func() {
 					directoryPrefix = "files-in-bucket-that-do-not-match-with-version"
 
-					tempFile, err := ioutil.TempFile("", "file-to-upload")
+					tempFile, err := os.CreateTemp("", "file-to-upload")
 					Ω(err).ShouldNot(HaveOccurred())
 					tempFile.Close()
 
@@ -546,7 +545,7 @@ var _ = Describe("check", func() {
 					BeforeEach(func() {
 						directoryPrefix = "files-in-bucket-that-do-match-with-version"
 
-						tempFile, err := ioutil.TempFile("", "file-to-upload")
+						tempFile, err := os.CreateTemp("", "file-to-upload")
 						Ω(err).ShouldNot(HaveOccurred())
 						tempFile.Close()
 
@@ -609,7 +608,7 @@ var _ = Describe("check", func() {
 					BeforeEach(func() {
 						directoryPrefix = "files-in-bucket-with-latest-version-deleted"
 
-						tempFile, err := ioutil.TempFile("", "file-to-upload")
+						tempFile, err := os.CreateTemp("", "file-to-upload")
 						Ω(err).ShouldNot(HaveOccurred())
 						tempFile.Close()
 

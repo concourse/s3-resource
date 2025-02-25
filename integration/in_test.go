@@ -4,12 +4,11 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"os/exec"
 	"path/filepath"
 
-	"github.com/concourse/s3-resource"
+	s3resource "github.com/concourse/s3-resource"
 	"github.com/concourse/s3-resource/in"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -30,7 +29,7 @@ var _ = Describe("in", func() {
 
 	BeforeEach(func() {
 		var err error
-		destDir, err = ioutil.TempDir("", "s3_in_integration_test")
+		destDir, err = os.MkdirTemp("", "s3_in_integration_test")
 		Ω(err).ShouldNot(HaveOccurred())
 
 		stdin = &bytes.Buffer{}
@@ -104,12 +103,12 @@ var _ = Describe("in", func() {
 				},
 			}
 
-			tempFile, err := ioutil.TempFile("", "file-to-upload")
+			tempFile, err := os.CreateTemp("", "file-to-upload")
 			Ω(err).ShouldNot(HaveOccurred())
 			tempFile.Close()
 
 			for i := 1; i <= 3; i++ {
-				err = ioutil.WriteFile(tempFile.Name(), []byte(fmt.Sprintf("some-file-%d", i)), 0755)
+				err = os.WriteFile(tempFile.Name(), []byte(fmt.Sprintf("some-file-%d", i)), 0755)
 				Ω(err).ShouldNot(HaveOccurred())
 
 				_, err = s3client.UploadFile(bucketName, filepath.Join(directoryPrefix, fmt.Sprintf("some-file-%d", i)), tempFile.Name(), s3resource.NewUploadFileOptions())
@@ -151,17 +150,17 @@ var _ = Describe("in", func() {
 			}))
 
 			Ω(filepath.Join(destDir, "some-file-2")).Should(BeARegularFile())
-			contents, err := ioutil.ReadFile(filepath.Join(destDir, "some-file-2"))
+			contents, err := os.ReadFile(filepath.Join(destDir, "some-file-2"))
 			Ω(err).ShouldNot(HaveOccurred())
 			Ω(contents).Should(Equal([]byte("some-file-2")))
 
 			Ω(filepath.Join(destDir, "version")).Should(BeARegularFile())
-			versionContents, err := ioutil.ReadFile(filepath.Join(destDir, "version"))
+			versionContents, err := os.ReadFile(filepath.Join(destDir, "version"))
 			Ω(err).ShouldNot(HaveOccurred())
 			Ω(versionContents).Should(Equal([]byte("2")))
 
 			Ω(filepath.Join(destDir, "url")).Should(BeARegularFile())
-			urlContents, err := ioutil.ReadFile(filepath.Join(destDir, "url"))
+			urlContents, err := os.ReadFile(filepath.Join(destDir, "url"))
 			Ω(err).ShouldNot(HaveOccurred())
 			Ω(urlContents).Should(Equal([]byte(buildEndpoint(bucketName, endpoint) + "/in-request-files/some-file-2")))
 		})
@@ -192,12 +191,12 @@ var _ = Describe("in", func() {
 				}))
 
 				Ω(filepath.Join(destDir, "some-file-0.0.0")).Should(BeARegularFile())
-				contents, err := ioutil.ReadFile(filepath.Join(destDir, "some-file-0.0.0"))
+				contents, err := os.ReadFile(filepath.Join(destDir, "some-file-0.0.0"))
 				Ω(err).ShouldNot(HaveOccurred())
 				Ω(contents).Should(Equal([]byte(inRequest.Source.InitialContentText)))
 
 				Ω(filepath.Join(destDir, "version")).Should(BeARegularFile())
-				versionContents, err := ioutil.ReadFile(filepath.Join(destDir, "version"))
+				versionContents, err := os.ReadFile(filepath.Join(destDir, "version"))
 				Ω(err).ShouldNot(HaveOccurred())
 				Ω(versionContents).Should(Equal([]byte("0.0.0")))
 
@@ -226,12 +225,12 @@ var _ = Describe("in", func() {
 				Version: s3resource.Version{},
 			}
 
-			tempFile, err := ioutil.TempFile("", "file-to-upload")
+			tempFile, err := os.CreateTemp("", "file-to-upload")
 			Ω(err).ShouldNot(HaveOccurred())
 			tempFile.Close()
 
 			for i := 1; i <= 3; i++ {
-				err = ioutil.WriteFile(tempFile.Name(), []byte(fmt.Sprintf("some-file-%d", i)), 0755)
+				err = os.WriteFile(tempFile.Name(), []byte(fmt.Sprintf("some-file-%d", i)), 0755)
 				Ω(err).ShouldNot(HaveOccurred())
 
 				_, err = s3client.UploadFile(versionedBucketName, filepath.Join(directoryPrefix, "some-file"), tempFile.Name(), s3resource.NewUploadFileOptions())
@@ -279,17 +278,17 @@ var _ = Describe("in", func() {
 			}))
 
 			Ω(filepath.Join(destDir, "some-file")).Should(BeARegularFile())
-			contents, err := ioutil.ReadFile(filepath.Join(destDir, "some-file"))
+			contents, err := os.ReadFile(filepath.Join(destDir, "some-file"))
 			Ω(err).ShouldNot(HaveOccurred())
 			Ω(contents).Should(Equal([]byte("some-file-2")))
 
 			Ω(filepath.Join(destDir, "version")).Should(BeARegularFile())
-			versionContents, err := ioutil.ReadFile(filepath.Join(destDir, "version"))
+			versionContents, err := os.ReadFile(filepath.Join(destDir, "version"))
 			Ω(err).ShouldNot(HaveOccurred())
 			Ω(versionContents).Should(Equal([]byte(expectedVersion)))
 
 			Ω(filepath.Join(destDir, "url")).Should(BeARegularFile())
-			urlContents, err := ioutil.ReadFile(filepath.Join(destDir, "url"))
+			urlContents, err := os.ReadFile(filepath.Join(destDir, "url"))
 			Ω(err).ShouldNot(HaveOccurred())
 			Ω(urlContents).Should(Equal([]byte(buildEndpoint(versionedBucketName, endpoint) + "/in-request-files-versioned/some-file?versionId=" + expectedVersion)))
 		})
@@ -321,12 +320,12 @@ var _ = Describe("in", func() {
 				}))
 
 				Ω(filepath.Join(destDir, "some-file")).Should(BeARegularFile())
-				contents, err := ioutil.ReadFile(filepath.Join(destDir, "some-file"))
+				contents, err := os.ReadFile(filepath.Join(destDir, "some-file"))
 				Ω(err).ShouldNot(HaveOccurred())
 				Ω(contents).Should(Equal([]byte(inRequest.Source.InitialContentText)))
 
 				Ω(filepath.Join(destDir, "version")).Should(BeARegularFile())
-				versionContents, err := ioutil.ReadFile(filepath.Join(destDir, "version"))
+				versionContents, err := os.ReadFile(filepath.Join(destDir, "version"))
 				Ω(err).ShouldNot(HaveOccurred())
 				Ω(versionContents).Should(Equal([]byte(expectedVersion)))
 
@@ -363,12 +362,12 @@ var _ = Describe("in", func() {
 			err := json.NewEncoder(stdin).Encode(inRequest)
 			Ω(err).ShouldNot(HaveOccurred())
 
-			tempFile, err := ioutil.TempFile("", "file-to-upload")
+			tempFile, err := os.CreateTemp("", "file-to-upload")
 			Ω(err).ShouldNot(HaveOccurred())
 			tempFile.Close()
 
 			for i := 1; i <= 3; i++ {
-				err = ioutil.WriteFile(tempFile.Name(), []byte(fmt.Sprintf("some-file-%d", i)), 0755)
+				err = os.WriteFile(tempFile.Name(), []byte(fmt.Sprintf("some-file-%d", i)), 0755)
 				Ω(err).ShouldNot(HaveOccurred())
 
 				_, err = s3client.UploadFile(bucketName, filepath.Join(directoryPrefix, fmt.Sprintf("some-file-%d", i)), tempFile.Name(), s3resource.NewUploadFileOptions())
@@ -407,12 +406,12 @@ var _ = Describe("in", func() {
 			}))
 
 			Ω(filepath.Join(destDir, "some-file-2")).Should(BeARegularFile())
-			contents, err := ioutil.ReadFile(filepath.Join(destDir, "some-file-2"))
+			contents, err := os.ReadFile(filepath.Join(destDir, "some-file-2"))
 			Ω(err).ShouldNot(HaveOccurred())
 			Ω(contents).Should(Equal([]byte("some-file-2")))
 
 			Ω(filepath.Join(destDir, "url")).Should(BeARegularFile())
-			urlContents, err := ioutil.ReadFile(filepath.Join(destDir, "url"))
+			urlContents, err := os.ReadFile(filepath.Join(destDir, "url"))
 			Ω(err).ShouldNot(HaveOccurred())
 			Ω(urlContents).Should(Equal([]byte(inRequest.Source.CloudfrontURL + "/in-request-cloudfront-files/some-file-2")))
 		})
@@ -474,11 +473,11 @@ var _ = Describe("in", func() {
 			err := json.NewEncoder(stdin).Encode(inRequest)
 			Ω(err).ShouldNot(HaveOccurred())
 
-			tempFile, err := ioutil.TempFile("", "file-to-upload")
+			tempFile, err := os.CreateTemp("", "file-to-upload")
 			Ω(err).ShouldNot(HaveOccurred())
 			tempFile.Close()
 
-			err = ioutil.WriteFile(tempFile.Name(), []byte("some-file-1"), 0755)
+			err = os.WriteFile(tempFile.Name(), []byte("some-file-1"), 0755)
 			Ω(err).ShouldNot(HaveOccurred())
 
 			_, err = s3client.UploadFile(bucketName, filepath.Join(directoryPrefix, "some-file-1"), tempFile.Name(), s3resource.NewUploadFileOptions())
@@ -499,7 +498,7 @@ var _ = Describe("in", func() {
 
 		It("writes the tags to tags.json", func() {
 			Ω(filepath.Join(destDir, "tags.json")).Should(BeARegularFile())
-			actualTagsJSON, err := ioutil.ReadFile(filepath.Join(destDir, "tags.json"))
+			actualTagsJSON, err := os.ReadFile(filepath.Join(destDir, "tags.json"))
 			Ω(err).ShouldNot(HaveOccurred())
 
 			expectedTagsJSON, err := json.Marshal(tags)
