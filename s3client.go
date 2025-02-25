@@ -6,7 +6,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"os"
 	"strings"
 	"time"
@@ -403,7 +402,7 @@ func (client *s3client) DownloadTags(bucketName string, remotePath string, versi
 		return err
 	}
 
-	return ioutil.WriteFile(localPath, tagsJSON, 0644)
+	return os.WriteFile(localPath, tagsJSON, 0644)
 }
 
 func (client *s3client) URL(bucketName string, remotePath string, private bool, versionID string) string {

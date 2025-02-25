@@ -20,6 +20,8 @@ github.com/google/go-cmp v0.3.0/go.mod h1:8QqcDgzrUqlUb/G2PQTWiueGozuR1884gddMyw
 github.com/google/go-cmp v0.3.1/go.mod h1:8QqcDgzrUqlUb/G2PQTWiueGozuR1884gddMywk6iLU=
 github.com/google/go-cmp v0.4.0 h1:xsAVV57WRhGj6kEIi8ReJzQlHHqcBYCElAvkovg3B/4=
 github.com/google/go-cmp v0.4.0/go.mod h1:v8dTdLbMG2kIc/vJvl+f65V22dbkXbowE6jgT/gNBxE=
+github.com/google/uuid v1.6.0 h1:NIvaJDMOsjHA8n1jAhLSgzrAzy1Hgr+hNrb57e+94F0=
+github.com/google/uuid v1.6.0/go.mod h1:TIyPZe4MgqvfeYDBFedMoGGpEw/LqOeaOT+nhxU+yHo=
 github.com/h2non/filetype v1.0.2-0.20170308102658-0df83c38d14f h1:UqVLtLFmxGwicDsRHAAt0Wjda6V2joB6cd2RcKdDI9M=
 github.com/h2non/filetype v1.0.2-0.20170308102658-0df83c38d14f/go.mod h1:isekKqOuhMj+s/7r3rIeTErIRy4Rub5uBWHfvMusLMU=
 github.com/jmespath/go-jmespath v0.3.0 h1:OS12ieG61fsCg5+qLJ+SsW9NicxNkg3b25OyT2yCeUc=
@@ -30,8 +32,6 @@ github.com/mattn/go-isatty v0.0.0-20161123143637-30a891c33c7c h1:YHHK/dEmr2Jo1cW
 github.com/mattn/go-isatty v0.0.0-20161123143637-30a891c33c7c/go.mod h1:M+lRXTBqGeGNdLjl/ufCoiOlB5xdOkqRJdNxMWT7Zi4=
 github.com/mitchellh/colorstring v0.0.0-20150917214807-8631ce90f286 h1:KHyL+3mQOF9sPfs26lsefckcFNDcIZtiACQiECzIUkw=
 github.com/mitchellh/colorstring v0.0.0-20150917214807-8631ce90f286/go.mod h1:l0dey0ia/Uv7NcFFVbCLtqEBQbrT4OCwCSKTEv6enCw=
-github.com/nu7hatch/gouuid v0.0.0-20131221200532-179d4d0c4d8d h1:VhgPp6v9qf9Agr/56bj7Y/xa04UccTW04VP0Qed4vnQ=
-github.com/nu7hatch/gouuid v0.0.0-20131221200532-179d4d0c4d8d/go.mod h1:YUTz3bUH2ZwIWBy3CJBeOBEugqcmXREj14T+iG/4k4U=
 github.com/olekukonko/ts v0.0.0-20140412220145-ecf753e7c962 h1:3ev7csw9n4tLCxb5mtYXooCeQIFmC8Iw+4VhrSBy4zk=
 github.com/olekukonko/ts v0.0.0-20140412220145-ecf753e7c962/go.mod h1:F/7q8/HZz+TXjlsoZQQKVYvXTZaFH4QRa3y+j1p7MS0=
 github.com/onsi/ginkgo v1.2.1-0.20170102031522-a23f924ce96d h1:KFDjWk1pKKFlfIOu/D7DqWtZpoNdrNelD7Yktk5qsag=
