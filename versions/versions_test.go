@@ -6,7 +6,7 @@ import (
 	s3resource "github.com/concourse/s3-resource"
 	"github.com/concourse/s3-resource/fakes"
 	"github.com/concourse/s3-resource/versions"
-	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 )
 

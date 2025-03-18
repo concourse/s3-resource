@@ -12,12 +12,12 @@ import (
 	"github.com/aws/aws-sdk-go/service/s3/s3manager"
 	s3resource "github.com/concourse/s3-resource"
 	"github.com/concourse/s3-resource/out"
-	. "github.com/onsi/ginkgo"
-	. "github.com/onsi/gomega"
+	"github.com/google/uuid"
 	"github.com/onsi/gomega/gbytes"
 	"github.com/onsi/gomega/gexec"
 
-	"github.com/google/uuid"
+	. "github.com/onsi/ginkgo/v2"
+	. "github.com/onsi/gomega"
 )
 
 var _ = Describe("out", func() {

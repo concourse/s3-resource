@@ -5,7 +5,7 @@ import (
 	"os"
 	"testing"
 
-	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
 	"github.com/onsi/gomega/gexec"
@@ -41,10 +41,10 @@ func ExistOnFilesystem() types.GomegaMatcher {
 }
 
 type existOnFilesystemMatcher struct {
-	expected interface{}
+	expected any
 }
 
-func (matcher *existOnFilesystemMatcher) Match(actual interface{}) (success bool, err error) {
+func (matcher *existOnFilesystemMatcher) Match(actual any) (success bool, err error) {
 	path, ok := actual.(string)
 	if !ok {
 		return false, fmt.Errorf("ExistOnFilesystem matcher expects a string")
@@ -59,10 +59,10 @@ func (matcher *existOnFilesystemMatcher) Match(actual interface{}) (success bool
 	return true, nil
 }
 
-func (matcher *existOnFilesystemMatcher) FailureMessage(actual interface{}) (message string) {
+func (matcher *existOnFilesystemMatcher) FailureMessage(actual any) (message string) {
 	return fmt.Sprintf("Expected\n\t%#v\nto exist on the filesystem", actual)
 }
 
-func (matcher *existOnFilesystemMatcher) NegatedFailureMessage(actual interface{}) (message string) {
+func (matcher *existOnFilesystemMatcher) NegatedFailureMessage(actual any) (message string) {
 	return fmt.Sprintf("Expected\n\t%#v\nnot to exist on the filesystem", actual)
 }
