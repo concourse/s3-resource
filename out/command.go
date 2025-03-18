@@ -154,7 +154,7 @@ func (command *Command) metadata(bucketName, remotePath string, private bool, ve
 	remoteFilename := filepath.Base(remotePath)
 
 	metadata := []s3resource.MetadataPair{
-		s3resource.MetadataPair{
+		{
 			Name:  "filename",
 			Value: remoteFilename,
 		},
