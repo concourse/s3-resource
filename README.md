@@ -108,7 +108,7 @@ Places the following files in the destination:
 * `url`: A file containing the URL of the object. If `private` is true, this
   URL will be signed.
 
-* `s3_uri`: A file containing the S3 URI of the object (for use with `aws cp`, etc.)
+* `s3_uri`: A file containing the S3 URI (`s3://...`) of the object (for use with `aws cp`, etc.)
 
 * `version`: The version identified in the file name.
 
