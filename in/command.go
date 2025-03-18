@@ -4,7 +4,6 @@ import (
 	"encoding/base64"
 	"errors"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path"
 	"path/filepath"
@@ -188,15 +187,15 @@ func (command *Command) Run(destinationDir string, request Request) (Response, e
 }
 
 func (command *Command) writeURLFile(destDir string, url string) error {
-	return ioutil.WriteFile(filepath.Join(destDir, "url"), []byte(url), 0644)
+	return os.WriteFile(filepath.Join(destDir, "url"), []byte(url), 0644)
 }
 
 func (command *Command) writeS3URIFile(destDir string, s3_uri string) error {
-	return ioutil.WriteFile(filepath.Join(destDir, "s3_uri"), []byte(s3_uri), 0644)
+	return os.WriteFile(filepath.Join(destDir, "s3_uri"), []byte(s3_uri), 0644)
 }
 
 func (command *Command) writeVersionFile(destDir string, versionNumber string) error {
-	return ioutil.WriteFile(filepath.Join(destDir, "version"), []byte(versionNumber), 0644)
+	return os.WriteFile(filepath.Join(destDir, "version"), []byte(versionNumber), 0644)
 }
 
 func (command *Command) downloadFile(bucketName string, remotePath string, versionID string, destinationDir string, destinationFile string) error {
@@ -222,14 +221,14 @@ func (command *Command) downloadTags(bucketName string, remotePath string, versi
 }
 
 func (command *Command) createInitialFile(destDir string, destFile string, data []byte) error {
-	return ioutil.WriteFile(filepath.Join(destDir, destFile), []byte(data), 0644)
+	return os.WriteFile(filepath.Join(destDir, destFile), []byte(data), 0644)
 }
 
 func (command *Command) metadata(remotePath string, private bool, url string) []s3resource.MetadataPair {
 	remoteFilename := filepath.Base(remotePath)
 
 	metadata := []s3resource.MetadataPair{
-		s3resource.MetadataPair{
+		{
 			Name:  "filename",
 			Value: remoteFilename,
 		},
@@ -254,7 +253,7 @@ func extractArchive(mime, filename string) error {
 	}
 
 	if mime == "application/gzip" || mime == "application/x-gzip" {
-		fileInfos, err := ioutil.ReadDir(destDir)
+		fileInfos, err := os.ReadDir(destDir)
 		if err != nil {
 			return fmt.Errorf("failed to read dir: %s", err)
 		}
