@@ -103,10 +103,12 @@ object's filename is the resulting version.
 
 Places the following files in the destination:
 
-* `(filename)`: The file fetched from the bucket.
+* `(filename)`: The file fetched from the bucket (if `skip_download` is not `true`).
 
 * `url`: A file containing the URL of the object. If `private` is true, this
   URL will be signed.
+
+* `s3_uri`: A file containing the S3 URI (`s3://...`) of the object (for use with `aws cp`, etc.)
 
 * `version`: The version identified in the file name.
 

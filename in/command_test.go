@@ -164,6 +164,19 @@ var _ = Describe("In Command", func() {
 				Ω(versionID).Should(BeEmpty())
 			})
 
+			It("creates a 's3_uri' file that contains the S3 URI", func() {
+				uriPath := filepath.Join(destDir, "s3_uri")
+				Ω(uriPath).ShouldNot(ExistOnFilesystem())
+
+				_, err := command.Run(destDir, request)
+				Ω(err).ShouldNot(HaveOccurred())
+
+				Ω(uriPath).Should(ExistOnFilesystem())
+				contents, err := os.ReadFile(uriPath)
+				Ω(err).ShouldNot(HaveOccurred())
+				Ω(string(contents)).Should(Equal("s3://" + request.Source.Bucket + "/files/a-file-1.3"))
+			})
+
 			Context("when configured with private URLs", func() {
 				BeforeEach(func() {
 					request.Source.Private = true
@@ -479,6 +492,16 @@ var _ = Describe("In Command", func() {
 				Ω(urlPath).ShouldNot(ExistOnFilesystem())
 			})
 
+			It("should not write the s3_uri file", func() {
+				uriPath := filepath.Join(destDir, "s3_uri")
+				Ω(uriPath).ShouldNot(ExistOnFilesystem())
+
+				_, err := command.Run(destDir, request)
+				Ω(err).ShouldNot(HaveOccurred())
+
+				Ω(uriPath).ShouldNot(ExistOnFilesystem())
+			})
+
 			It("should not include a URL in the metadata", func() {
 				response, err := command.Run(destDir, request)
 				Ω(err).ShouldNot(HaveOccurred())
@@ -558,6 +581,16 @@ var _ = Describe("In Command", func() {
 				Ω(err).ShouldNot(HaveOccurred())
 
 				Ω(urlPath).ShouldNot(ExistOnFilesystem())
+			})
+
+			It("should not write the s3_uri file", func() {
+				uriPath := filepath.Join(destDir, "s3_uri")
+				Ω(uriPath).ShouldNot(ExistOnFilesystem())
+
+				_, err := command.Run(destDir, request)
+				Ω(err).ShouldNot(HaveOccurred())
+
+				Ω(uriPath).ShouldNot(ExistOnFilesystem())
 			})
 
 			It("should not include a URL in the metadata", func() {
