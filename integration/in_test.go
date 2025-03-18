@@ -10,11 +10,11 @@ import (
 
 	s3resource "github.com/concourse/s3-resource"
 	"github.com/concourse/s3-resource/in"
-	. "github.com/onsi/ginkgo"
-	. "github.com/onsi/gomega"
-
 	"github.com/onsi/gomega/gbytes"
 	"github.com/onsi/gomega/gexec"
+
+	. "github.com/onsi/ginkgo/v2"
+	. "github.com/onsi/gomega"
 )
 
 var _ = Describe("in", func() {
@@ -99,7 +99,7 @@ var _ = Describe("in", func() {
 					Regexp:          filepath.Join(directoryPrefix, "some-file-(.*)"),
 				},
 				Version: s3resource.Version{
-					Path: filepath.Join(directoryPrefix, "some-file-2"),
+					Path: filepath.Join(directoryPrefix, "some-file-1"),
 				},
 			}
 
@@ -107,8 +107,8 @@ var _ = Describe("in", func() {
 			Ω(err).ShouldNot(HaveOccurred())
 			tempFile.Close()
 
-			for i := 1; i <= 3; i++ {
-				err = os.WriteFile(tempFile.Name(), []byte(fmt.Sprintf("some-file-%d", i)), 0755)
+			for i := range 3 {
+				err = os.WriteFile(tempFile.Name(), fmt.Appendf([]byte{}, "some-file-%d", i), 0755)
 				Ω(err).ShouldNot(HaveOccurred())
 
 				_, err = s3client.UploadFile(bucketName, filepath.Join(directoryPrefix, fmt.Sprintf("some-file-%d", i)), tempFile.Name(), s3resource.NewUploadFileOptions())
@@ -120,7 +120,7 @@ var _ = Describe("in", func() {
 		})
 
 		AfterEach(func() {
-			for i := 1; i <= 3; i++ {
+			for i := range 3 {
 				err := s3client.DeleteFile(bucketName, filepath.Join(directoryPrefix, fmt.Sprintf("some-file-%d", i)))
 				Ω(err).ShouldNot(HaveOccurred())
 			}
@@ -229,8 +229,8 @@ var _ = Describe("in", func() {
 			Ω(err).ShouldNot(HaveOccurred())
 			tempFile.Close()
 
-			for i := 1; i <= 3; i++ {
-				err = os.WriteFile(tempFile.Name(), []byte(fmt.Sprintf("some-file-%d", i)), 0755)
+			for i := range 3 {
+				err = os.WriteFile(tempFile.Name(), fmt.Appendf([]byte{}, "some-file-%d", i), 0755)
 				Ω(err).ShouldNot(HaveOccurred())
 
 				_, err = s3client.UploadFile(versionedBucketName, filepath.Join(directoryPrefix, "some-file"), tempFile.Name(), s3resource.NewUploadFileOptions())
@@ -355,7 +355,7 @@ var _ = Describe("in", func() {
 					Regexp:          filepath.Join(directoryPrefix, "some-file-(.*)"),
 				},
 				Version: s3resource.Version{
-					Path: filepath.Join(directoryPrefix, "some-file-2"),
+					Path: filepath.Join(directoryPrefix, "some-file-1"),
 				},
 			}
 
@@ -366,8 +366,8 @@ var _ = Describe("in", func() {
 			Ω(err).ShouldNot(HaveOccurred())
 			tempFile.Close()
 
-			for i := 1; i <= 3; i++ {
-				err = os.WriteFile(tempFile.Name(), []byte(fmt.Sprintf("some-file-%d", i)), 0755)
+			for i := range 3 {
+				err = os.WriteFile(tempFile.Name(), fmt.Appendf([]byte{}, "some-file-%d", i), 0755)
 				Ω(err).ShouldNot(HaveOccurred())
 
 				_, err = s3client.UploadFile(bucketName, filepath.Join(directoryPrefix, fmt.Sprintf("some-file-%d", i)), tempFile.Name(), s3resource.NewUploadFileOptions())
@@ -376,7 +376,7 @@ var _ = Describe("in", func() {
 		})
 
 		AfterEach(func() {
-			for i := 1; i <= 3; i++ {
+			for i := range 3 {
 				err := s3client.DeleteFile(bucketName, filepath.Join(directoryPrefix, fmt.Sprintf("some-file-%d", i)))
 				Ω(err).ShouldNot(HaveOccurred())
 			}

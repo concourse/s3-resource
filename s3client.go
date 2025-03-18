@@ -22,8 +22,8 @@ import (
 	"github.com/cheggaaa/pb"
 )
 
-//go:generate counterfeiter . S3Client
-
+//go:generate go run github.com/maxbrunsfeld/counterfeiter/v6 -generate
+//counterfeiter:generate . S3Client
 type S3Client interface {
 	BucketFiles(bucketName string, prefixHint string) ([]string, error)
 	BucketFileVersions(bucketName string, remotePath string) ([]string, error)
