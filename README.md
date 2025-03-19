@@ -16,8 +16,10 @@ version numbers.
 * `session_token`: *Optional.* The AWS STS session token to use when
   accessing the bucket.
 
-* `aws_role_arn`: *Optional.* The AWS role ARN to be assumed by the user
-  identified by `access_key_id` and `secret_access_key`.
+* `aws_role_arn`: *Optional.* The AWS role ARN to be assumed by the resource.
+    Will be assumed using the AWS SDK's default authentication chain. If
+    `access_key_id` and `secret_access_key` are provided those will be used
+    instead to try and assume the role.
 
 * `region_name`: *Optional.* The region the bucket is in. Defaults to
   `us-east-1`.
@@ -33,24 +35,28 @@ version numbers.
   `Query String Forwarding and Caching` to `Forward all, cache based on all` to
   ensure S3 calls succeed.
 
-* `endpoint`: *Optional.* Custom endpoint for using S3 compatible provider.
+* `endpoint`: *Optional.* Custom endpoint for using S3 compatible provider. Can
+    be just a hostname or include the scheme (e.g. `https://my-endpoint.com` or
+    `my-endpoint.com`)
 
 * `disable_ssl`: *Optional.* Disable SSL for the endpoint, useful for S3
-  compatible providers without SSL.
+    compatible providers without SSL.
 
-* `skip_ssl_verification`: *Optional.* Skip SSL verification for S3 endpoint. Useful for S3 compatible providers using self-signed SSL certificates.
+* `skip_ssl_verification`: *Optional.* Skip SSL verification for S3 endpoint.
+    Useful for S3 compatible providers using self-signed SSL certificates.
 
-* `skip_download`: *Optional.* Skip downloading object from S3. Useful only trigger the pipeline without using the object.
+* `skip_download`: *Optional.* Skip downloading object from S3. Useful only
+    trigger the pipeline without using the object.
 
-* `server_side_encryption`: *Optional.* An encryption algorithm to use when
-  storing objects in S3.
+* `server_side_encryption`: *Optional.* The encryption algorithm to use when
+    storing objects in S3. One of `AES256`, `aws:kms`, `aws:kms:dsse`
 
 * `sse_kms_key_id`: *Optional.* The ID of the AWS KMS master encryption key
-  used for the object.
+    used for the object.
 
-* `use_v2_signing`: *Optional.* Use signature v2 signing, useful for S3 compatible providers that do not support v4.
+* `disable_multipart`: *Optional.* Disable Multipart Upload. useful for S3
+    compatible providers that do not support multipart upload.
 
-* `disable_multipart`: *Optional.* Disable Multipart Upload. useful for S3 compatible providers that do not support multipart upload.
 
 ### File Names
 
@@ -232,7 +238,6 @@ Run the tests with the following command:
 
 ```sh
 docker build -t s3-resource --target tests --build-arg base_image=paketobuildpacks/run-jammy-base:latest .
- .
 ```
 
 #### Integration tests

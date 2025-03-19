@@ -118,7 +118,7 @@ type FakeS3Client struct {
 	setTagsReturnsOnCall map[int]struct {
 		result1 error
 	}
-	URLStub        func(string, string, bool, string) string
+	URLStub        func(string, string, bool, string) (string, error)
 	uRLMutex       sync.RWMutex
 	uRLArgsForCall []struct {
 		arg1 string
@@ -128,9 +128,11 @@ type FakeS3Client struct {
 	}
 	uRLReturns struct {
 		result1 string
+		result2 error
 	}
 	uRLReturnsOnCall map[int]struct {
 		result1 string
+		result2 error
 	}
 	UploadFileStub        func(string, string, string, s3resource.UploadFileOptions) (string, error)
 	uploadFileMutex       sync.RWMutex
@@ -665,7 +667,7 @@ func (fake *FakeS3Client) SetTagsReturnsOnCall(i int, result1 error) {
 	}{result1}
 }
 
-func (fake *FakeS3Client) URL(arg1 string, arg2 string, arg3 bool, arg4 string) string {
+func (fake *FakeS3Client) URL(arg1 string, arg2 string, arg3 bool, arg4 string) (string, error) {
 	fake.uRLMutex.Lock()
 	ret, specificReturn := fake.uRLReturnsOnCall[len(fake.uRLArgsForCall)]
 	fake.uRLArgsForCall = append(fake.uRLArgsForCall, struct {
@@ -682,9 +684,9 @@ func (fake *FakeS3Client) URL(arg1 string, arg2 string, arg3 bool, arg4 string) 
 		return stub(arg1, arg2, arg3, arg4)
 	}
 	if specificReturn {
-		return ret.result1
+		return ret.result1, ret.result2
 	}
-	return fakeReturns.result1
+	return fakeReturns.result1, fakeReturns.result2
 }
 
 func (fake *FakeS3Client) URLCallCount() int {
@@ -693,7 +695,7 @@ func (fake *FakeS3Client) URLCallCount() int {
 	return len(fake.uRLArgsForCall)
 }
 
-func (fake *FakeS3Client) URLCalls(stub func(string, string, bool, string) string) {
+func (fake *FakeS3Client) URLCalls(stub func(string, string, bool, string) (string, error)) {
 	fake.uRLMutex.Lock()
 	defer fake.uRLMutex.Unlock()
 	fake.URLStub = stub
@@ -706,27 +708,30 @@ func (fake *FakeS3Client) URLArgsForCall(i int) (string, string, bool, string) {
 	return argsForCall.arg1, argsForCall.arg2, argsForCall.arg3, argsForCall.arg4
 }
 
-func (fake *FakeS3Client) URLReturns(result1 string) {
+func (fake *FakeS3Client) URLReturns(result1 string, result2 error) {
 	fake.uRLMutex.Lock()
 	defer fake.uRLMutex.Unlock()
 	fake.URLStub = nil
 	fake.uRLReturns = struct {
 		result1 string
-	}{result1}
+		result2 error
+	}{result1, result2}
 }
 
-func (fake *FakeS3Client) URLReturnsOnCall(i int, result1 string) {
+func (fake *FakeS3Client) URLReturnsOnCall(i int, result1 string, result2 error) {
 	fake.uRLMutex.Lock()
 	defer fake.uRLMutex.Unlock()
 	fake.URLStub = nil
 	if fake.uRLReturnsOnCall == nil {
 		fake.uRLReturnsOnCall = make(map[int]struct {
 			result1 string
+			result2 error
 		})
 	}
 	fake.uRLReturnsOnCall[i] = struct {
 		result1 string
-	}{result1}
+		result2 error
+	}{result1, result2}
 }
 
 func (fake *FakeS3Client) UploadFile(arg1 string, arg2 string, arg3 string, arg4 s3resource.UploadFileOptions) (string, error) {

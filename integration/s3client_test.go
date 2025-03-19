@@ -1,14 +1,15 @@
 package integration_test
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"os"
 	"path/filepath"
 	"time"
 
-	"github.com/aws/aws-sdk-go/aws"
-	"github.com/aws/aws-sdk-go/service/s3"
+	"github.com/aws/aws-sdk-go-v2/aws"
+	"github.com/aws/aws-sdk-go-v2/service/s3"
 	s3resource "github.com/concourse/s3-resource"
 
 	. "github.com/onsi/ginkgo/v2"
@@ -114,13 +115,13 @@ var _ = Describe("S3client", func() {
 		Ω(err).ShouldNot(HaveOccurred())
 		Ω(actualTagsJSON).Should(MatchJSON(expectedTagsJSON))
 
-		resp, err := s3Service.HeadObject(&s3.HeadObjectInput{
+		resp, err := s3Service.HeadObject(context.TODO(), &s3.HeadObjectInput{
 			Bucket: aws.String(versionedBucketName),
 			Key:    aws.String(filepath.Join(directoryPrefix, "file-to-upload-3")),
 		})
 
 		Ω(err).ShouldNot(HaveOccurred())
-		Ω(*resp.ServerSideEncryption).Should(Equal("AES256"))
+		Ω(resp.ServerSideEncryption).Should(Equal("AES256"))
 	})
 
 	Context("when using a sessionToken", func() {

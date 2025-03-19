@@ -50,7 +50,7 @@ var _ = Describe("In Command", func() {
 			s3client = &fakes.FakeS3Client{}
 			command = NewCommand(s3client)
 
-			s3client.URLReturns("http://google.com")
+			s3client.URLReturns("http://google.com", nil)
 		})
 
 		AfterEach(func() {

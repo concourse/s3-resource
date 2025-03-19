@@ -8,8 +8,7 @@ import (
 	"net/url"
 	"strings"
 
-	"github.com/aws/aws-sdk-go/aws"
-	"github.com/concourse/s3-resource"
+	s3resource "github.com/concourse/s3-resource"
 	"github.com/concourse/s3-resource/in"
 )
 
@@ -24,22 +23,26 @@ func main() {
 	var request in.Request
 	inputRequest(&request)
 
-	awsConfig := s3resource.NewAwsConfig(
+	awsConfig, err := s3resource.NewAwsConfig(
 		request.Source.AccessKeyID,
 		request.Source.SecretAccessKey,
 		request.Source.SessionToken,
+		request.Source.AwsRoleARN,
 		request.Source.RegionName,
-		request.Source.Endpoint,
-		request.Source.DisableSSL,
 		request.Source.SkipSSLVerification,
 	)
+	if err != nil {
+		s3resource.Fatal("error creating aws config", err)
+	}
 
+	s3PathStyle := true
+	endpoint := request.Source.Endpoint
 	if len(request.Source.CloudfrontURL) != 0 {
 		cloudfrontUrl, err := url.ParseRequestURI(request.Source.CloudfrontURL)
 		if err != nil {
 			s3resource.Fatal("parsing 'cloudfront_url'", err)
 		}
-		awsConfig.S3ForcePathStyle = aws.Bool(false)
+		s3PathStyle = false
 
 		splitResult := strings.Split(cloudfrontUrl.Host, ".")
 		if len(splitResult) < 2 {
@@ -47,15 +50,19 @@ func main() {
 		}
 		request.Source.Bucket = strings.Split(cloudfrontUrl.Host, ".")[0]
 		fqdn := strings.SplitAfterN(cloudfrontUrl.Host, ".", 2)[1]
-		awsConfig.Endpoint = aws.String(fmt.Sprintf("%s://%s", cloudfrontUrl.Scheme, fqdn))
+		endpoint = fmt.Sprintf("%s://%s", cloudfrontUrl.Scheme, fqdn)
 	}
 
-	client := s3resource.NewS3Client(
+	client, err := s3resource.NewS3Client(
 		os.Stderr,
 		awsConfig,
-		request.Source.UseV2Signing,
-		request.Source.AwsRoleARN,
+		endpoint,
+		request.Source.DisableSSL,
+		s3PathStyle,
 	)
+	if err != nil {
+		s3resource.Fatal("error creating s3 client", err)
+	}
 
 	command := in.NewCommand(client)
 

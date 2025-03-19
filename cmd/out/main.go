@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"os"
 
-	"github.com/concourse/s3-resource"
+	s3resource "github.com/concourse/s3-resource"
 	"github.com/concourse/s3-resource/out"
 )
 
@@ -19,22 +19,29 @@ func main() {
 
 	sourceDir := os.Args[1]
 
-	awsConfig := s3resource.NewAwsConfig(
+	awsConfig, err := s3resource.NewAwsConfig(
 		request.Source.AccessKeyID,
 		request.Source.SecretAccessKey,
 		request.Source.SessionToken,
+		request.Source.AwsRoleARN,
 		request.Source.RegionName,
-		request.Source.Endpoint,
-		request.Source.DisableSSL,
 		request.Source.SkipSSLVerification,
 	)
+	if err != nil {
+		s3resource.Fatal("error creating aws config", err)
+	}
 
-	client := s3resource.NewS3Client(
+	s3PathStyle := true
+	client, err := s3resource.NewS3Client(
 		os.Stderr,
 		awsConfig,
-		request.Source.UseV2Signing,
-		request.Source.AwsRoleARN,
+		request.Source.Endpoint,
+		request.Source.DisableSSL,
+		s3PathStyle,
 	)
+	if err != nil {
+		s3resource.Fatal("error creating s3 client", err)
+	}
 
 	command := out.NewCommand(os.Stderr, client)
 	response, err := command.Run(sourceDir, request)

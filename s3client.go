@@ -1,24 +1,26 @@
 package s3resource
 
 import (
+	"context"
 	"crypto/tls"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
+	"net/http"
+	"net/url"
 	"os"
 	"strings"
 	"time"
 
-	"github.com/aws/aws-sdk-go/aws/credentials/stscreds"
-
-	"net/http"
-
-	"github.com/aws/aws-sdk-go/aws"
-	"github.com/aws/aws-sdk-go/aws/credentials"
-	"github.com/aws/aws-sdk-go/aws/session"
-	"github.com/aws/aws-sdk-go/service/s3"
-	"github.com/aws/aws-sdk-go/service/s3/s3manager"
+	"github.com/aws/aws-sdk-go-v2/aws"
+	"github.com/aws/aws-sdk-go-v2/config"
+	"github.com/aws/aws-sdk-go-v2/credentials"
+	"github.com/aws/aws-sdk-go-v2/credentials/stscreds"
+	"github.com/aws/aws-sdk-go-v2/feature/s3/manager"
+	"github.com/aws/aws-sdk-go-v2/service/s3"
+	"github.com/aws/aws-sdk-go-v2/service/s3/types"
+	"github.com/aws/aws-sdk-go-v2/service/sts"
 	"github.com/cheggaaa/pb"
 )
 
@@ -39,7 +41,7 @@ type S3Client interface {
 	DeleteFile(bucketName string, remotePath string) error
 	DeleteVersionedFile(bucketName string, remotePath string, versionID string) error
 
-	URL(bucketName string, remotePath string, private bool, versionID string) string
+	URL(bucketName string, remotePath string, private bool, versionID string) (string, error)
 }
 
 // 12 retries works out to ~5 mins of total backoff time, though AWS randomizes
@@ -47,9 +49,7 @@ type S3Client interface {
 const maxRetries = 12
 
 type s3client struct {
-	client  *s3.S3
-	session *session.Session
-
+	client         *s3.Client
 	progressOutput io.Writer
 }
 
@@ -70,55 +70,59 @@ func NewUploadFileOptions() UploadFileOptions {
 func NewS3Client(
 	progressOutput io.Writer,
 	awsConfig *aws.Config,
-	useV2Signing bool,
-	roleToAssume string,
-) S3Client {
-	sess := session.New(awsConfig)
-
-	assumedRoleAwsConfig := fetchCredentialsForRoleIfDefined(roleToAssume, awsConfig)
-
-	client := s3.New(sess, awsConfig, &assumedRoleAwsConfig)
-
-	if useV2Signing {
-		setv2Handlers(client)
+	endpoint string,
+	disableSSL bool,
+	s3PathStyle bool,
+) (S3Client, error) {
+	s3Opts := []func(*s3.Options){
+		func(o *s3.Options) {
+			o.UsePathStyle = s3PathStyle
+		},
 	}
+
+	if endpoint != "" {
+		u, err := url.Parse(endpoint)
+		if err != nil {
+			return nil, fmt.Errorf("error parsing given endpoint: %w", err)
+		}
+		if u.Scheme == "" {
+			// source.Endpoint is a hostname with no Scheme
+			scheme := "https://"
+			if disableSSL {
+				scheme = "http://"
+			}
+			endpoint = scheme + endpoint
+		}
+
+		s3Opts = append(s3Opts, func(o *s3.Options) {
+			o.BaseEndpoint = &endpoint
+		})
+	}
+
+	client := s3.NewFromConfig(*awsConfig, s3Opts...)
 
 	return &s3client{
-		client:  client,
-		session: sess,
-
+		client:         client,
 		progressOutput: progressOutput,
-	}
-}
-
-func fetchCredentialsForRoleIfDefined(roleToAssume string, awsConfig *aws.Config) aws.Config {
-	assumedRoleAwsConfig := aws.Config{}
-	if len(roleToAssume) != 0 {
-		stsConfig := awsConfig.Copy()
-		stsConfig.Endpoint = nil
-		stsSession := session.Must(session.NewSession(stsConfig))
-		roleCredentials := stscreds.NewCredentials(stsSession, roleToAssume)
-
-		assumedRoleAwsConfig.Credentials = roleCredentials
-	}
-	return assumedRoleAwsConfig
+	}, nil
 }
 
 func NewAwsConfig(
 	accessKey string,
 	secretKey string,
 	sessionToken string,
+	roleToAssume string,
 	regionName string,
-	endpoint string,
-	disableSSL bool,
 	skipSSLVerification bool,
-) *aws.Config {
-	var creds *credentials.Credentials
+) (*aws.Config, error) {
+	var creds aws.CredentialsProvider
 
-	if accessKey == "" && secretKey == "" {
-		creds = credentials.AnonymousCredentials
-	} else {
-		creds = credentials.NewStaticCredentials(accessKey, secretKey, sessionToken)
+	if accessKey != "" && secretKey != "" {
+		creds = aws.NewCredentialsCache(credentials.NewStaticCredentialsProvider(accessKey, secretKey, sessionToken))
+		_, err := creds.Retrieve(context.Background())
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	if len(regionName) == 0 {
@@ -134,21 +138,33 @@ func NewAwsConfig(
 		httpClient = http.DefaultClient
 	}
 
-	awsConfig := &aws.Config{
-		Region:           aws.String(regionName),
-		Credentials:      creds,
-		S3ForcePathStyle: aws.Bool(true),
-		MaxRetries:       aws.Int(maxRetries),
-		DisableSSL:       aws.Bool(disableSSL),
-		HTTPClient:       httpClient,
+	cfg, err := config.LoadDefaultConfig(context.Background(),
+		config.WithRegion(regionName),
+		config.WithHTTPClient(httpClient),
+		config.WithRetryMaxAttempts(maxRetries),
+		config.WithCredentialsProvider(creds),
+	)
+	if err != nil {
+		return nil, err
 	}
 
-	if len(endpoint) != 0 {
-		endpoint := fmt.Sprintf("%s", endpoint)
-		awsConfig.Endpoint = &endpoint
+	if roleToAssume != "" {
+		stsClient := sts.NewFromConfig(cfg)
+		roleCreds := stscreds.NewAssumeRoleProvider(stsClient, roleToAssume)
+		creds, err := roleCreds.Retrieve(context.TODO())
+		if err != nil {
+			return nil, fmt.Errorf("error assuming role: %w", err)
+		}
+
+		cfg.Credentials = aws.NewCredentialsCache(credentials.NewStaticCredentialsProvider(
+			creds.AccessKeyID,
+			creds.SecretAccessKey,
+			creds.SessionToken,
+		))
+
 	}
 
-	return awsConfig
+	return &cfg, nil
 }
 
 // BucketFiles returns all the files in bucketName immediately under directoryPrefix
@@ -219,18 +235,21 @@ func (client *s3client) ChunkedBucketList(bucketName string, prefix string, cont
 		Delimiter:         aws.String("/"),
 		Prefix:            aws.String(prefix),
 	}
-	response, err := client.client.ListObjectsV2(params)
+	response, err := client.client.ListObjectsV2(context.TODO(), params)
 	if err != nil {
 		return BucketListChunk{}, err
 	}
 	commonPrefixes := make([]string, 0, len(response.CommonPrefixes))
 	paths := make([]string, 0, len(response.Contents))
+
 	for _, commonPrefix := range response.CommonPrefixes {
 		commonPrefixes = append(commonPrefixes, *commonPrefix.Prefix)
 	}
+
 	for _, path := range response.Contents {
 		paths = append(paths, *path.Key)
 	}
+
 	return BucketListChunk{
 		Truncated:         *response.IsTruncated,
 		ContinuationToken: response.NextContinuationToken,
@@ -240,7 +259,7 @@ func (client *s3client) ChunkedBucketList(bucketName string, prefix string, cont
 }
 
 func (client *s3client) UploadFile(bucketName string, remotePath string, localPath string, options UploadFileOptions) (string, error) {
-	uploader := s3manager.NewUploaderWithClient(client.client)
+	uploader := manager.NewUploader(client.client)
 
 	if client.isGCSHost() {
 		// GCS returns `InvalidArgument` on multipart uploads
@@ -273,8 +292,8 @@ func (client *s3client) UploadFile(bucketName string, remotePath string, localPa
 		uploader.MaxUploadParts = 1
 		uploader.Concurrency = 1
 		uploader.PartSize = fSize + 1
-		if fSize <= s3manager.MinUploadPartSize {
-			uploader.PartSize = s3manager.MinUploadPartSize
+		if fSize <= manager.MinUploadPartSize {
+			uploader.PartSize = manager.MinUploadPartSize
 		}
 	}
 
@@ -283,14 +302,14 @@ func (client *s3client) UploadFile(bucketName string, remotePath string, localPa
 	progress.Start()
 	defer progress.Finish()
 
-	uploadInput := s3manager.UploadInput{
+	uploadInput := &s3.PutObjectInput{
 		Bucket: aws.String(bucketName),
 		Key:    aws.String(remotePath),
 		Body:   progressReader{localFile, progress},
-		ACL:    aws.String(options.Acl),
+		ACL:    types.ObjectCannedACL(options.Acl),
 	}
 	if options.ServerSideEncryption != "" {
-		uploadInput.ServerSideEncryption = aws.String(options.ServerSideEncryption)
+		uploadInput.ServerSideEncryption = types.ServerSideEncryption(options.ServerSideEncryption)
 	}
 	if options.KmsKeyId != "" {
 		uploadInput.SSEKMSKeyId = aws.String(options.KmsKeyId)
@@ -299,7 +318,7 @@ func (client *s3client) UploadFile(bucketName string, remotePath string, localPa
 		uploadInput.ContentType = aws.String(options.ContentType)
 	}
 
-	uploadOutput, err := uploader.Upload(&uploadInput)
+	uploadOutput, err := uploader.Upload(context.TODO(), uploadInput)
 	if err != nil {
 		return "", err
 	}
@@ -321,14 +340,14 @@ func (client *s3client) DownloadFile(bucketName string, remotePath string, versi
 		headObject.VersionId = aws.String(versionID)
 	}
 
-	object, err := client.client.HeadObject(headObject)
+	object, err := client.client.HeadObject(context.TODO(), headObject)
 	if err != nil {
 		return err
 	}
 
 	progress := client.newProgressBar(*object.ContentLength)
 
-	downloader := s3manager.NewDownloaderWithClient(client.client)
+	downloader := manager.NewDownloader(client.client)
 
 	localFile, err := os.Create(localPath)
 	if err != nil {
@@ -348,7 +367,7 @@ func (client *s3client) DownloadFile(bucketName string, remotePath string, versi
 	progress.Start()
 	defer progress.Finish()
 
-	_, err = downloader.Download(progressWriterAt{localFile, progress}, getObject)
+	_, err = downloader.Download(context.TODO(), progressWriterAt{localFile, progress}, getObject)
 	if err != nil {
 		return err
 	}
@@ -357,9 +376,9 @@ func (client *s3client) DownloadFile(bucketName string, remotePath string, versi
 }
 
 func (client *s3client) SetTags(bucketName string, remotePath string, versionID string, tags map[string]string) error {
-	var tagSet []*s3.Tag
+	var tagSet []types.Tag
 	for key, value := range tags {
-		tagSet = append(tagSet, &s3.Tag{
+		tagSet = append(tagSet, types.Tag{
 			Key:   aws.String(key),
 			Value: aws.String(value),
 		})
@@ -368,13 +387,13 @@ func (client *s3client) SetTags(bucketName string, remotePath string, versionID 
 	putObjectTagging := &s3.PutObjectTaggingInput{
 		Bucket:  aws.String(bucketName),
 		Key:     aws.String(remotePath),
-		Tagging: &s3.Tagging{TagSet: tagSet},
+		Tagging: &types.Tagging{TagSet: tagSet},
 	}
 	if versionID != "" {
 		putObjectTagging.VersionId = aws.String(versionID)
 	}
 
-	_, err := client.client.PutObjectTagging(putObjectTagging)
+	_, err := client.client.PutObjectTagging(context.TODO(), putObjectTagging)
 	return err
 }
 
@@ -387,7 +406,7 @@ func (client *s3client) DownloadTags(bucketName string, remotePath string, versi
 		getObjectTagging.VersionId = aws.String(versionID)
 	}
 
-	objectTagging, err := client.client.GetObjectTagging(getObjectTagging)
+	objectTagging, err := client.client.GetObjectTagging(context.TODO(), getObjectTagging)
 	if err != nil {
 		return err
 	}
@@ -405,7 +424,11 @@ func (client *s3client) DownloadTags(bucketName string, remotePath string, versi
 	return os.WriteFile(localPath, tagsJSON, 0644)
 }
 
-func (client *s3client) URL(bucketName string, remotePath string, private bool, versionID string) string {
+func (client *s3client) URL(bucketName string, remotePath string, private bool, versionID string) (string, error) {
+	if !private {
+		return fmt.Sprintf("%s/%s/%s", *client.client.Options().BaseEndpoint, bucketName, remotePath), nil
+	}
+
 	getObjectInput := &s3.GetObjectInput{
 		Bucket: aws.String(bucketName),
 		Key:    aws.String(remotePath),
@@ -415,22 +438,20 @@ func (client *s3client) URL(bucketName string, remotePath string, private bool, 
 		getObjectInput.VersionId = aws.String(versionID)
 	}
 
-	awsRequest, _ := client.client.GetObjectRequest(getObjectInput)
+	presign := s3.NewPresignClient(client.client)
+	request, err := presign.PresignGetObject(context.TODO(), getObjectInput, func(po *s3.PresignOptions) {
+		po.Expires = 24 * time.Hour
+	})
 
-	var url string
-
-	if private {
-		url, _ = awsRequest.Presign(24 * time.Hour)
-	} else {
-		awsRequest.Build()
-		url = awsRequest.HTTPRequest.URL.String()
+	if err != nil {
+		return "", err
 	}
 
-	return url
+	return request.URL, nil
 }
 
 func (client *s3client) DeleteVersionedFile(bucketName string, remotePath string, versionID string) error {
-	_, err := client.client.DeleteObject(&s3.DeleteObjectInput{
+	_, err := client.client.DeleteObject(context.TODO(), &s3.DeleteObjectInput{
 		Bucket:    aws.String(bucketName),
 		Key:       aws.String(remotePath),
 		VersionId: aws.String(versionID),
@@ -440,7 +461,7 @@ func (client *s3client) DeleteVersionedFile(bucketName string, remotePath string
 }
 
 func (client *s3client) DeleteFile(bucketName string, remotePath string) error {
-	_, err := client.client.DeleteObject(&s3.DeleteObjectInput{
+	_, err := client.client.DeleteObject(context.TODO(), &s3.DeleteObjectInput{
 		Bucket: aws.String(bucketName),
 		Key:    aws.String(remotePath),
 	})
@@ -453,20 +474,16 @@ func (client *s3client) getBucketVersioning(bucketName string) (bool, error) {
 		Bucket: aws.String(bucketName),
 	}
 
-	resp, err := client.client.GetBucketVersioning(params)
+	resp, err := client.client.GetBucketVersioning(context.TODO(), params)
 	if err != nil {
 		return false, err
 	}
 
-	if resp.Status == nil {
-		return false, nil
-	}
-
-	return *resp.Status == "Enabled", nil
+	return resp.Status == types.BucketVersioningStatusEnabled, nil
 }
 
-func (client *s3client) getVersionedBucketContents(bucketName string, prefix string) (map[string][]*s3.ObjectVersion, error) {
-	versionedBucketContents := map[string][]*s3.ObjectVersion{}
+func (client *s3client) getVersionedBucketContents(bucketName string, prefix string) (map[string][]types.ObjectVersion, error) {
+	versionedBucketContents := map[string][]types.ObjectVersion{}
 	keyMarker := ""
 	versionMarker := ""
 	for {
@@ -483,7 +500,7 @@ func (client *s3client) getVersionedBucketContents(bucketName string, prefix str
 			params.VersionIdMarker = aws.String(versionMarker)
 		}
 
-		listObjectVersionsResponse, err := client.client.ListObjectVersions(params)
+		listObjectVersionsResponse, err := client.client.ListObjectVersions(context.TODO(), params)
 		if err != nil {
 			return versionedBucketContents, err
 		}
@@ -533,5 +550,5 @@ func (client *s3client) newProgressBar(total int64) *pb.ProgressBar {
 }
 
 func (client *s3client) isGCSHost() bool {
-	return (client.session.Config.Endpoint != nil && strings.Contains(*client.session.Config.Endpoint, "storage.googleapis.com"))
+	return (client.client.Options().BaseEndpoint != nil && strings.Contains(*client.client.Options().BaseEndpoint, "storage.googleapis.com"))
 }

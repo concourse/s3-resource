@@ -3,7 +3,7 @@ package check
 import (
 	"errors"
 
-	"github.com/concourse/s3-resource"
+	s3resource "github.com/concourse/s3-resource"
 	"github.com/concourse/s3-resource/versions"
 )
 
