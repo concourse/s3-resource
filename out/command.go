@@ -35,7 +35,7 @@ func NewCommand(stderr io.Writer, s3client s3resource.S3Client) *Command {
 }
 
 func (command *Command) Run(sourceDir string, request Request) (Response, error) {
-	if request.Params.From != "" || request.Params.To != "" {
+	if request.Params.From != "" || request.Params.To != "" || request.Source.UseV2Signing {
 		command.printDeprecationWarning()
 	}
 
@@ -88,9 +88,14 @@ func (command *Command) Run(sourceDir string, request Request) (Response, error)
 		version.Path = remotePath
 	}
 
+	url, err := command.s3client.URL(bucketName, remotePath, request.Source.Private, versionID)
+	if err != nil {
+		return Response{}, err
+	}
+
 	return Response{
 		Version:  version,
-		Metadata: command.metadata(bucketName, remotePath, request.Source.Private, versionID),
+		Metadata: command.metadata(url, remotePath, request.Source.Private),
 	}, nil
 }
 
@@ -150,7 +155,7 @@ func (command *Command) match(params Params, sourceDir string) (string, error) {
 	return matches[0], nil
 }
 
-func (command *Command) metadata(bucketName, remotePath string, private bool, versionID string) []s3resource.MetadataPair {
+func (command *Command) metadata(url, remotePath string, private bool) []s3resource.MetadataPair {
 	remoteFilename := filepath.Base(remotePath)
 
 	metadata := []s3resource.MetadataPair{
@@ -163,7 +168,7 @@ func (command *Command) metadata(bucketName, remotePath string, private bool, ve
 	if !private {
 		metadata = append(metadata, s3resource.MetadataPair{
 			Name:  "url",
-			Value: command.s3client.URL(bucketName, remotePath, false, versionID),
+			Value: url,
 		})
 	}
 
@@ -176,5 +181,7 @@ func (command *Command) printDeprecationWarning() {
 	command.stderr.Write([]byte(blinkColor("WARNING:")))
 	command.stderr.Write([]byte("\n"))
 	command.stderr.Write([]byte(errorColor("Parameters 'from/to' are deprecated, use 'file' instead")))
+	command.stderr.Write([]byte("\n"))
+	command.stderr.Write([]byte(errorColor("Source field 'use_v2_signing' has been removed. v4 signing happens by default now.")))
 	command.stderr.Write([]byte("\n\n"))
 }

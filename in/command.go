@@ -15,33 +15,13 @@ import (
 
 var ErrMissingPath = errors.New("missing path in request")
 
-type RequestURLProvider struct {
-	s3Client s3resource.S3Client
-}
-
-func (up *RequestURLProvider) GetURL(request Request, remotePath string) string {
-	return up.s3URL(request, remotePath)
-}
-
-func (up *RequestURLProvider) s3URL(request Request, remotePath string) string {
-	return up.s3Client.URL(request.Source.Bucket, remotePath, request.Source.Private, request.Version.VersionID)
-}
-
-func GetS3URI(request Request, remotePath string) string {
-	return "s3://" + request.Source.Bucket + "/" + remotePath
-}
-
 type Command struct {
-	s3client    s3resource.S3Client
-	urlProvider RequestURLProvider
+	s3client s3resource.S3Client
 }
 
 func NewCommand(s3client s3resource.S3Client) *Command {
 	return &Command{
 		s3client: s3client,
-		urlProvider: RequestURLProvider{
-			s3Client: s3client,
-		},
 	}
 }
 
@@ -152,11 +132,15 @@ func (command *Command) Run(destinationDir string, request Request) (Response, e
 			}
 		}
 
-		url = command.urlProvider.GetURL(request, remotePath)
-		if err = command.writeURLFile(destinationDir, url); err != nil {
+		url, err = command.getURL(request, remotePath)
+		if err != nil {
 			return Response{}, err
 		}
-		s3_uri = GetS3URI(request, remotePath)
+		err = command.writeURLFile(destinationDir, url)
+		if err != nil {
+			return Response{}, err
+		}
+		s3_uri = command.gets3URI(request, remotePath)
 		if err = command.writeS3URIFile(destinationDir, s3_uri); err != nil {
 			return Response{}, err
 		}
@@ -242,6 +226,14 @@ func (command *Command) metadata(remotePath string, private bool, url string) []
 	}
 
 	return metadata
+}
+
+func (command *Command) getURL(request Request, remotePath string) (string, error) {
+	return command.s3client.URL(request.Source.Bucket, remotePath, request.Source.Private, request.Version.VersionID)
+}
+
+func (command *Command) gets3URI(request Request, remotePath string) string {
+	return "s3://" + request.Source.Bucket + "/" + remotePath
 }
 
 func extractArchive(mime, filename string) error {

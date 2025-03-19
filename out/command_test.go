@@ -308,8 +308,8 @@ var _ = Describe("Out Command", func() {
 
 		Describe("output metadata", func() {
 			BeforeEach(func() {
-				s3client.URLStub = func(bucketName string, remotePath string, private bool, versionID string) string {
-					return "http://example.com/" + filepath.Join(bucketName, remotePath)
+				s3client.URLStub = func(bucketName string, remotePath string, private bool, versionID string) (string, error) {
+					return "http://example.com/" + filepath.Join(bucketName, remotePath), nil
 				}
 			})
 

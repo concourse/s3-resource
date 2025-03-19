@@ -2,14 +2,16 @@ package integration_test
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"os"
 	"os/exec"
 	"path/filepath"
 
-	"github.com/aws/aws-sdk-go/aws"
-	"github.com/aws/aws-sdk-go/service/s3"
-	"github.com/aws/aws-sdk-go/service/s3/s3manager"
+	"github.com/aws/aws-sdk-go-v2/aws"
+	"github.com/aws/aws-sdk-go-v2/feature/s3/manager"
+	"github.com/aws/aws-sdk-go-v2/service/s3"
+	"github.com/aws/aws-sdk-go-v2/service/s3/types"
 	s3resource "github.com/concourse/s3-resource"
 	"github.com/concourse/s3-resource/out"
 	"github.com/google/uuid"
@@ -119,7 +121,7 @@ var _ = Describe("out", func() {
 		})
 
 		It("creates a file with the specified content-type", func() {
-			response, err := s3Service.HeadObject(&s3.HeadObjectInput{
+			response, err := s3Service.HeadObject(context.TODO(), &s3.HeadObjectInput{
 				Bucket: aws.String(bucketName),
 				Key:    aws.String("content-typed-file"),
 			})
@@ -163,7 +165,7 @@ var _ = Describe("out", func() {
 
 		// http://docs.aws.amazon.com/AWSImportExport/latest/DG/FileExtensiontoMimeTypes.html
 		It("creates a file with the default S3 content-type for a unknown filename extension", func() {
-			response, err := s3Service.HeadObject(&s3.HeadObjectInput{
+			response, err := s3Service.HeadObject(context.TODO(), &s3.HeadObjectInput{
 				Bucket: aws.String(bucketName),
 				Key:    aws.String("uncontent-typed-file"),
 			})
@@ -279,11 +281,11 @@ var _ = Describe("out", func() {
 
 			It("allows everyone to have read access to the object", func() {
 				anonURI := "http://acs.amazonaws.com/groups/global/AllUsers"
-				permision := s3.PermissionRead
-				grantee := s3.Grantee{URI: &anonURI, Type: aws.String("Group")}
-				expectedGrant := s3.Grant{
+				permision := types.PermissionRead
+				grantee := types.Grantee{URI: &anonURI, Type: "Group"}
+				expectedGrant := types.Grant{
 					Grantee:    &grantee,
-					Permission: &permision,
+					Permission: permision,
 				}
 
 				params := &s3.GetObjectAclInput{
@@ -291,7 +293,7 @@ var _ = Describe("out", func() {
 					Key:    aws.String(filepath.Join(directoryPrefix, "glob-file-to-upload")),
 				}
 
-				resp, err := s3Service.GetObjectAcl(params)
+				resp, err := s3Service.GetObjectAcl(context.TODO(), params)
 				Ω(err).ShouldNot(HaveOccurred())
 				Ω(resp.Grants).Should(ContainElement(&expectedGrant))
 			})
@@ -310,7 +312,7 @@ var _ = Describe("out", func() {
 				Ω(err).NotTo(HaveOccurred())
 				Ω(file.Close()).To(Succeed())
 
-				Ω(os.Truncate(path, s3manager.MinUploadPartSize*s3manager.MaxUploadParts)).To(Succeed())
+				Ω(os.Truncate(path, manager.MinUploadPartSize*int64(manager.MaxUploadParts))).To(Succeed())
 
 				outRequest := out.Request{
 					Source: s3resource.Source{
