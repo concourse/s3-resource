@@ -9,7 +9,7 @@ import (
 	"strings"
 
 	"github.com/aws/aws-sdk-go/aws"
-	"github.com/concourse/s3-resource"
+	s3resource "github.com/concourse/s3-resource"
 	"github.com/concourse/s3-resource/in"
 )
 

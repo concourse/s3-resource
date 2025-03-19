@@ -19,7 +19,7 @@ import (
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/s3"
 	"github.com/aws/aws-sdk-go/service/s3/s3manager"
-	"github.com/cheggaaa/pb"
+	"github.com/cheggaaa/pb/v3"
 )
 
 //go:generate go run github.com/maxbrunsfeld/counterfeiter/v6 -generate
@@ -73,7 +73,7 @@ func NewS3Client(
 	useV2Signing bool,
 	roleToAssume string,
 ) S3Client {
-	sess := session.New(awsConfig)
+	sess := session.Must(session.NewSession())
 
 	assumedRoleAwsConfig := fetchCredentialsForRoleIfDefined(roleToAssume, awsConfig)
 
@@ -113,18 +113,6 @@ func NewAwsConfig(
 	disableSSL bool,
 	skipSSLVerification bool,
 ) *aws.Config {
-	var creds *credentials.Credentials
-
-	if accessKey == "" && secretKey == "" {
-		creds = credentials.AnonymousCredentials
-	} else {
-		creds = credentials.NewStaticCredentials(accessKey, secretKey, sessionToken)
-	}
-
-	if len(regionName) == 0 {
-		regionName = "us-east-1"
-	}
-
 	var httpClient *http.Client
 	if skipSSLVerification {
 		httpClient = &http.Client{Transport: &http.Transport{
@@ -135,12 +123,22 @@ func NewAwsConfig(
 	}
 
 	awsConfig := &aws.Config{
-		Region:           aws.String(regionName),
-		Credentials:      creds,
-		S3ForcePathStyle: aws.Bool(true),
-		MaxRetries:       aws.Int(maxRetries),
-		DisableSSL:       aws.Bool(disableSSL),
-		HTTPClient:       httpClient,
+		Region:                        aws.String(regionName),
+		S3ForcePathStyle:              aws.Bool(true),
+		MaxRetries:                    aws.Int(maxRetries),
+		DisableSSL:                    aws.Bool(disableSSL),
+		HTTPClient:                    httpClient,
+		CredentialsChainVerboseErrors: aws.Bool(true),
+	}
+
+	if accessKey != "" && secretKey != "" {
+		awsConfig.Credentials = credentials.NewStaticCredentials(accessKey, secretKey, sessionToken)
+	} else {
+		println("Using default credential chain for authentication.")
+	}
+
+	if len(regionName) == 0 {
+		regionName = "us-east-1"
 	}
 
 	if len(endpoint) != 0 {
@@ -523,13 +521,8 @@ func (client *s3client) getVersionedBucketContents(bucketName string, prefix str
 
 func (client *s3client) newProgressBar(total int64) *pb.ProgressBar {
 	progress := pb.New64(total)
-
-	progress.Output = client.progressOutput
-	progress.ShowSpeed = true
-	progress.Units = pb.U_BYTES
-	progress.NotPrint = true
-
-	return progress.SetWidth(80)
+	progress.SetWriter(client.progressOutput)
+	return progress.Set(pb.Bytes, true)
 }
 
 func (client *s3client) isGCSHost() bool {

@@ -12,6 +12,6 @@ func Fatal(doing string, err error) {
 	os.Exit(1)
 }
 
-func Sayf(message string, args ...any) {
+func Sayf(message string, args ...interface{}) {
 	fmt.Fprintf(os.Stderr, message, args...)
 }

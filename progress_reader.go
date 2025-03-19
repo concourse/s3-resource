@@ -3,7 +3,7 @@ package s3resource
 import (
 	"io"
 
-	"github.com/cheggaaa/pb"
+	"github.com/cheggaaa/pb/v3"
 )
 
 type progressReader struct {
