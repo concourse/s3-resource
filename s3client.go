@@ -21,7 +21,7 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/s3"
 	"github.com/aws/aws-sdk-go-v2/service/s3/types"
 	"github.com/aws/aws-sdk-go-v2/service/sts"
-	"github.com/cheggaaa/pb"
+	"github.com/cheggaaa/pb/v3"
 )
 
 //go:generate go run github.com/maxbrunsfeld/counterfeiter/v6 -generate
@@ -541,12 +541,9 @@ func (client *s3client) getVersionedBucketContents(bucketName string, prefix str
 func (client *s3client) newProgressBar(total int64) *pb.ProgressBar {
 	progress := pb.New64(total)
 
-	progress.Output = client.progressOutput
-	progress.ShowSpeed = true
-	progress.Units = pb.U_BYTES
-	progress.NotPrint = true
-
-	return progress.SetWidth(80)
+	progress.SetWriter(client.progressOutput)
+	progress.SetWidth(80)
+	return progress.Set(pb.Bytes, true)
 }
 
 func (client *s3client) isGCSHost() bool {
