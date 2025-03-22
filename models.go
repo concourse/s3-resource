@@ -23,6 +23,7 @@ type Source struct {
 	InitialContentText   string `json:"initial_content_text"`
 	InitialContentBinary string `json:"initial_content_binary"`
 	DisableMultipart     bool   `json:"disable_multipart"`
+	OrderBy              string `json:"order_by"`
 }
 
 func (source Source) IsValid() (bool, string) {
@@ -40,6 +41,9 @@ func (source Source) IsValid() (bool, string) {
 
 	if source.InitialContentText != "" && source.InitialContentBinary != "" {
 		return false, "please use intial_content_text or initial_content_binary but not both"
+	}
+	if source.OrderBy != "" && source.OrderBy != "string" && source.OrderBy != "semver" {
+		return false, "please use either 'string' or 'semver' as argument for `order_by`"
 	}
 
 	hasInitialContent := source.InitialContentText != "" || source.InitialContentBinary != ""
