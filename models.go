@@ -1,15 +1,16 @@
 package s3resource
 
 type Source struct {
-	AccessKeyID          string `json:"access_key_id"`
-	SecretAccessKey      string `json:"secret_access_key"`
-	SessionToken         string `json:"session_token"`
-	AwsRoleARN           string `json:"aws_role_arn"`
-	Bucket               string `json:"bucket"`
-	Regexp               string `json:"regexp"`
-	VersionedFile        string `json:"versioned_file"`
-	Private              bool   `json:"private"`
-	RegionName           string `json:"region_name"`
+	AccessKeyID     string `json:"access_key_id"`
+	SecretAccessKey string `json:"secret_access_key"`
+	SessionToken    string `json:"session_token"`
+	AwsRoleARN      string `json:"aws_role_arn"`
+	Bucket          string `json:"bucket"`
+	Regexp          string `json:"regexp"`
+	VersionedFile   string `json:"versioned_file"`
+	Private         bool   `json:"private"`
+	RegionName      string `json:"region_name"`
+	//Deprecated: Not needed since upgrading to the v2 AWS Go SDK
 	CloudfrontURL        string `json:"cloudfront_url"`
 	Endpoint             string `json:"endpoint"`
 	DisableSSL           bool   `json:"disable_ssl"`

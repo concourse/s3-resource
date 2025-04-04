@@ -29,13 +29,14 @@ version numbers.
     generate generic Virtual-Hosted style URLs. If you're using a custom
     endpoint you should include the bucketname in the endpoint URL.
 
-* `cloudfront_url`: *Optional.* The URL (scheme and domain) of your CloudFront
+* `cloudfront_url`: *Optional._Deprecated_* The URL (scheme and domain) of your CloudFront
   distribution that is fronting this bucket (e.g
   `https://d5yxxxxx.cloudfront.net`).  This will affect `in` but not `check`
   and `put`. `in` will ignore the `bucket` name setting, exclusively using the
   `cloudfront_url`.  When configuring CloudFront with versioned buckets, set
   `Query String Forwarding and Caching` to `Forward all, cache based on all` to
-  ensure S3 calls succeed.
+  ensure S3 calls succeed. _Deprecated: Since upgrading this resource to the v2
+  AWS Go SDK there is no need to specify this along with `endpoint`._
 
 * `endpoint`: *Optional.* Custom endpoint for using an S3 compatible provider. Can
     be just a hostname or include the scheme (e.g. `https://eu1.my-endpoint.com`

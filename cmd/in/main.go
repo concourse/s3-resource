@@ -4,10 +4,6 @@ import (
 	"encoding/json"
 	"os"
 
-	"fmt"
-	"net/url"
-	"strings"
-
 	s3resource "github.com/concourse/s3-resource"
 	"github.com/concourse/s3-resource/in"
 )
@@ -37,18 +33,7 @@ func main() {
 
 	endpoint := request.Source.Endpoint
 	if len(request.Source.CloudfrontURL) != 0 {
-		cloudfrontUrl, err := url.ParseRequestURI(request.Source.CloudfrontURL)
-		if err != nil {
-			s3resource.Fatal("parsing 'cloudfront_url'", err)
-		}
-
-		splitResult := strings.Split(cloudfrontUrl.Host, ".")
-		if len(splitResult) < 2 {
-			s3resource.Fatal("verifying 'cloudfront_url'", fmt.Errorf("'%s' doesn't have enough dots ('.'), a typical format is 'https://d111111abcdef8.cloudfront.net'", request.Source.CloudfrontURL))
-		}
-		request.Source.Bucket = strings.Split(cloudfrontUrl.Host, ".")[0]
-		fqdn := strings.SplitAfterN(cloudfrontUrl.Host, ".", 2)[1]
-		endpoint = fmt.Sprintf("%s://%s", cloudfrontUrl.Scheme, fqdn)
+		s3resource.Sayf("'cloudfront_url' is deprecated and no longer used. You only need to specify 'endpoint' now.")
 	}
 
 	client, err := s3resource.NewS3Client(
