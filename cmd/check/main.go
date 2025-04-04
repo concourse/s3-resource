@@ -24,13 +24,11 @@ func main() {
 		s3resource.Fatal("error creating aws config", err)
 	}
 
-	s3PathStyle := true
 	client, err := s3resource.NewS3Client(
 		os.Stderr,
 		awsConfig,
 		request.Source.Endpoint,
 		request.Source.DisableSSL,
-		s3PathStyle,
 	)
 	if err != nil {
 		s3resource.Fatal("error creating s3 client", err)

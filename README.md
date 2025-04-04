@@ -25,19 +25,22 @@ version numbers.
   `us-east-1`.
 
 * `private`: *Optional.* Indicates that the bucket is private, so that any
-  URLs provided are signed.
+    URLs provided by this resource are presigned. Otherwise this resource will
+    generate generic Virtual-Hosted style URLs. If you're using a custom
+    endpoint you should include the bucketname in the endpoint URL.
 
-* `cloudfront_url`: *Optional.* The URL (scheme and domain) of your CloudFront
+* `cloudfront_url`: *Optional._Deprecated_* The URL (scheme and domain) of your CloudFront
   distribution that is fronting this bucket (e.g
   `https://d5yxxxxx.cloudfront.net`).  This will affect `in` but not `check`
   and `put`. `in` will ignore the `bucket` name setting, exclusively using the
   `cloudfront_url`.  When configuring CloudFront with versioned buckets, set
   `Query String Forwarding and Caching` to `Forward all, cache based on all` to
-  ensure S3 calls succeed.
+  ensure S3 calls succeed. _Deprecated: Since upgrading this resource to the v2
+  AWS Go SDK there is no need to specify this along with `endpoint`._
 
-* `endpoint`: *Optional.* Custom endpoint for using S3 compatible provider. Can
-    be just a hostname or include the scheme (e.g. `https://my-endpoint.com` or
-    `my-endpoint.com`)
+* `endpoint`: *Optional.* Custom endpoint for using an S3 compatible provider. Can
+    be just a hostname or include the scheme (e.g. `https://eu1.my-endpoint.com`
+    or `eu1.my-endpoint.com`)
 
 * `disable_ssl`: *Optional.* Disable SSL for the endpoint, useful for S3
     compatible providers without SSL.
@@ -111,8 +114,8 @@ Places the following files in the destination:
 
 * `(filename)`: The file fetched from the bucket (if `skip_download` is not `true`).
 
-* `url`: A file containing the URL of the object. If `private` is true, this
-  URL will be signed.
+* `url`: A file containing the URL of the object in Virutal-Hosted style. If
+    `private` is `true` this URL will be presigned.
 
 * `s3_uri`: A file containing the S3 URI (`s3://...`) of the object (for use with `aws cp`, etc.)
 
