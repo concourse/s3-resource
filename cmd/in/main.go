@@ -35,14 +35,12 @@ func main() {
 		s3resource.Fatal("error creating aws config", err)
 	}
 
-	s3PathStyle := true
 	endpoint := request.Source.Endpoint
 	if len(request.Source.CloudfrontURL) != 0 {
 		cloudfrontUrl, err := url.ParseRequestURI(request.Source.CloudfrontURL)
 		if err != nil {
 			s3resource.Fatal("parsing 'cloudfront_url'", err)
 		}
-		s3PathStyle = false
 
 		splitResult := strings.Split(cloudfrontUrl.Host, ".")
 		if len(splitResult) < 2 {
@@ -58,7 +56,6 @@ func main() {
 		awsConfig,
 		endpoint,
 		request.Source.DisableSSL,
-		s3PathStyle,
 	)
 	if err != nil {
 		s3resource.Fatal("error creating s3 client", err)

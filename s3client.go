@@ -72,13 +72,8 @@ func NewS3Client(
 	awsConfig *aws.Config,
 	endpoint string,
 	disableSSL bool,
-	s3PathStyle bool,
 ) (S3Client, error) {
-	s3Opts := []func(*s3.Options){
-		func(o *s3.Options) {
-			o.UsePathStyle = s3PathStyle
-		},
-	}
+	s3Opts := []func(*s3.Options){}
 
 	if endpoint != "" {
 		u, err := url.Parse(endpoint)
@@ -426,7 +421,33 @@ func (client *s3client) DownloadTags(bucketName string, remotePath string, versi
 
 func (client *s3client) URL(bucketName string, remotePath string, private bool, versionID string) (string, error) {
 	if !private {
-		return fmt.Sprintf("%s/%s/%s", *client.client.Options().BaseEndpoint, bucketName, remotePath), nil
+		var endpoint *string
+		clientOptions := client.client.Options()
+
+		if clientOptions.BaseEndpoint != nil {
+			endpoint = clientOptions.BaseEndpoint
+		}
+
+		if endpoint == nil {
+			endpoint = aws.String(fmt.Sprintf("https://s3.%s.amazonaws.com", clientOptions.Region))
+		}
+
+		// ResolveEndpoint() will return a URL with only the scheme and host
+		// (e.g. https://bucket-name.s3.us-west-2.amazonaws.com). It will not
+		// include the key/remotePath if you provide it.
+		url, err := client.client.Options().EndpointResolverV2.ResolveEndpoint(
+			context.Background(),
+			s3.EndpointParameters{
+				Endpoint: endpoint,
+				Bucket:   &bucketName,
+				Region:   &clientOptions.Region, //Not used to make the final URL string but is required
+			})
+
+		if err != nil {
+			return "", fmt.Errorf("error resolving endpoint: %w", err)
+		}
+
+		return fmt.Sprintf("%s/%s", url.URI.String(), remotePath), nil
 	}
 
 	getObjectInput := &s3.GetObjectInput{
