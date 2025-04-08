@@ -2,13 +2,11 @@ package s3resource
 
 import (
 	"io"
-
-	"github.com/cheggaaa/pb/v3"
 )
 
 type progressWriterAt struct {
 	io.WriterAt
-	*pb.ProgressBar
+	io.Writer
 }
 
 func (pwa progressWriterAt) WriteAt(p []byte, off int64) (int, error) {
@@ -17,7 +15,6 @@ func (pwa progressWriterAt) WriteAt(p []byte, off int64) (int, error) {
 		return n, err
 	}
 
-	pwa.ProgressBar.Add(len(p))
-
+	pwa.Write(p)
 	return n, err
 }

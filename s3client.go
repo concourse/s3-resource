@@ -21,7 +21,8 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/s3"
 	"github.com/aws/aws-sdk-go-v2/service/s3/types"
 	"github.com/aws/aws-sdk-go-v2/service/sts"
-	"github.com/cheggaaa/pb/v3"
+	"github.com/vbauerster/mpb/v8"
+	"github.com/vbauerster/mpb/v8/decor"
 )
 
 //go:generate go run github.com/maxbrunsfeld/counterfeiter/v6 -generate
@@ -293,14 +294,12 @@ func (client *s3client) UploadFile(bucketName string, remotePath string, localPa
 	}
 
 	progress := client.newProgressBar(fSize)
-
-	progress.Start()
-	defer progress.Finish()
+	defer progress.Wait()
 
 	uploadInput := &s3.PutObjectInput{
 		Bucket: aws.String(bucketName),
 		Key:    aws.String(remotePath),
-		Body:   progressReader{localFile, progress},
+		Body:   progress.ProxyReader(localFile),
 		ACL:    types.ObjectCannedACL(options.Acl),
 	}
 	if options.ServerSideEncryption != "" {
@@ -341,6 +340,7 @@ func (client *s3client) DownloadFile(bucketName string, remotePath string, versi
 	}
 
 	progress := client.newProgressBar(*object.ContentLength)
+	defer progress.Wait()
 
 	downloader := manager.NewDownloader(client.client)
 
@@ -359,10 +359,7 @@ func (client *s3client) DownloadFile(bucketName string, remotePath string, versi
 		getObject.VersionId = aws.String(versionID)
 	}
 
-	progress.Start()
-	defer progress.Finish()
-
-	_, err = downloader.Download(context.TODO(), progressWriterAt{localFile, progress}, getObject)
+	_, err = downloader.Download(context.TODO(), progressWriterAt{localFile, progress.ProxyWriter(io.Discard)}, getObject)
 	if err != nil {
 		return err
 	}
@@ -559,12 +556,18 @@ func (client *s3client) getVersionedBucketContents(bucketName string, prefix str
 	return versionedBucketContents, nil
 }
 
-func (client *s3client) newProgressBar(total int64) *pb.ProgressBar {
-	progress := pb.New64(total)
-
-	progress.SetWriter(client.progressOutput)
-	progress.SetWidth(80)
-	return progress.Set(pb.Bytes, true)
+func (client *s3client) newProgressBar(total int64) *mpb.Bar {
+	pg := mpb.New(mpb.WithWidth(80), mpb.WithOutput(client.progressOutput), mpb.WithAutoRefresh())
+	bar := pg.New(total, mpb.BarStyle(),
+		mpb.PrependDecorators(
+			decor.Counters(decor.SizeB1024(0), "% .2f / % .2f"),
+		),
+		mpb.AppendDecorators(
+			decor.NewPercentage("%d - "),
+			decor.AverageSpeed(decor.SizeB1024(0), "% .2f"),
+		),
+	)
+	return bar
 }
 
 func (client *s3client) isGCSHost() bool {
