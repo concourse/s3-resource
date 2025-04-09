@@ -50,12 +50,12 @@ func (command *Command) Run(destinationDir string, request Request) (Response, e
 
 		remotePath = request.Version.Path
 
-		extraction, ok := versions.Extract(remotePath, request.Source.Regexp)
+		extraction, ok := versions.Extract(remotePath, request.Source.Regexp, request.Source.OrderBy)
 		if !ok {
 			return Response{}, fmt.Errorf("regex does not match provided version: %#v", request.Version)
 		}
 
-		versionNumber = extraction.VersionNumber
+		versionNumber = extraction.GetVersionNumber()
 
 		isInitialVersion = request.Source.InitialPath != "" && request.Version.Path == request.Source.InitialPath
 	} else {
