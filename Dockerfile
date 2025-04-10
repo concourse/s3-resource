@@ -15,14 +15,12 @@ RUN set -e; for pkg in $(go list ./...); do \
 
 FROM ${base_image} AS resource
 USER root
-RUN apt update && apt upgrade -y -o Dpkg::Options::="--force-confdef"
-RUN apt update \
-      && apt install -y --no-install-recommends \
-        tzdata \
-        ca-certificates \
-        unzip \
-        zip \
-      && rm -rf /var/lib/apt/lists/*
+RUN apk --update-cache add \
+    ca-certificates \
+    tzdata \
+    unzip \
+    zip
+
 COPY --from=builder assets/ /opt/resource/
 RUN chmod +x /opt/resource/*
 
