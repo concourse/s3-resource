@@ -4,25 +4,23 @@ ARG builder_image=concourse/golang-builder
 FROM ${builder_image} as builder
 COPY . /go/src/github.com/concourse/s3-resource
 WORKDIR /go/src/github.com/concourse/s3-resource
-ENV CGO_ENABLED 0
+ENV CGO_ENABLED=0
 RUN go mod download
 RUN go build -o /assets/in ./cmd/in
 RUN go build -o /assets/out ./cmd/out
 RUN go build -o /assets/check ./cmd/check
-RUN set -e; for pkg in $(go list ./...); do \
+RUN set -e; for pkg in "$(go list ./...)"; do \
 		go test -o "/tests/$(basename $pkg).test" -c $pkg; \
 	done
 
 FROM ${base_image} AS resource
-USER root
-RUN apt update && apt upgrade -y -o Dpkg::Options::="--force-confdef"
-RUN apt update \
-      && apt install -y --no-install-recommends \
-        tzdata \
-        ca-certificates \
-        unzip \
-        zip \
-      && rm -rf /var/lib/apt/lists/*
+RUN apk --no-cache add \
+    ca-certificates \
+    tzdata \
+    unzip \
+    zip && \
+    rm -rf /var/cache/apk/*
+
 COPY --from=builder assets/ /opt/resource/
 RUN chmod +x /opt/resource/*
 

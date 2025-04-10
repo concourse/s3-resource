@@ -242,7 +242,7 @@ will stop the build.
 Run the tests with the following command:
 
 ```sh
-docker build -t s3-resource --target tests --build-arg base_image=paketobuildpacks/run-jammy-base:latest .
+docker build -t s3-resource --target tests --build-arg base_image=cgr.dev/chainguard/wolfi-base:latest .
 ```
 
 #### Integration tests
