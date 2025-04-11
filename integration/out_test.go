@@ -73,6 +73,7 @@ var _ = Describe("out", func() {
 					Endpoint:        endpoint,
 					Regexp:          "some-regex",
 					VersionedFile:   "some-file",
+					UsePathStyle:    pathStyle,
 				},
 			}
 
@@ -100,6 +101,7 @@ var _ = Describe("out", func() {
 					Bucket:          bucketName,
 					RegionName:      regionName,
 					Endpoint:        endpoint,
+					UsePathStyle:    pathStyle,
 				},
 				Params: out.Params{
 					From:        filepath.Join(sourceDir, "content-typed-file"),
@@ -144,6 +146,7 @@ var _ = Describe("out", func() {
 					Bucket:          bucketName,
 					RegionName:      regionName,
 					Endpoint:        endpoint,
+					UsePathStyle:    pathStyle,
 				},
 				Params: out.Params{
 					From: filepath.Join(sourceDir, "uncontent-typed-file"),
@@ -186,6 +189,7 @@ var _ = Describe("out", func() {
 					Bucket:          bucketName,
 					RegionName:      regionName,
 					Endpoint:        endpoint,
+					UsePathStyle:    pathStyle,
 				},
 				Params: out.Params{
 					File: "glob-*",
@@ -233,6 +237,7 @@ var _ = Describe("out", func() {
 						Bucket:          bucketName,
 						RegionName:      regionName,
 						Endpoint:        endpoint,
+						UsePathStyle:    pathStyle,
 					},
 					Params: out.Params{
 						File: "glob-*",
@@ -323,6 +328,7 @@ var _ = Describe("out", func() {
 						Bucket:          bucketName,
 						RegionName:      regionName,
 						Endpoint:        endpoint,
+						UsePathStyle:    pathStyle,
 					},
 					Params: out.Params{
 						File: "large-file-to-upload",
@@ -362,6 +368,7 @@ var _ = Describe("out", func() {
 						RegionName:      regionName,
 						Endpoint:        endpoint,
 						Regexp:          filepath.Join(directoryPrefix, "some-file-pattern"),
+						UsePathStyle:    pathStyle,
 					},
 					Params: out.Params{
 						File: "file-to-upload",
@@ -417,6 +424,7 @@ var _ = Describe("out", func() {
 						RegionName:      regionName,
 						VersionedFile:   filepath.Join(directoryPrefix, "file-to-upload"),
 						Endpoint:        endpoint,
+						UsePathStyle:    pathStyle,
 					},
 					Params: out.Params{
 						From: "file-to-upload-local",
@@ -468,6 +476,7 @@ var _ = Describe("out", func() {
 						RegionName:      regionName,
 						VersionedFile:   filepath.Join(directoryPrefix, "file-to-upload"),
 						Endpoint:        endpoint,
+						UsePathStyle:    pathStyle,
 					},
 					Params: out.Params{
 						From: "file-to-upload-local",
@@ -526,6 +535,7 @@ var _ = Describe("out", func() {
 						Bucket:          versionedBucketName,
 						RegionName:      regionName,
 						Endpoint:        endpoint,
+						UsePathStyle:    pathStyle,
 					},
 					Params: out.Params{
 						From: "file-to-upload",
