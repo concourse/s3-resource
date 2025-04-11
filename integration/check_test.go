@@ -57,6 +57,7 @@ var _ = Describe("check", func() {
 					Regexp:          "some-regex",
 					Endpoint:        endpoint,
 					VersionedFile:   "some-file",
+					UsePathStyle:    pathStyle,
 				},
 				Version: s3resource.Version{},
 			}
@@ -87,6 +88,7 @@ var _ = Describe("check", func() {
 						Bucket:          bucketName,
 						RegionName:      regionName,
 						Endpoint:        endpoint,
+						UsePathStyle:    pathStyle,
 					},
 					Version: s3resource.Version{},
 				}
@@ -183,6 +185,7 @@ var _ = Describe("check", func() {
 						Bucket:          versionedBucketName,
 						RegionName:      regionName,
 						Endpoint:        endpoint,
+						UsePathStyle:    pathStyle,
 					},
 					Version: s3resource.Version{},
 				}
@@ -327,6 +330,7 @@ var _ = Describe("check", func() {
 						Bucket:          bucketName,
 						RegionName:      regionName,
 						Endpoint:        endpoint,
+						UsePathStyle:    pathStyle,
 					},
 				}
 			})
@@ -491,6 +495,7 @@ var _ = Describe("check", func() {
 						Bucket:          versionedBucketName,
 						RegionName:      regionName,
 						Endpoint:        endpoint,
+						UsePathStyle:    pathStyle,
 					},
 				}
 			})

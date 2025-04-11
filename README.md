@@ -60,6 +60,8 @@ version numbers.
 * `disable_multipart`: *Optional.* Disable Multipart Upload. useful for S3
     compatible providers that do not support multipart upload.
 
+* `use_path_style`: *Optional* Enables legacy path-style access for S3 
+    compatible providers. The default behavior is virtual path-style.
 
 ### File Names
 
