@@ -70,6 +70,7 @@ var _ = Describe("in", func() {
 					Endpoint:        endpoint,
 					Regexp:          "some-regex",
 					VersionedFile:   "some-file",
+					UsePathStyle:    pathStyle,
 				},
 				Version: s3resource.Version{},
 			}
@@ -97,6 +98,7 @@ var _ = Describe("in", func() {
 					RegionName:      regionName,
 					Endpoint:        endpoint,
 					Regexp:          filepath.Join(directoryPrefix, "some-file-(.*)"),
+					UsePathStyle:    pathStyle,
 				},
 				Version: s3resource.Version{
 					Path: filepath.Join(directoryPrefix, "some-file-1"),
@@ -221,6 +223,7 @@ var _ = Describe("in", func() {
 					RegionName:      regionName,
 					Endpoint:        endpoint,
 					VersionedFile:   filepath.Join(directoryPrefix, "some-file"),
+					UsePathStyle:    pathStyle,
 				},
 				Version: s3resource.Version{},
 			}
@@ -352,6 +355,7 @@ var _ = Describe("in", func() {
 					RegionName:      regionName,
 					Endpoint:        endpoint,
 					Regexp:          filepath.Join(directoryPrefix, "some-file-(.*)"),
+					UsePathStyle:    pathStyle,
 				},
 				Version: s3resource.Version{
 					Path: filepath.Join(directoryPrefix, "some-file-1"),

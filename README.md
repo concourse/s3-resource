@@ -60,6 +60,8 @@ version numbers.
 * `disable_multipart`: *Optional.* Disable Multipart Upload. useful for S3
     compatible providers that do not support multipart upload.
 
+* `use_path_style`: *Optional.* Enables legacy path-style access for S3 
+    compatible providers. The default behavior is virtual path-style.
 
 ### File Names
 
@@ -258,7 +260,8 @@ docker build . -t s3-resource --target tests \
   --build-arg S3_TESTING_BUCKET="bucket-non-versioned" \
   --build-arg S3_VERSIONED_TESTING_BUCKET="bucket-versioned" \
   --build-arg S3_TESTING_REGION="us-east-1" \
-  --build-arg S3_ENDPOINT="https://s3.amazonaws.com"
+  --build-arg S3_ENDPOINT="https://s3.amazonaws.com" \
+  --build-arg S3_USE_PATH_STYLE="" 
 ```
 
 ##### Speeding up integration tests by skipping large file upload

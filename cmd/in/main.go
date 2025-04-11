@@ -41,6 +41,7 @@ func main() {
 		awsConfig,
 		endpoint,
 		request.Source.DisableSSL,
+		request.Source.UsePathStyle,
 	)
 	if err != nil {
 		s3resource.Fatal("error creating s3 client", err)
