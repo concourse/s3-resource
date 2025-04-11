@@ -72,7 +72,7 @@ func NewS3Client(
 	progressOutput io.Writer,
 	awsConfig *aws.Config,
 	endpoint string,
-	disableSSL bool,
+	disableSSL, usePathStyle bool,
 ) (S3Client, error) {
 	s3Opts := []func(*s3.Options){}
 
@@ -92,6 +92,7 @@ func NewS3Client(
 
 		s3Opts = append(s3Opts, func(o *s3.Options) {
 			o.BaseEndpoint = &endpoint
+			o.UsePathStyle = usePathStyle
 		})
 	}
 

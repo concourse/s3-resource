@@ -21,22 +21,25 @@ func TestIntegration(t *testing.T) {
 	RegisterFailHandler(Fail)
 }
 
-var accessKeyID = os.Getenv("S3_TESTING_ACCESS_KEY_ID")
-var secretAccessKey = os.Getenv("S3_TESTING_SECRET_ACCESS_KEY")
-var sessionToken = os.Getenv("S3_TESTING_SESSION_TOKEN")
-var awsRoleARN = os.Getenv("S3_TESTING_AWS_ROLE_ARN")
-var versionedBucketName = os.Getenv("S3_VERSIONED_TESTING_BUCKET")
-var bucketName = os.Getenv("S3_TESTING_BUCKET")
-var regionName = os.Getenv("S3_TESTING_REGION")
-var endpoint = os.Getenv("S3_ENDPOINT")
-var v2signing = os.Getenv("S3_V2_SIGNING")
-var awsConfig *aws.Config
-var s3client s3resource.S3Client
-var s3Service *s3.Client
+var (
+	accessKeyID         = os.Getenv("S3_TESTING_ACCESS_KEY_ID")
+	secretAccessKey     = os.Getenv("S3_TESTING_SECRET_ACCESS_KEY")
+	sessionToken        = os.Getenv("S3_TESTING_SESSION_TOKEN")
+	awsRoleARN          = os.Getenv("S3_TESTING_AWS_ROLE_ARN")
+	versionedBucketName = os.Getenv("S3_VERSIONED_TESTING_BUCKET")
+	bucketName          = os.Getenv("S3_TESTING_BUCKET")
+	regionName          = os.Getenv("S3_TESTING_REGION")
+	endpoint            = os.Getenv("S3_ENDPOINT")
+	v2signing           = os.Getenv("S3_V2_SIGNING")
+	pathStyle           = len(os.Getenv("S3_USE_PATH_STYLE")) > 0
+	awsConfig           *aws.Config
+	s3client            s3resource.S3Client
+	s3Service           *s3.Client
 
-var checkPath string
-var inPath string
-var outPath string
+	checkPath string
+	inPath    string
+	outPath   string
+)
 
 type suiteData struct {
 	CheckPath string
@@ -80,6 +83,7 @@ func getSessionTokenS3Client(awsConfig *aws.Config) (*s3.Client, s3resource.S3Cl
 		newAwsConfig,
 		endpoint,
 		false,
+		pathStyle,
 	)
 	Ω(err).ShouldNot(HaveOccurred())
 
@@ -133,6 +137,7 @@ var _ = SynchronizedBeforeSuite(func() []byte {
 			awsConfig,
 			endpoint,
 			false,
+			pathStyle,
 		)
 		Ω(err).ShouldNot(HaveOccurred())
 	}
