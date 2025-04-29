@@ -47,7 +47,7 @@ type S3Client interface {
 
 // 12 retries works out to ~5 mins of total backoff time, though AWS randomizes
 // the backoff to some extent so it may be as low as 4 or as high as 8 minutes
-const maxRetries = 12
+const MaxRetries = 12
 
 type s3client struct {
 	client         *s3.Client
@@ -93,6 +93,7 @@ func NewS3Client(
 		s3Opts = append(s3Opts, func(o *s3.Options) {
 			o.BaseEndpoint = &endpoint
 			o.UsePathStyle = usePathStyle
+			o.DisableLogOutputChecksumValidationSkipped = true
 		})
 	}
 
@@ -113,6 +114,10 @@ func NewAwsConfig(
 	skipSSLVerification bool,
 ) (*aws.Config, error) {
 	var creds aws.CredentialsProvider
+
+	if roleToAssume == "" {
+		creds = aws.AnonymousCredentials{}
+	}
 
 	if accessKey != "" && secretKey != "" {
 		creds = aws.NewCredentialsCache(credentials.NewStaticCredentialsProvider(accessKey, secretKey, sessionToken))
@@ -138,27 +143,26 @@ func NewAwsConfig(
 	cfg, err := config.LoadDefaultConfig(context.Background(),
 		config.WithRegion(regionName),
 		config.WithHTTPClient(httpClient),
-		config.WithRetryMaxAttempts(maxRetries),
+		config.WithRetryMaxAttempts(MaxRetries),
 		config.WithCredentialsProvider(creds),
 	)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("error loading default AWS config: %w", err)
 	}
 
 	if roleToAssume != "" {
 		stsClient := sts.NewFromConfig(cfg)
-		roleCreds := stscreds.NewAssumeRoleProvider(stsClient, roleToAssume)
-		creds, err := roleCreds.Retrieve(context.TODO())
+		stsCreds := stscreds.NewAssumeRoleProvider(stsClient, roleToAssume)
+		roleCreds, err := stsCreds.Retrieve(context.TODO())
 		if err != nil {
 			return nil, fmt.Errorf("error assuming role: %w", err)
 		}
 
 		cfg.Credentials = aws.NewCredentialsCache(credentials.NewStaticCredentialsProvider(
-			creds.AccessKeyID,
-			creds.SecretAccessKey,
-			creds.SessionToken,
+			roleCreds.AccessKeyID,
+			roleCreds.SecretAccessKey,
+			roleCreds.SessionToken,
 		))
-
 	}
 
 	return &cfg, nil

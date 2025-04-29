@@ -19,7 +19,8 @@ version numbers.
 * `aws_role_arn`: *Optional.* The AWS role ARN to be assumed by the resource.
     Will be assumed using the AWS SDK's default authentication chain. If
     `access_key_id` and `secret_access_key` are provided those will be used
-    instead to try and assume the role.
+    instead to try and assume the role. If no role is provided then the resource
+    will use the AWS SDK's `AnonymousCredentials` for authentication.
 
 * `region_name`: *Optional.* The region the bucket is in. Defaults to
   `us-east-1`.
@@ -60,7 +61,7 @@ version numbers.
 * `disable_multipart`: *Optional.* Disable Multipart Upload. useful for S3
     compatible providers that do not support multipart upload.
 
-* `use_path_style`: *Optional.* Enables legacy path-style access for S3 
+* `use_path_style`: *Optional.* Enables legacy path-style access for S3
     compatible providers. The default behavior is virtual path-style.
 
 ### File Names
@@ -261,7 +262,7 @@ docker build . -t s3-resource --target tests \
   --build-arg S3_VERSIONED_TESTING_BUCKET="bucket-versioned" \
   --build-arg S3_TESTING_REGION="us-east-1" \
   --build-arg S3_ENDPOINT="https://s3.amazonaws.com" \
-  --build-arg S3_USE_PATH_STYLE="" 
+  --build-arg S3_USE_PATH_STYLE=""
 ```
 
 ##### Speeding up integration tests by skipping large file upload
