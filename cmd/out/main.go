@@ -26,6 +26,7 @@ func main() {
 		request.Source.AwsRoleARN,
 		request.Source.RegionName,
 		request.Source.SkipSSLVerification,
+		request.Source.UseAwsCredsProvider,
 	)
 	if err != nil {
 		s3resource.Fatal("error creating aws config", err)

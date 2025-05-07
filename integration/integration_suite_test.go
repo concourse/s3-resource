@@ -76,6 +76,7 @@ func getSessionTokenS3Client(awsConfig *aws.Config) (*s3.Client, s3resource.S3Cl
 		awsRoleARN,
 		regionName,
 		false,
+		false,
 	)
 	Ω(err).ShouldNot(HaveOccurred())
 	s3client, err := s3resource.NewS3Client(
@@ -127,6 +128,7 @@ var _ = SynchronizedBeforeSuite(func() []byte {
 			sessionToken,
 			awsRoleARN,
 			regionName,
+			false,
 			false,
 		)
 		Ω(err).ShouldNot(HaveOccurred())

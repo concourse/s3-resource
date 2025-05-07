@@ -22,6 +22,10 @@ version numbers.
     instead to try and assume the role. If no role is provided then the resource
     will use the AWS SDK's `AnonymousCredentials` for authentication.
 
+* `enable_aws_creds_provider`: *Optional.* Do not fall back to `AnonymousCredentials`
+    if no other creds are provided.  This allows the use of AWS SDK's Default
+    Credentials Provider. e.g. Instance Profile(EC2) if set on the underlying worker.
+
 * `region_name`: *Optional.* The region the bucket is in. Defaults to
   `us-east-1`.
 
@@ -287,3 +291,4 @@ In addition to the required permissions above, the `s3:PutObjectTagging` permiss
 
 Please make all pull requests to the `master` branch and ensure tests pass
 locally.
+
