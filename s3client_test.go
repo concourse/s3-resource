@@ -16,7 +16,7 @@ var _ = Describe("AWSConfig", func() {
 			accessKey := "access-key"
 			secretKey := "secret-key"
 			sessionToken := "session-token"
-			cfg, err := s3resource.NewAwsConfig(accessKey, secretKey, sessionToken, "", "", false)
+			cfg, err := s3resource.NewAwsConfig(accessKey, secretKey, sessionToken, "", "", false, false)
 			Expect(err).ToNot(HaveOccurred())
 			Expect(cfg).ToNot(BeNil())
 
@@ -31,7 +31,7 @@ var _ = Describe("AWSConfig", func() {
 
 	Context("There are no static credentials or role to assume", func() {
 		It("uses the anonymous credentials", func() {
-			cfg, err := s3resource.NewAwsConfig("", "", "", "", "", false)
+			cfg, err := s3resource.NewAwsConfig("", "", "", "", "", false, false)
 			Expect(err).ToNot(HaveOccurred())
 			Expect(cfg).ToNot(BeNil())
 			Expect(cfg.Credentials).ToNot(BeNil())
@@ -39,23 +39,33 @@ var _ = Describe("AWSConfig", func() {
 		})
 	})
 
+	Context("Set to use the Aws Default Credential Provider", func() {
+		It("uses the Aws Default Credential Provider", func() {
+			cfg, err := s3resource.NewAwsConfig("", "", "", "", "", false, true)
+			Expect(err).ToNot(HaveOccurred())
+			Expect(cfg).ToNot(BeNil())
+			Expect(cfg.Credentials).ToNot(BeNil())
+			Expect(cfg.Credentials).ToNot(Equal(aws.NewCredentialsCache(aws.AnonymousCredentials{})))
+		})
+	})
+
 	Context("default values", func() {
 		It("sets RetryMaxAttempts", func() {
-			cfg, err := s3resource.NewAwsConfig("", "", "", "", "", false)
+			cfg, err := s3resource.NewAwsConfig("", "", "", "", "", false, false)
 			Expect(err).ToNot(HaveOccurred())
 			Expect(cfg).ToNot(BeNil())
 			Expect(cfg.RetryMaxAttempts).To(Equal(s3resource.MaxRetries))
 		})
 
 		It("sets region to us-east-1", func() {
-			cfg, err := s3resource.NewAwsConfig("", "", "", "", "", false)
+			cfg, err := s3resource.NewAwsConfig("", "", "", "", "", false, false)
 			Expect(err).ToNot(HaveOccurred())
 			Expect(cfg).ToNot(BeNil())
 			Expect(cfg.Region).To(Equal("us-east-1"))
 		})
 
 		It("uses the default http client", func() {
-			cfg, err := s3resource.NewAwsConfig("", "", "", "", "", false)
+			cfg, err := s3resource.NewAwsConfig("", "", "", "", "", false, false)
 			Expect(err).ToNot(HaveOccurred())
 			Expect(cfg).ToNot(BeNil())
 			Expect(cfg.HTTPClient).To(Equal(http.DefaultClient))
@@ -64,7 +74,7 @@ var _ = Describe("AWSConfig", func() {
 
 	Context("Region is specified", func() {
 		It("sets the region", func() {
-			cfg, err := s3resource.NewAwsConfig("", "", "", "", "ca-central-1", false)
+			cfg, err := s3resource.NewAwsConfig("", "", "", "", "ca-central-1", false, false)
 			Expect(err).ToNot(HaveOccurred())
 			Expect(cfg).ToNot(BeNil())
 			Expect(cfg.Region).To(Equal("ca-central-1"))
@@ -73,7 +83,7 @@ var _ = Describe("AWSConfig", func() {
 
 	Context("SSL verification is skipped", func() {
 		It("creates a http client that skips SSL verification", func() {
-			cfg, err := s3resource.NewAwsConfig("", "", "", "", "", true)
+			cfg, err := s3resource.NewAwsConfig("", "", "", "", "", true, false)
 			Expect(err).ToNot(HaveOccurred())
 			Expect(cfg).ToNot(BeNil())
 

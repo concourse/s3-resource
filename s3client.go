@@ -112,10 +112,11 @@ func NewAwsConfig(
 	roleToAssume string,
 	regionName string,
 	skipSSLVerification bool,
+	useAwsCredsProvider bool,
 ) (*aws.Config, error) {
 	var creds aws.CredentialsProvider
 
-	if roleToAssume == "" {
+	if roleToAssume == "" && !useAwsCredsProvider {
 		creds = aws.AnonymousCredentials{}
 	}
 
