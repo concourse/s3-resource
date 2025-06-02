@@ -53,6 +53,10 @@ version numbers.
 * `skip_ssl_verification`: *Optional.* Skip SSL verification for S3 endpoint.
     Useful for S3 compatible providers using self-signed SSL certificates.
 
+* `ca_bundle`: *Optional.* Set of PEM encoded certificates to validate the S3
+    endpoint against. Useful for S3 compatible providers using self-signed
+    SSL certificates.
+
 * `skip_download`: *Optional.* Skip downloading object from S3. Useful only
     trigger the pipeline without using the object.
 
@@ -291,4 +295,3 @@ In addition to the required permissions above, the `s3:PutObjectTagging` permiss
 
 Please make all pull requests to the `master` branch and ensure tests pass
 locally.
-

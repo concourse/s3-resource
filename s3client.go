@@ -3,6 +3,7 @@ package s3resource
 import (
 	"context"
 	"crypto/tls"
+	"crypto/x509"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -113,6 +114,7 @@ func NewAwsConfig(
 	roleToAssume string,
 	regionName string,
 	skipSSLVerification bool,
+	caBundle string,
 	useAwsCredsProvider bool,
 ) (*aws.Config, error) {
 	var creds aws.CredentialsProvider
@@ -141,6 +143,23 @@ func NewAwsConfig(
 			}
 			tr.TLSClientConfig.InsecureSkipVerify = true
 		})
+	}
+	if caBundle != "" {
+		var caErr error
+		httpClient = httpClient.WithTransportOptions(func(tr *http.Transport) {
+			if tr.TLSClientConfig == nil {
+				tr.TLSClientConfig = &tls.Config{}
+			}
+			if tr.TLSClientConfig.RootCAs == nil {
+				tr.TLSClientConfig.RootCAs = x509.NewCertPool()
+			}
+			if !tr.TLSClientConfig.RootCAs.AppendCertsFromPEM([]byte(caBundle)) {
+				caErr = fmt.Errorf("failed to load custom CA bundle PEM file")
+			}
+		})
+		if caErr != nil {
+			return nil, caErr
+		}
 	}
 
 	cfg, err := config.LoadDefaultConfig(context.Background(),
