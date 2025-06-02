@@ -14,6 +14,7 @@ import (
 	"time"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
+	awshttp "github.com/aws/aws-sdk-go-v2/aws/transport/http"
 	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/credentials"
 	"github.com/aws/aws-sdk-go-v2/credentials/stscreds"
@@ -132,13 +133,14 @@ func NewAwsConfig(
 		regionName = "us-east-1"
 	}
 
-	var httpClient *http.Client
+	httpClient := awshttp.NewBuildableClient()
 	if skipSSLVerification {
-		httpClient = &http.Client{Transport: &http.Transport{
-			TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
-		}}
-	} else {
-		httpClient = http.DefaultClient
+		httpClient = httpClient.WithTransportOptions(func(tr *http.Transport) {
+			if tr.TLSClientConfig == nil {
+				tr.TLSClientConfig = &tls.Config{}
+			}
+			tr.TLSClientConfig.InsecureSkipVerify = true
+		})
 	}
 
 	cfg, err := config.LoadDefaultConfig(context.Background(),
