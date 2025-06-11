@@ -323,6 +323,12 @@ func (client *s3client) UploadFile(bucketName string, remotePath string, localPa
 		return "", err
 	}
 
+	// Have to manually complete the progress bar for empty files
+	// See https://github.com/vbauerster/mpb/issues/7
+	if fSize == 0 {
+		progress.SetTotal(-1, true)
+	}
+
 	if uploadOutput.VersionID != nil {
 		return *uploadOutput.VersionID, nil
 	}
@@ -368,6 +374,12 @@ func (client *s3client) DownloadFile(bucketName string, remotePath string, versi
 	_, err = downloader.Download(context.TODO(), progressWriterAt{localFile, progress.ProxyWriter(io.Discard)}, getObject)
 	if err != nil {
 		return err
+	}
+
+	// Have to manually complete the progress bar for empty files
+	// See https://github.com/vbauerster/mpb/issues/7
+	if *object.ContentLength == 0 {
+		progress.SetTotal(-1, true)
 	}
 
 	return nil
