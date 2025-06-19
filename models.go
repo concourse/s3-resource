@@ -19,6 +19,7 @@ type Source struct {
 	SSEKMSKeyId          string `json:"sse_kms_key_id"`
 	UseV2Signing         bool   `json:"use_v2_signing"`
 	SkipSSLVerification  bool   `json:"skip_ssl_verification"`
+	CABundle             string `json:"ca_bundle"`
 	SkipDownload         bool   `json:"skip_download"`
 	InitialVersion       string `json:"initial_version"`
 	InitialPath          string `json:"initial_path"`
@@ -39,6 +40,10 @@ func (source Source) IsValid() (bool, string) {
 
 	if source.VersionedFile != "" && source.InitialPath != "" {
 		return false, "please use initial_version when versioned_file is set"
+	}
+
+	if source.SkipSSLVerification && source.CABundle != "" {
+		return false, "please do not use ca_bundle when skip_ssl_verification is set"
 	}
 
 	if source.InitialContentText != "" && source.InitialContentBinary != "" {
