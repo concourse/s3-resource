@@ -3,6 +3,7 @@ package s3resource
 import (
 	"context"
 	"crypto/tls"
+	"crypto/x509"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -14,6 +15,7 @@ import (
 	"time"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
+	awshttp "github.com/aws/aws-sdk-go-v2/aws/transport/http"
 	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/credentials"
 	"github.com/aws/aws-sdk-go-v2/credentials/stscreds"
@@ -112,6 +114,7 @@ func NewAwsConfig(
 	roleToAssume string,
 	regionName string,
 	skipSSLVerification bool,
+	caBundle string,
 	useAwsCredsProvider bool,
 ) (*aws.Config, error) {
 	var creds aws.CredentialsProvider
@@ -132,13 +135,31 @@ func NewAwsConfig(
 		regionName = "us-east-1"
 	}
 
-	var httpClient *http.Client
+	httpClient := awshttp.NewBuildableClient()
 	if skipSSLVerification {
-		httpClient = &http.Client{Transport: &http.Transport{
-			TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
-		}}
-	} else {
-		httpClient = http.DefaultClient
+		httpClient = httpClient.WithTransportOptions(func(tr *http.Transport) {
+			if tr.TLSClientConfig == nil {
+				tr.TLSClientConfig = &tls.Config{}
+			}
+			tr.TLSClientConfig.InsecureSkipVerify = true
+		})
+	}
+	if caBundle != "" {
+		var caErr error
+		httpClient = httpClient.WithTransportOptions(func(tr *http.Transport) {
+			if tr.TLSClientConfig == nil {
+				tr.TLSClientConfig = &tls.Config{}
+			}
+			if tr.TLSClientConfig.RootCAs == nil {
+				tr.TLSClientConfig.RootCAs = x509.NewCertPool()
+			}
+			if !tr.TLSClientConfig.RootCAs.AppendCertsFromPEM([]byte(caBundle)) {
+				caErr = fmt.Errorf("failed to load custom CA bundle PEM file")
+			}
+		})
+		if caErr != nil {
+			return nil, caErr
+		}
 	}
 
 	cfg, err := config.LoadDefaultConfig(context.Background(),
