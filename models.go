@@ -27,6 +27,7 @@ type Source struct {
 	InitialContentBinary string `json:"initial_content_binary"`
 	DisableMultipart     bool   `json:"disable_multipart"`
 	UsePathStyle         bool   `json:"use_path_style"`
+	SkipS3Checksums      bool   `json:"skip_s3_checksums"`
 }
 
 func (source Source) IsValid() (bool, string) {
