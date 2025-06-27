@@ -32,6 +32,7 @@ var (
 	endpoint            = os.Getenv("S3_ENDPOINT")
 	v2signing           = os.Getenv("S3_V2_SIGNING")
 	pathStyle           = len(os.Getenv("S3_USE_PATH_STYLE")) > 0
+	skipS3Checksums     = len(os.Getenv("S3_SKIP_S3_CHECKSUMS")) > 0
 	awsConfig           *aws.Config
 	s3client            s3resource.S3Client
 	s3Service           *s3.Client
@@ -86,6 +87,7 @@ func getSessionTokenS3Client(awsConfig *aws.Config) (*s3.Client, s3resource.S3Cl
 		endpoint,
 		false,
 		pathStyle,
+		skipS3Checksums,
 	)
 	Ω(err).ShouldNot(HaveOccurred())
 
@@ -142,6 +144,7 @@ var _ = SynchronizedBeforeSuite(func() []byte {
 			endpoint,
 			false,
 			pathStyle,
+			skipS3Checksums,
 		)
 		Ω(err).ShouldNot(HaveOccurred())
 	}

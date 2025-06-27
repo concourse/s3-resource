@@ -76,6 +76,10 @@ version numbers.
 * `use_path_style`: *Optional.* Enables legacy path-style access for S3
     compatible providers. The default behavior is virtual path-style.
 
+* `skip_s3_checksums`: *Optional.* Enables legacy optional checksum validation
+    for S3 compatible providers. The default behaviour is to require checksum
+    verification.
+
 ### File Names
 
 One of the following two options must be specified:

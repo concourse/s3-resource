@@ -74,7 +74,7 @@ func NewS3Client(
 	progressOutput io.Writer,
 	awsConfig *aws.Config,
 	endpoint string,
-	disableSSL, usePathStyle bool,
+	disableSSL, usePathStyle, skipS3Checksums bool,
 ) (S3Client, error) {
 	s3Opts := []func(*s3.Options){}
 
@@ -96,6 +96,10 @@ func NewS3Client(
 			o.BaseEndpoint = &endpoint
 			o.UsePathStyle = usePathStyle
 			o.DisableLogOutputChecksumValidationSkipped = true
+			if skipS3Checksums {
+				o.RequestChecksumCalculation = aws.RequestChecksumCalculationWhenRequired
+				o.ResponseChecksumValidation = aws.ResponseChecksumValidationWhenRequired
+			}
 		})
 	}
 
