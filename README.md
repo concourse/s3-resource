@@ -201,6 +201,22 @@ When the file is being [versioned by s3](http://docs.aws.amazon.com/AmazonS3/lat
     secret_access_key: SECRET
 ```
 
+or
+
+When the bucket is not versioned and you want to match against a static
+filename, use `regexp` and set the capture group `()` to a static string:
+
+``` yaml
+- name: release
+  type: s3
+  source:
+    bucket: releases
+    regexp: directory_on_s3/(release).tgz
+          # directory_on_s3/(release\.tgz) would also work
+    access_key_id: ACCESS-KEY
+    secret_access_key: SECRET
+```
+
 ### Plan
 
 ``` yaml
