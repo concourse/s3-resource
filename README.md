@@ -77,11 +77,10 @@ version numbers.
     compatible providers. The default behavior is virtual path-style.
 
 * `skip_s3_checksums`: *Optional.* Disables automatic checksum validation
-    for S3 operations. The AWS SDK v2 enables aggressive checksum validation
-    by default, which may not be supported by all S3-compatible providers.
-    When set to `true`, checksums are only calculated and validated when
-    explicitly required by the S3 API. Defaults to `false` (automatic
-    checksums enabled).
+    for S3 operations. The AWS SDK v2 enables checksum validation by default,
+    which may not be supported by all S3-compatible providers. When set to
+    `true`, checksums are only calculated and validated when explicitly
+    required by the S3 API. Defaults to `false` (automatic checksums enabled).
 
 ### File Names
 
