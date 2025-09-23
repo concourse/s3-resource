@@ -70,15 +70,18 @@ version numbers.
 * `sse_kms_key_id`: *Optional.* The ID of the AWS KMS master encryption key
     used for the object.
 
-* `disable_multipart`: *Optional.* Disable Multipart Upload. useful for S3
+* `disable_multipart`: *Optional.* Disables Multipart Upload. useful for S3
     compatible providers that do not support multipart upload.
 
 * `use_path_style`: *Optional.* Enables legacy path-style access for S3
     compatible providers. The default behavior is virtual path-style.
 
-* `skip_s3_checksums`: *Optional.* Enables legacy optional checksum validation
-    for S3 compatible providers. The default behaviour is to require checksum
-    verification.
+* `skip_s3_checksums`: *Optional.* Disables automatic checksum validation
+    for S3 operations. The AWS SDK v2 enables aggressive checksum validation
+    by default, which may not be supported by all S3-compatible providers.
+    When set to `true`, checksums are only calculated and validated when
+    explicitly required by the S3 API. Defaults to `false` (automatic
+    checksums enabled).
 
 ### File Names
 
