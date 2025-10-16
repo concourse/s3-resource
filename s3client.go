@@ -487,7 +487,12 @@ func (client *s3client) URL(bucketName string, remotePath string, private bool, 
 			return "", fmt.Errorf("error resolving endpoint: %w", err)
 		}
 
-		return fmt.Sprintf("%s/%s", url.URI.String(), remotePath), nil
+		finalURL := fmt.Sprintf("%s/%s", url.URI.String(), remotePath)
+		if versionID != "" {
+			finalURL = fmt.Sprintf("%s?versionId=%s", finalURL, versionID)
+		}
+
+		return finalURL, nil
 	}
 
 	getObjectInput := &s3.GetObjectInput{
