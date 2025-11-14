@@ -88,6 +88,7 @@ func getSessionTokenS3Client(awsConfig *aws.Config) (*s3.Client, s3resource.S3Cl
 		false,
 		pathStyle,
 		skipS3Checksums,
+		"",
 	)
 	Ω(err).ShouldNot(HaveOccurred())
 
@@ -145,6 +146,7 @@ var _ = SynchronizedBeforeSuite(func() []byte {
 			false,
 			pathStyle,
 			skipS3Checksums,
+			"",
 		)
 		Ω(err).ShouldNot(HaveOccurred())
 	}

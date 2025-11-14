@@ -62,6 +62,7 @@ type UploadFileOptions struct {
 	KmsKeyId             string
 	ContentType          string
 	DisableMultipart     bool
+	ChecksumAlgorithm    string
 }
 
 func NewUploadFileOptions() UploadFileOptions {
@@ -75,6 +76,7 @@ func NewS3Client(
 	awsConfig *aws.Config,
 	endpoint string,
 	disableSSL, usePathStyle, skipS3Checksums bool,
+	checksumAlgorithm string,
 ) (S3Client, error) {
 	s3Opts := []func(*s3.Options){}
 
@@ -99,6 +101,9 @@ func NewS3Client(
 			if skipS3Checksums {
 				o.RequestChecksumCalculation = aws.RequestChecksumCalculationWhenRequired
 				o.ResponseChecksumValidation = aws.ResponseChecksumValidationWhenRequired
+			}
+			if checksumAlgorithm != "" {
+				o.RequestChecksumCalculation = aws.RequestChecksumCalculationWhenSupported
 			}
 		})
 	}
@@ -341,6 +346,9 @@ func (client *s3client) UploadFile(bucketName string, remotePath string, localPa
 	}
 	if options.ContentType != "" {
 		uploadInput.ContentType = aws.String(options.ContentType)
+	}
+	if options.ChecksumAlgorithm != "" {
+		uploadInput.ChecksumAlgorithm = types.ChecksumAlgorithm(options.ChecksumAlgorithm)
 	}
 
 	uploadOutput, err := uploader.Upload(context.TODO(), uploadInput)
