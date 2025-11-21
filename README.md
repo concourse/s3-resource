@@ -82,6 +82,12 @@ version numbers.
     `true`, checksums are only calculated and validated when explicitly
     required by the S3 API. Defaults to `false` (automatic checksums enabled).
 
+* `checksum_algorithm`: *Optional.* Specifies the checksum algorithm to use
+    when uploading objects to S3. Valid values are `CRC32`, `CRC32C`, `SHA1`,
+    `SHA256`, or `CRC64NVME`. If not specified, S3 will use its default algorithm.
+    This setting is ignored if `skip_s3_checksums` is set to `true`. Note that
+    not all S3-compatible providers support all algorithms.
+
 ### File Names
 
 One of the following two options must be specified:

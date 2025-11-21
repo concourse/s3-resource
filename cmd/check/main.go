@@ -33,6 +33,7 @@ func main() {
 		request.Source.DisableSSL,
 		request.Source.UsePathStyle,
 		request.Source.SkipS3Checksums,
+		request.Source.ChecksumAlgorithm,
 	)
 	if err != nil {
 		s3resource.Fatal("error creating s3 client", err)

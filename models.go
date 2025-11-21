@@ -1,5 +1,12 @@
 package s3resource
 
+import (
+	"sort"
+	"strings"
+
+	"github.com/aws/aws-sdk-go-v2/service/s3/types"
+)
+
 type Source struct {
 	AccessKeyID         string `json:"access_key_id"`
 	SecretAccessKey     string `json:"secret_access_key"`
@@ -28,6 +35,7 @@ type Source struct {
 	DisableMultipart     bool   `json:"disable_multipart"`
 	UsePathStyle         bool   `json:"use_path_style"`
 	SkipS3Checksums      bool   `json:"skip_s3_checksums"`
+	ChecksumAlgorithm    string `json:"checksum_algorithm"`
 }
 
 func (source Source) IsValid() (bool, string) {
@@ -54,6 +62,32 @@ func (source Source) IsValid() (bool, string) {
 	hasInitialContent := source.InitialContentText != "" || source.InitialContentBinary != ""
 	if hasInitialContent && source.InitialVersion == "" && source.InitialPath == "" {
 		return false, "please specify initial_version or initial_path if initial content is set"
+	}
+
+	// Validate checksum algorithm if specified
+	if source.ChecksumAlgorithm != "" {
+		validAlgorithms := types.ChecksumAlgorithm("").Values()
+
+		valid := false
+		for _, alg := range validAlgorithms {
+			if string(alg) == source.ChecksumAlgorithm {
+				valid = true
+				break
+			}
+		}
+
+		if !valid {
+			validValues := make([]string, len(validAlgorithms))
+			for i, alg := range validAlgorithms {
+				validValues[i] = string(alg)
+			}
+			sort.Strings(validValues)
+			return false, "checksum_algorithm must be one of: " + strings.Join(validValues, ", ")
+		}
+
+		if source.SkipS3Checksums {
+			return false, "checksum_algorithm cannot be used when skip_s3_checksums is true"
+		}
 	}
 
 	return true, ""
