@@ -24,6 +24,7 @@ FROM ${base_image} AS resource
 RUN apk --no-cache add \
     tzdata \
     ca-certificates \
+    cmd:bunzip2 \
     cmd:unzip \
     cmd:tar \
     cmd:gunzip

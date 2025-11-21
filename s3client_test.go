@@ -171,6 +171,7 @@ var _ = Describe("S3Resource", func() {
 					false,
 					true,
 					true,
+					"",
 				)
 			})
 

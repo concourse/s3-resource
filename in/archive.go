@@ -16,6 +16,8 @@ var archiveMimetypes = []string{
 	"application/gzip",
 	"application/x-tar",
 	"application/zip",
+	"application/x-bzip2",
+	"application/x-bzip",
 }
 
 func mimetype(r *bufio.Reader) (string, error) {
@@ -67,6 +69,9 @@ func inflate(mime, path, destination string) error {
 
 	case "application/gzip", "application/x-gzip":
 		cmd = exec.Command("gunzip", path)
+
+	case "application/x-bzip2", "application/x-bzip":
+		cmd = exec.Command("bunzip2", path)
 
 	default:
 		return fmt.Errorf("don't know how to extract %s", mime)
