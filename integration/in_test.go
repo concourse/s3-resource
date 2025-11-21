@@ -402,4 +402,226 @@ var _ = Describe("in", func() {
 			Ω(actualTagsJSON).Should(MatchJSON(expectedTagsJSON))
 		})
 	})
+
+	Context("when unpack is true with a .tar.bz2 file", func() {
+		var directoryPrefix string
+
+		BeforeEach(func() {
+			directoryPrefix = "in-request-unpack-bz2"
+			inRequest = in.Request{
+				Source: s3resource.Source{
+					AccessKeyID:     accessKeyID,
+					SecretAccessKey: secretAccessKey,
+					SessionToken:    sessionToken,
+					AwsRoleARN:      awsRoleARN,
+					Bucket:          bucketName,
+					RegionName:      regionName,
+					Endpoint:        endpoint,
+					Regexp:          filepath.Join(directoryPrefix, "archive-(.*)"),
+					UsePathStyle:    pathStyle,
+				},
+				Version: s3resource.Version{
+					Path: filepath.Join(directoryPrefix, "archive-1.tar.bz2"),
+				},
+				Params: in.Params{
+					Unpack: true,
+				},
+			}
+
+			// Create temp directory for building the archive
+			archiveTempDir, err := os.MkdirTemp("", "archive-build")
+			Ω(err).ShouldNot(HaveOccurred())
+			defer os.RemoveAll(archiveTempDir)
+
+			// Create test files
+			err = os.WriteFile(filepath.Join(archiveTempDir, "file1.txt"), []byte("content1"), 0644)
+			Ω(err).ShouldNot(HaveOccurred())
+			err = os.WriteFile(filepath.Join(archiveTempDir, "file2.txt"), []byte("content2"), 0644)
+			Ω(err).ShouldNot(HaveOccurred())
+			err = os.Mkdir(filepath.Join(archiveTempDir, "subdir"), 0755)
+			Ω(err).ShouldNot(HaveOccurred())
+			err = os.WriteFile(filepath.Join(archiveTempDir, "subdir", "file3.txt"), []byte("content3"), 0644)
+			Ω(err).ShouldNot(HaveOccurred())
+
+			// Create tar.bz2 archive
+			archiveFile := filepath.Join(archiveTempDir, "archive-1.tar.bz2")
+			tarCmd := exec.Command("tar", "-cjf", archiveFile, "-C", archiveTempDir, "file1.txt", "file2.txt", "subdir")
+			err = tarCmd.Run()
+			Ω(err).ShouldNot(HaveOccurred())
+
+			// Upload to S3
+			_, err = s3client.UploadFile(bucketName, filepath.Join(directoryPrefix, "archive-1.tar.bz2"), archiveFile, s3resource.NewUploadFileOptions())
+			Ω(err).ShouldNot(HaveOccurred())
+		})
+
+		AfterEach(func() {
+			err := s3client.DeleteFile(bucketName, filepath.Join(directoryPrefix, "archive-1.tar.bz2"))
+			Ω(err).ShouldNot(HaveOccurred())
+		})
+
+		It("extracts the archive contents", func() {
+			// Verify the archive file was removed after extraction
+			Ω(filepath.Join(destDir, "archive-1.tar.bz2")).ShouldNot(BeARegularFile())
+
+			// Verify all files were extracted
+			Ω(filepath.Join(destDir, "file1.txt")).Should(BeARegularFile())
+			content1, err := os.ReadFile(filepath.Join(destDir, "file1.txt"))
+			Ω(err).ShouldNot(HaveOccurred())
+			Ω(content1).Should(Equal([]byte("content1")))
+
+			Ω(filepath.Join(destDir, "file2.txt")).Should(BeARegularFile())
+			content2, err := os.ReadFile(filepath.Join(destDir, "file2.txt"))
+			Ω(err).ShouldNot(HaveOccurred())
+			Ω(content2).Should(Equal([]byte("content2")))
+
+			Ω(filepath.Join(destDir, "subdir", "file3.txt")).Should(BeARegularFile())
+			content3, err := os.ReadFile(filepath.Join(destDir, "subdir", "file3.txt"))
+			Ω(err).ShouldNot(HaveOccurred())
+			Ω(content3).Should(Equal([]byte("content3")))
+
+			// Verify version file is created
+			Ω(filepath.Join(destDir, "version")).Should(BeARegularFile())
+			versionContents, err := os.ReadFile(filepath.Join(destDir, "version"))
+			Ω(err).ShouldNot(HaveOccurred())
+			Ω(versionContents).Should(Equal([]byte("1")))
+		})
+	})
+
+	Context("when unpack is true with a .tar.gz file", func() {
+		var directoryPrefix string
+
+		BeforeEach(func() {
+			directoryPrefix = "in-request-unpack-gz"
+			inRequest = in.Request{
+				Source: s3resource.Source{
+					AccessKeyID:     accessKeyID,
+					SecretAccessKey: secretAccessKey,
+					SessionToken:    sessionToken,
+					AwsRoleARN:      awsRoleARN,
+					Bucket:          bucketName,
+					RegionName:      regionName,
+					Endpoint:        endpoint,
+					Regexp:          filepath.Join(directoryPrefix, "archive-(.*)"),
+					UsePathStyle:    pathStyle,
+				},
+				Version: s3resource.Version{
+					Path: filepath.Join(directoryPrefix, "archive-1.tar.gz"),
+				},
+				Params: in.Params{
+					Unpack: true,
+				},
+			}
+
+			// Create temp directory for building the archive
+			archiveTempDir, err := os.MkdirTemp("", "archive-build-gz")
+			Ω(err).ShouldNot(HaveOccurred())
+			defer os.RemoveAll(archiveTempDir)
+
+			// Create test files
+			err = os.WriteFile(filepath.Join(archiveTempDir, "gzfile1.txt"), []byte("gz-content1"), 0644)
+			Ω(err).ShouldNot(HaveOccurred())
+			err = os.WriteFile(filepath.Join(archiveTempDir, "gzfile2.txt"), []byte("gz-content2"), 0644)
+			Ω(err).ShouldNot(HaveOccurred())
+
+			// Create tar.gz archive
+			archiveFile := filepath.Join(archiveTempDir, "archive-1.tar.gz")
+			tarCmd := exec.Command("tar", "-czf", archiveFile, "-C", archiveTempDir, "gzfile1.txt", "gzfile2.txt")
+			err = tarCmd.Run()
+			Ω(err).ShouldNot(HaveOccurred())
+
+			// Upload to S3
+			_, err = s3client.UploadFile(bucketName, filepath.Join(directoryPrefix, "archive-1.tar.gz"), archiveFile, s3resource.NewUploadFileOptions())
+			Ω(err).ShouldNot(HaveOccurred())
+		})
+
+		AfterEach(func() {
+			err := s3client.DeleteFile(bucketName, filepath.Join(directoryPrefix, "archive-1.tar.gz"))
+			Ω(err).ShouldNot(HaveOccurred())
+		})
+
+		It("extracts the archive contents (regression test)", func() {
+			// Verify the archive file was removed after extraction
+			Ω(filepath.Join(destDir, "archive-1.tar.gz")).ShouldNot(BeARegularFile())
+
+			// Verify files were extracted
+			Ω(filepath.Join(destDir, "gzfile1.txt")).Should(BeARegularFile())
+			content1, err := os.ReadFile(filepath.Join(destDir, "gzfile1.txt"))
+			Ω(err).ShouldNot(HaveOccurred())
+			Ω(content1).Should(Equal([]byte("gz-content1")))
+
+			Ω(filepath.Join(destDir, "gzfile2.txt")).Should(BeARegularFile())
+			content2, err := os.ReadFile(filepath.Join(destDir, "gzfile2.txt"))
+			Ω(err).ShouldNot(HaveOccurred())
+			Ω(content2).Should(Equal([]byte("gz-content2")))
+		})
+	})
+
+	Context("when unpack is true with a plain .bz2 file", func() {
+		var directoryPrefix string
+
+		BeforeEach(func() {
+			directoryPrefix = "in-request-unpack-bz2-plain"
+			inRequest = in.Request{
+				Source: s3resource.Source{
+					AccessKeyID:     accessKeyID,
+					SecretAccessKey: secretAccessKey,
+					SessionToken:    sessionToken,
+					AwsRoleARN:      awsRoleARN,
+					Bucket:          bucketName,
+					RegionName:      regionName,
+					Endpoint:        endpoint,
+					Regexp:          filepath.Join(directoryPrefix, "file-(.*)"),
+					UsePathStyle:    pathStyle,
+				},
+				Version: s3resource.Version{
+					Path: filepath.Join(directoryPrefix, "file-1.bz2"),
+				},
+				Params: in.Params{
+					Unpack: true,
+				},
+			}
+
+			// Create temp directory for building the compressed file
+			compressTempDir, err := os.MkdirTemp("", "compress-build")
+			Ω(err).ShouldNot(HaveOccurred())
+			defer os.RemoveAll(compressTempDir)
+
+			// Create test file
+			testFile := filepath.Join(compressTempDir, "file-1")
+			err = os.WriteFile(testFile, []byte("plain bz2 content"), 0644)
+			Ω(err).ShouldNot(HaveOccurred())
+
+			// Compress with bzip2
+			compressCmd := exec.Command("bzip2", "-k", testFile)
+			err = compressCmd.Run()
+			Ω(err).ShouldNot(HaveOccurred())
+
+			// Upload to S3
+			compressedFile := testFile + ".bz2"
+			_, err = s3client.UploadFile(bucketName, filepath.Join(directoryPrefix, "file-1.bz2"), compressedFile, s3resource.NewUploadFileOptions())
+			Ω(err).ShouldNot(HaveOccurred())
+		})
+
+		AfterEach(func() {
+			err := s3client.DeleteFile(bucketName, filepath.Join(directoryPrefix, "file-1.bz2"))
+			Ω(err).ShouldNot(HaveOccurred())
+		})
+
+		It("decompresses the file", func() {
+			// Verify the compressed file was removed after decompression
+			Ω(filepath.Join(destDir, "file-1.bz2")).ShouldNot(BeARegularFile())
+
+			// Verify decompressed file exists
+			Ω(filepath.Join(destDir, "file-1")).Should(BeARegularFile())
+			content, err := os.ReadFile(filepath.Join(destDir, "file-1"))
+			Ω(err).ShouldNot(HaveOccurred())
+			Ω(content).Should(Equal([]byte("plain bz2 content")))
+
+			// Verify version file is created
+			Ω(filepath.Join(destDir, "version")).Should(BeARegularFile())
+			versionContents, err := os.ReadFile(filepath.Join(destDir, "version"))
+			Ω(err).ShouldNot(HaveOccurred())
+			Ω(versionContents).Should(Equal([]byte("1")))
+		})
+	})
 })

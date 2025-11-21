@@ -244,14 +244,22 @@ func extractArchive(mime, filename string) error {
 		return fmt.Errorf("failed to extract archive: %s", err)
 	}
 
-	if mime == "application/gzip" || mime == "application/x-gzip" {
+	// Special handling for gzip and bzip2: check if there's a tar inside
+	if mime == "application/gzip" || mime == "application/x-gzip" ||
+		mime == "application/x-bzip2" || mime == "application/x-bzip" {
+
+		compressionType := "gzip"
+		if mime == "application/x-bzip2" || mime == "application/x-bzip" {
+			compressionType = "bzip2"
+		}
+
 		fileInfos, err := os.ReadDir(destDir)
 		if err != nil {
 			return fmt.Errorf("failed to read dir: %s", err)
 		}
 
 		if len(fileInfos) != 1 {
-			return fmt.Errorf("%d files found after gunzip; expected 1", len(fileInfos))
+			return fmt.Errorf("%d files found after %s decompression; expected 1", len(fileInfos), compressionType)
 		}
 
 		filename = filepath.Join(destDir, fileInfos[0].Name())

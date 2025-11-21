@@ -154,7 +154,7 @@ Places the following files in the destination:
 
 * `skip_download`: *Optional.* Skip downloading object from S3. Same parameter as source configuration but used to define/override by get. Value needs to be a true/false string.
 
-* `unpack`: *Optional.* If true and the file is an archive (tar, gzipped tar, other gzipped file, or zip), unpack the file. Gzipped tarballs will be both ungzipped and untarred. It is ignored when `get` is running on the initial version.
+* `unpack`: *Optional.* If true and the file is an archive (tar, gzipped tar, bzip2 compressed tar, other gzipped file, other bzip2 compressed file, or zip), unpack the file. Gzipped and bzip2 compressed tarballs will be both decompressed and untarred. It is ignored when `get` is running on the initial version.
 
 * `download_tags`: *Optional.* Write object tags to `tags.json`. Value needs to be a true/false string.
 
