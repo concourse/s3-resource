@@ -7,6 +7,7 @@ import (
 	"io"
 	"log"
 	"os"
+	"os/exec"
 	"path"
 	"path/filepath"
 	"strings"
@@ -402,6 +403,101 @@ var _ = Describe("In Command", func() {
 				})
 
 				It("extracts the gzipped tarball", func() {
+					_, err := command.Run(destDir, request)
+					Expect(err).NotTo(HaveOccurred())
+
+					Expect(filepath.Join(destDir, "some-dir", "some-file")).To(BeARegularFile())
+
+					bs, err := os.ReadFile(filepath.Join(destDir, "some-dir", "some-file"))
+					Expect(err).NotTo(HaveOccurred())
+					Expect(bs).To(Equal([]byte("some-contents")))
+
+					bs, err = os.ReadFile(filepath.Join(destDir, "some-file"))
+					Expect(err).NotTo(HaveOccurred())
+					Expect(bs).To(Equal([]byte("some-other-contents")))
+				})
+			})
+
+			Context("when the file is bzip2 compressed", func() {
+				BeforeEach(func() {
+					request.Version.Path = "files/a-file-1.3.bz2"
+					request.Source.Regexp = "files/a-file-(.*).bz2"
+
+					s3client.DownloadFileStub = func(bucketName string, remotePath string, versionID string, localPath string) error {
+						// Create uncompressed file
+						uncompressedPath := filepath.Join(tmpPath, "uncompressed-file")
+						err := os.WriteFile(uncompressedPath, []byte("some-contents"), os.ModePerm)
+						Expect(err).NotTo(HaveOccurred())
+
+						// Compress with bzip2 command
+						cmd := exec.Command("bzip2", "-c", uncompressedPath)
+						compressed, err := cmd.Output()
+						Expect(err).NotTo(HaveOccurred())
+
+						// Write compressed data to localPath
+						err = os.WriteFile(localPath, compressed, os.ModePerm)
+						Expect(err).NotTo(HaveOccurred())
+
+						return nil
+					}
+				})
+
+				It("decompresses the bzip2 file", func() {
+					_, err := command.Run(destDir, request)
+					Expect(err).NotTo(HaveOccurred())
+
+					bs, err := os.ReadFile(filepath.Join(destDir, "a-file-1.3"))
+					Expect(err).NotTo(HaveOccurred())
+
+					Expect(string(bs)).To(Equal("some-contents"))
+				})
+			})
+
+			Context("when the file is a bzip2 compressed tarball", func() {
+				BeforeEach(func() {
+					request.Version.Path = "files/a-file-1.3.tar.bz2"
+					request.Source.Regexp = "files/a-file-(.*).tar.bz2"
+
+					s3client.DownloadFileStub = func(bucketName string, remotePath string, versionID string, localPath string) error {
+						// Create directory structure
+						err := os.MkdirAll(filepath.Join(tmpPath, "some-dir"), os.ModePerm)
+						Expect(err).NotTo(HaveOccurred())
+
+						someFile1 := filepath.Join(tmpPath, "some-dir", "some-file")
+						err = os.WriteFile(someFile1, []byte("some-contents"), os.ModePerm)
+						Expect(err).NotTo(HaveOccurred())
+
+						someFile2 := filepath.Join(tmpPath, "some-file")
+						err = os.WriteFile(someFile2, []byte("some-other-contents"), os.ModePerm)
+						Expect(err).NotTo(HaveOccurred())
+
+						// Create tarball
+						tarPath := filepath.Join(tmpPath, "some-tar")
+						err = createTarball([]string{someFile1, someFile2}, tmpPath, tarPath)
+						Expect(err).NotTo(HaveOccurred())
+
+						_, err = os.Stat(tarPath)
+						Expect(err).NotTo(HaveOccurred())
+
+						// Read the tar file
+						tarData, err := os.ReadFile(tarPath)
+						Expect(err).NotTo(HaveOccurred())
+
+						// Compress with bzip2 command
+						cmd := exec.Command("bzip2", "-c")
+						cmd.Stdin = strings.NewReader(string(tarData))
+						compressed, err := cmd.Output()
+						Expect(err).NotTo(HaveOccurred())
+
+						// Write compressed tar to localPath
+						err = os.WriteFile(localPath, compressed, os.ModePerm)
+						Expect(err).NotTo(HaveOccurred())
+
+						return nil
+					}
+				})
+
+				It("extracts the bzip2 compressed tarball", func() {
 					_, err := command.Run(destDir, request)
 					Expect(err).NotTo(HaveOccurred())
 
