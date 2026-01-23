@@ -1,7 +1,7 @@
 # S3 Resource
 
 Versions objects in an S3 bucket, by pattern-matching filenames to identify
-version numbers.
+version numbers. Uses v2 of the [AWS SDK for Go](https://github.com/aws/aws-sdk-go-v2).
 
 <a href="https://ci.concourse-ci.org/teams/main/pipelines/resource/jobs/build?vars.type=%22s3%22">
   <img src="https://ci.concourse-ci.org/api/v1/teams/main/pipelines/resource/jobs/build/badge?vars.type=%22s3%22" alt="Build Status">
@@ -125,6 +125,23 @@ By default the resource file will be created with no content when `get` runs. Yo
 * `initial_content_text`: *Optional.* Initial content as a string.
 
 * `initial_content_binary`: *Optional.* You can pass binary content as a base64 encoded string.
+
+### Advice for S3 Compatible Providers
+
+If you're using an S3 compatible service (e.g. MinIO), you may want to adjust
+some or all of the following settings mentioned in the `source` above:
+
+* `endpoint`
+* `disable_ssl`
+* `skip_ssl_verification`
+* `ca_bundle`
+* `disable_multipart`
+* `use_path_style`
+* `skip_s3_checksums`
+
+Scroll back up to read about each setting and why you may or may not want to
+set it. Some trial and error may be required and reviewing the documentation of
+your S3 compatible provider.
 
 ## Behavior
 
