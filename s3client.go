@@ -331,11 +331,15 @@ func (client *s3client) UploadFile(bucketName string, remotePath string, localPa
 
 	progress := client.newProgressBar(fSize)
 	defer progress.Wait()
+	pr, err := progress.ProxyReader(localFile)
+	if err != nil {
+		return "", fmt.Errorf("progress bar reader: %w", err)
+	}
 
 	uploadInput := &s3.PutObjectInput{
 		Bucket: aws.String(bucketName),
 		Key:    aws.String(remotePath),
-		Body:   progress.ProxyReader(localFile),
+		Body:   pr,
 		ACL:    types.ObjectCannedACL(options.Acl),
 	}
 	if options.ServerSideEncryption != "" {
@@ -404,7 +408,12 @@ func (client *s3client) DownloadFile(bucketName string, remotePath string, versi
 		getObject.VersionId = aws.String(versionID)
 	}
 
-	_, err = downloader.Download(context.TODO(), progressWriterAt{localFile, progress.ProxyWriter(io.Discard)}, getObject)
+	pr, err := progress.ProxyWriter(io.Discard)
+	if err != nil {
+		return fmt.Errorf("progress bar reader: %w", err)
+	}
+
+	_, err = downloader.Download(context.TODO(), progressWriterAt{localFile, pr}, getObject)
 	if err != nil {
 		return err
 	}
