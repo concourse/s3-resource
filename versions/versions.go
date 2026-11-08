@@ -50,7 +50,8 @@ func Extract(path string, pattern string) (Extraction, bool) {
 
 	ver, err := version.NewVersionFromString(match)
 	if err != nil {
-		panic("version number was not valid: " + err.Error())
+		// Not a version we can order, so treat it like any other non-match.
+		return Extraction{}, false
 	}
 
 	extraction := Extraction{

@@ -96,6 +96,54 @@ var _ = Describe("Check Command", func() {
 				})
 			})
 
+			Context("when a matching path does not hold a usable version", func() {
+				BeforeEach(func() {
+					s3client.ChunkedBucketListReturnsOnCall(0, s3resource.BucketListChunk{
+						Truncated:         false,
+						ContinuationToken: nil,
+						Paths: []string{
+							"files/abc-1.0.0.tgz",
+							"files/abc-.tgz",
+							"files/abc-2.0.0.tgz",
+						},
+					}, nil)
+				})
+
+				It("skips that path", func() {
+					request.Version.Path = ""
+					request.Source.Regexp = "files/abc-(.*).tgz"
+
+					response, err := command.Run(request)
+					Ω(err).ShouldNot(HaveOccurred())
+
+					Ω(response).Should(ConsistOf(
+						s3resource.Version{
+							Path: "files/abc-2.0.0.tgz",
+						},
+					))
+				})
+
+				Context("and it is the only matching path", func() {
+					BeforeEach(func() {
+						s3client.ChunkedBucketListReturnsOnCall(0, s3resource.BucketListChunk{
+							Truncated:         false,
+							ContinuationToken: nil,
+							Paths:             []string{"files/abc-.tgz"},
+						}, nil)
+					})
+
+					It("returns no versions", func() {
+						request.Version.Path = ""
+						request.Source.Regexp = "files/abc-(.*).tgz"
+
+						response, err := command.Run(request)
+						Ω(err).ShouldNot(HaveOccurred())
+
+						Ω(response).Should(HaveLen(0))
+					})
+				})
+			})
+
 			Context("when the regexp does not match anything", func() {
 				It("does not explode", func() {
 					request.Source.Regexp = "no-files/missing-(.*).tgz"
